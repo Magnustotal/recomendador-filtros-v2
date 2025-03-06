@@ -1,393 +1,259 @@
-// app/page.tsx
-'use client';
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import Layout from '../components/Layout';
-import ModeSelector from '../components/ModeSelector';
-import DimensionsInput from '../components/DimensionsInput';
-import ResultsTable from '../components/ResultsTable';
-import LoadingState from '../components/LoadingState';
-import AlertMessage from '../components/AlertMessage';
-import FilterDetails from '../components/FilterDetails';
-import tips from '../data/tips';
-import useDebounce from '../hooks/useDebounce';
-import { Filter, Dimensions, SortConfig, FilteredResults } from '../types';
+"use client";
+import { useState, useEffect } from "react";
+import FilterCard from "@/components/FilterCard";
+import FilterForm from "@/components/FilterForm";
+import { getFilteredFilters, calculateFilterScore, getFilterLevel } from "@/lib/filters"; //Importamos getFilterLevel
+import { Filtro } from "@/types/Filtro";
+import FiltersDisplay from "@/components/FiltersDisplay";
+import Tips from "@/components/Tips";
+
+const tips = [
+  "💧 Realiza cambios parciales de agua regularmente (10-20% cada semana).",
+  "🐟 No sobrealimentes a tus peces. Alimenta solo la cantidad que puedan comer en 2-3 minutos.",
+  "🧹 Utiliza un sifón para limpiar el fondo del acuario y eliminar los restos de comida y excrementos.",
+  "🧪 Controla los niveles de amoníaco, nitrito y nitrato regularmente.",
+  "⚙️ Asegúrate de que el filtro tenga el caudal adecuado para tu acuario.",
+  "🧼 Limpia el material filtrante del filtro regularmente, pero no lo reemplaces todo a la vez.",
+  "🐠 Introduce los peces nuevos gradualmente para evitar picos de amoníaco.",
+  "📚 Investiga las necesidades específicas de cada especie de pez que tengas.",
+  "🚰 Utiliza un acondicionador de agua para eliminar el cloro y las cloraminas del agua del grifo.",
+  "👀 Observa a tus peces regularmente para detectar signos de enfermedad.",
+  "🌡️ Mantén la temperatura del agua estable y adecuada para las especies que tengas.",
+  "🌿 Las plantas vivas ayudan a mantener la calidad del agua y proporcionan refugio a los peces.",
+  "☀️ Evita la luz solar directa sobre el acuario, ya que puede provocar un crecimiento excesivo de algas.",
+  "🐌 Los caracoles y otros invertebrados pueden ayudar a controlar las algas y mantener limpio el acuario.",
+  "🪨 Asegúrate de que las rocas y decoraciones sean seguras para acuarios y no alteren la química del agua.",
+  "⏳ No tengas prisa al montar un acuario nuevo. El ciclado del acuario es fundamental.",
+  "📝 Lleva un registro de los parámetros del agua y de cualquier cambio que realices.",
+  "👥 Únete a un foro o grupo de acuarismo para aprender de otros aficionados y compartir experiencias.",
+  "🚑 Ten a mano un botiquín básico para peces, con tratamientos para enfermedades comunes.",
+  "⚡️ Asegúrate de que todos los equipos eléctricos estén conectados a un interruptor diferencial (GFCI).",
+];
 
 export default function Home() {
-  const [dimensionsMode, setDimensionsMode] = useState<boolean | null>(null);
-  const [dimensions, setDimensions] = useState<Dimensions>({ length: 0, width: 0, height: 0 });
-  const [calculatedVolume, setCalculatedVolume] = useState<number>(0);
-  const [filters, setFilters] = useState<Filter[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [filters, setFilters] = useState<Filtro[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filteredResults, setFilteredResults] = useState<FilteredResults>({
-    recommended: [],
-    adequate: [],
-    notAdequate: [],
-    recommendedCombinations: [],
-    adequateCombinations: [],
-  });
-  const [currentTipIndex, setCurrentTipIndex] = useState<number>(0);
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'caudal', direction: 'ascending' });
-  const [showFiltersCount, setShowFiltersCount] = useState<boolean>(false);
-  const [maxVolume, setMaxVolume] = useState<number>(0);
-  const [showDetails, setShowDetails] = useState<boolean>(false);
-  const [selectedFilterId, setSelectedFilterId] = useState<string | null>(null);
-  const [selectedFilter, setSelectedFilter] = useState<Filter | null>(null);
-
-  const debouncedDimensions = useDebounce(dimensions, 500);
+  const [filteredFilters, setFilteredFilters] = useState<Filtro[]>([]);
+  const [showNoFiltersMessage, setShowNoFiltersMessage] = useState(false);
+  const [inputMode, setInputMode] = useState<"liters" | "dimensions" | null>(
+    null,
+  );
+  const [liters, setLiters] = useState<number | undefined>();
+  const [displayMode, setDisplayMode] = useState<"cards" | "table">("cards"); // Eliminamos "list"
+  const [hasSearched, setHasSearched] = useState(false);
+  const [showForm, setShowForm] = useState(true);
+  const [visibleFilters, setVisibleFilters] = useState<number>(20); // Aumentamos el estado inicial a 20.
 
   useEffect(() => {
     const fetchFilters = async () => {
-      setLoading(true);
+      setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch('/api/filters');
+        const response = await fetch("/api/filters");
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Error al cargar los filtros');
+          throw new Error(
+            `Error al obtener los filtros: ${response.status} ${response.statusText}`,
+          );
         }
-        const data: Filter[] = await response.json();
+        const data = await response.json();
+        // TODO: Validar data con Zod aquí
         setFilters(data);
-        const maxCaudalLocal = Math.max(...data.map(filter => filter.caudal));
-        setMaxVolume((2 * maxCaudalLocal) / 10);
       } catch (err: any) {
-        setError(err.message || 'Error al cargar los filtros. Inténtalo de nuevo.');
+        setError(err.message || "Error al cargar los filtros");
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
+
     fetchFilters();
   }, []);
 
-  useEffect(() => {
-    if (debouncedDimensions.length && debouncedDimensions.width && debouncedDimensions.height) {
-      const vol = (debouncedDimensions.length * debouncedDimensions.width * debouncedDimensions.height) / 1000;
-      setCalculatedVolume(vol);
-    }
-  }, [debouncedDimensions]);
-
-  const handleDimensionChange = useCallback((field: keyof Dimensions, value: number) => {
-    setDimensions(prev => ({ ...prev, [field]: value }));
-  }, []);
-
-  const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVolume = e.target.value;
-    if (newVolume === '' || parseFloat(newVolume) >= 0) {
-      setCalculatedVolume(newVolume === '' ? 0 : parseFloat(newVolume));
-    }
-  }, []);
-
-  const resetForm = useCallback(() => {
-    setDimensionsMode(null);
-    setDimensions({ length: 0, width: 0, height: 0 });
-    setCalculatedVolume(0);
-    setFilteredResults({
-      recommended: [],
-      adequate: [],
-      notAdequate: [],
-      recommendedCombinations: [],
-      adequateCombinations: [],
-    });
-    setShowFiltersCount(false);
-    setShowDetails(false);
-    setSelectedFilterId(null);
-    setSelectedFilter(null);
-  }, []);
-
-  const navigateTip = useCallback((direction: 'next' | 'prev') => {
-    setCurrentTipIndex(prevIndex =>
-      direction === 'next'
-        ? (prevIndex + 1) % tips.length
-        : (prevIndex - 1 + tips.length) % tips.length
-    );
-  }, []);
-
-  const requestSort = useCallback((key: string) => {
-    setSortConfig(prevConfig => ({
-      key,
-      direction: prevConfig.key === key && prevConfig.direction === 'ascending'
-        ? 'descending'
-        : 'ascending',
-    }));
-  }, []);
-
-  const classifyFilters = useCallback(() => {
-    if (!calculatedVolume || filters.length === 0) return;
-
-    if (calculatedVolume > maxVolume) {
-      setError(`Este recomendador ha sido creado para acuarios de un volumen inferior a ${maxVolume.toFixed(1)} litros.`);
-      return;
-    } else {
-      setError(null);
-    }
-
-    let recommended: Filter[] = [];
-    let adequate: Filter[] = [];
-    let notAdequate: Filter[] = [];
-    let recommendedCombinations: Filter[] = [];
-    let adequateCombinations: Filter[] = [];
-
-    const minFlowRate = calculatedVolume * 10;
-    const maxCaudalLocal = Math.max(...filters.map(filter => filter.caudal));
-    const combinationThreshold = maxCaudalLocal / 10;
-
-    filters.forEach(filter => {
-      const { caudal, volumen_vaso_filtro } = filter;
-
-      if (caudal < minFlowRate) {
-        notAdequate.push(filter);
-        return;
-      }
-
-      if (caudal >= minFlowRate && volumen_vaso_filtro >= calculatedVolume * 0.05) {
-        recommended.push(filter);
-      } else if (caudal >= minFlowRate && volumen_vaso_filtro >= calculatedVolume * 0.025) {
-        adequate.push(filter);
-      } else {
-        notAdequate.push(filter);
-      }
+ const handleFilterSubmit = (liters: number) => {
+    let newFilteredFilters = getFilteredFilters({
+      liters,
+      filters,
     });
 
-    const sortByRatio = (a: Filter, b: Filter) => {
-      const ratioA = a.caudal / a.volumen_vaso_filtro;
-      const ratioB = b.caudal / b.volumen_vaso_filtro;
-      return ratioB - ratioA;
+    // Separar por nivel de cumplimiento
+    const recommendedFilters = newFilteredFilters.filter(filtro => getFilterLevel(filtro, liters) === "recommended");
+    const minimumFilters = newFilteredFilters.filter(filtro => getFilterLevel(filtro, liters) === "minimum");
+
+    // Ordenar cada grupo por caudal (ascendente)
+    recommendedFilters.sort((a, b) => a.caudal - b.caudal);
+    minimumFilters.sort((a, b) => a.caudal - b.caudal);
+
+    // Combinar: primero los mínimos, luego los recomendados
+    newFilteredFilters = [...minimumFilters, ...recommendedFilters];
+
+
+    setFilteredFilters(newFilteredFilters);
+    setShowNoFiltersMessage(newFilteredFilters.length === 0);
+    setInputMode(null);
+    setLiters(liters);
+    setHasSearched(true);
+    setShowForm(false);
+    setVisibleFilters(20); // Restablecer el número de filtros visibles
+  };
+
+  const handleNewQuery = () => {
+    setShowForm(true);
+    setInputMode(null);
+    setLiters(undefined);
+    setFilteredFilters([]);
+    setHasSearched(false);
+    setShowNoFiltersMessage(false);
+     setVisibleFilters(20); // Reset
+  };
+
+  const handleLitersChange = (newLitros: number | undefined) => {
+    setLiters(newLitros);
+  };
+
+    const handleShowMore = () => {
+        setVisibleFilters(prevVisibleFilters => prevVisibleFilters + 20); // Muestra 20 más
     };
 
-    recommended.sort(sortByRatio);
-    adequate.sort(sortByRatio);
-
-    if (calculatedVolume > 200) {
-      filters.forEach((filter1, index) => {
-        filters.slice(index + 1).forEach(filter2 => {
-          if (filter1.modelo === filter2.modelo) {
-            const combinedFilter: Filter = {
-              id: `${filter1.id}-${filter2.id}`,
-              marca: filter1.marca,
-              modelo: `${filter1.modelo} x2`,
-              caudal: filter1.caudal + filter2.caudal,
-              volumen_vaso_filtro: filter1.volumen_vaso_filtro + filter2.volumen_vaso_filtro,
-              volumen_prefiltro: null,
-              volumen_vaso_real: null,
-              cestas: null,
-              consumo: null,
-              asin: null,
-            };
-
-            if (combinedFilter.caudal >= minFlowRate &&
-                combinedFilter.volumen_vaso_filtro >= calculatedVolume * 0.05) {
-              recommendedCombinations.push(combinedFilter);
-            } else if (combinedFilter.caudal >= minFlowRate &&
-                       combinedFilter.volumen_vaso_filtro >= calculatedVolume * 0.025) {
-              adequateCombinations.push(combinedFilter);
-            }
-          }
-        });
-      });
-
-      recommendedCombinations.sort(sortByRatio);
-      adequateCombinations.sort(sortByRatio);
-    }
-
-    setFilteredResults({
-      recommended,
-      adequate,
-      notAdequate,
-      recommendedCombinations,
-      adequateCombinations,
-    });
-    setShowFiltersCount(true);
-  }, [calculatedVolume, filters, maxVolume]);
-
-  useEffect(() => {
-    if (calculatedVolume > 0) {
-      classifyFilters();
-    }
-  }, [classifyFilters, calculatedVolume]);
-
-  const sortedFilters = useMemo(() => {
-    const { recommended, adequate, recommendedCombinations, adequateCombinations } = filteredResults;
-    const allFilters = [...recommended, ...adequate, ...recommendedCombinations, ...adequateCombinations];
-
-    return allFilters.sort((a, b) => {
-      const keyA = a[sortConfig.key as keyof Filter];
-      const keyB = b[sortConfig.key as keyof Filter];
-
-      if (keyA < keyB) return sortConfig.direction === 'ascending' ? -1 : 1;
-      if (keyA > keyB) return sortConfig.direction === 'ascending' ? 1 : -1;
-      return 0;
-    });
-  }, [filteredResults, sortConfig]);
-
-  const maxCaudal = Math.max(...filters.map(filter => filter.caudal || 0));
-  const showSumpMessage = calculatedVolume * 10 > maxCaudal;
-  const showSumpCriticalMessage = calculatedVolume * 20 > maxCaudal * 2;
-
-  const handleFilterClick = useCallback(async (filterId: string) => {
-    setSelectedFilterId(filterId);
-    setShowDetails(true);
-    setLoading(true);
-
-    try {
-      const response = await fetch(`/api/filters/${filterId}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al cargar los detalles del filtro');
-      }
-      const data: Filter = await response.json();
-      setSelectedFilter(data);
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar los detalles del filtro');
-      setShowDetails(false);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const handleCloseDetails = useCallback(() => {
-    setShowDetails(false);
-    setSelectedFilterId(null);
-    setSelectedFilter(null);
-  }, []);
-
   return (
-    <Layout>
-      {/* Sección de Consejos */}
-      <div className="max-w-4xl mx-auto mb-8 transform hover:scale-102 transition-transform duration-300">
-        <div className="glass-card p-6">
-          <div className="flex items-start space-x-4">
-            <div className="flex-shrink-0 text-2xl">💡</div>
-            <div className="flex-1">
-              <h2 className="text-xl font-semibold text-white mb-2">Consejo del día</h2>
-              <p className="text-gray-300">{tips[currentTipIndex]}</p>
-              <div className="mt-4 flex space-x-2">
-                <button
-                  onClick={() => navigateTip('prev')}
-                  className="btn-primary"
-                >
-                  ← Anterior
-                </button>
-                <button
-                  onClick={() => navigateTip('next')}
-                  className="btn-primary"
-                >
-                  Siguiente →
-                </button>
-              </div>
-            </div>
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-4 text-center text-blue-600 dark:text-blue-400">
+        🌊 Encuentra el Filtro Ideal para tu Acuario 🐠
+      </h1>
+      <p className="text-center mb-6 text-gray-600 dark:text-gray-400">
+        Esta aplicación ha sido diseñada por y para aficionados a la
+        acuariofilia.
+      </p>
+
+      {showForm && (
+        <>
+          <p className="text-center mb-6 text-gray-600 dark:text-gray-400">
+            Para poder recomendarte el filtro perfecto, necesitamos que nos
+            indiques las dimensiones de tu acuario o su volumen en litros.
+          </p>
+
+          <div className="flex justify-center space-x-4 mb-8">
+            {" "}
+            {/* Aumentado el margen inferior */}
+            <button
+              onClick={() => setInputMode("liters")}
+              className={`px-6 py-3 rounded-full  text-white font-semibold focus:outline-none transition duration-200 ${
+                inputMode === "liters"
+                  ? "bg-blue-700"
+                  : "bg-blue-500 hover:bg-blue-600"
+              }`}
+            >
+              Introducir Volumen (L)
+            </button>
+            <button
+              onClick={() => setInputMode("dimensions")}
+              className={`px-6 py-3 rounded-full text-white font-semibold focus:outline-none transition duration-200 ${
+                inputMode === "dimensions"
+                  ? "bg-blue-700"
+                  : "bg-blue-500 hover:bg-blue-600"
+              }`}
+            >
+              Introducir Dimensiones (cm)
+            </button>
           </div>
-        </div>
-      </div>
 
-      {/* Selector de Modo */}
-      <ModeSelector
-        dimensionsMode={dimensionsMode}
-        onModeSelect={setDimensionsMode}
-      />
-
-      {/* Panel Principal */}
-      <div className="max-w-4xl mx-auto">
-        {dimensionsMode === true ? (
-          <DimensionsInput
-            dimensions={dimensions}
-            onChange={handleDimensionChange}
-          />
-        ) : dimensionsMode === false ? (
-          <div className="glass-card p-6">
-            <h3 className="text-lg font-medium text-white mb-4">
-              Volumen del Acuario
-            </h3>
-            <input
-              type="number"
-              value={calculatedVolume}
-              onChange={handleVolumeChange}
-              className="input-field"
-              placeholder="Volumen en litros"
-              min="0"
+          {inputMode && (
+            <FilterForm
+              onSubmit={handleFilterSubmit}
+              inputMode={inputMode}
+              onLitersChange={handleLitersChange}
+              showSubmitButton={true} // Mostrar botón
             />
-          </div>
-        ) : null}
+          )}
+        </>
+      )}
 
-        {/* Volumen Calculado */}
-        {calculatedVolume > 0 && (
-          <div className="mt-6 text-center">
-            <div className="inline-block bg-blue-500/20 px-6 py-3 rounded-full">
-              <span className="text-blue-300">Volumen Calculado:</span>
-              <span className="ml-2 text-white font-bold">
-                {calculatedVolume.toFixed(1)} litros
-              </span>
+      {/* Resultados, leyenda, selector (solo si se ha buscado) */}
+      {hasSearched && (
+        <>
+          <div className="flex justify-center space-x-4 mt-8 mb-6">
+            {" "}
+            {/* Margen superior aumentado */}
+            <div className="flex items-center">
+              <span className="w-4 h-4 bg-green-500 rounded-full mr-2"></span>
+              <span>Recomendado</span>
+            </div>
+            <div className="flex items-center">
+              <span className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></span>
+              <span>Mínimo</span>
             </div>
           </div>
-        )}
 
-        {/* Botones de Acción */}
-        {(dimensionsMode === true || dimensionsMode === false) && (
-          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex justify-center space-x-4 mb-8">
+            {" "}
+            {/* Margen inferior aumentado */}
             <button
-              onClick={classifyFilters}
-              className="btn-primary"
+              onClick={() => setDisplayMode("cards")}
+              className={`px-4 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring transition ${
+                displayMode === "cards"
+                  ? "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white"
+                  : "text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400"
+              }`}
             >
-              ¿Qué filtros me recomiendas? 🐠
+              Tarjetas
             </button>
             <button
-              onClick={resetForm}
-              className="btn-secondary"
+              onClick={() => setDisplayMode("table")}
+              className={`px-4 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring transition ${
+                displayMode === "table"
+                  ? "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white"
+                  : "text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400"
+              }`}
             >
-              Reiniciar
+              Tabla
             </button>
           </div>
-        )}
 
-        {/* Estado de Carga */}
-        {loading && <LoadingState />}
+          {isLoading && (
+            <p className="text-gray-500 dark:text-gray-400">Cargando...</p>
+          )}
+          {error && <p className="text-red-500">Error: {error}</p>}
 
-        {/* Mensajes de Error */}
-        {error && (
-          <AlertMessage
-            type="error"
-            title="Error"
-            message={error}
-          />
-        )}
+          {!isLoading &&
+            !error &&
+            filteredFilters.length > 0 && ( // Mostrar si hay filtros
+              <>
+                <FiltersDisplay
+                  filters={filteredFilters.slice(0, visibleFilters)} // Limita los filtros mostrados
+                  displayMode={displayMode}
+                  liters={liters}
+                />
+                 {filteredFilters.length > visibleFilters && ( // Botón "Mostrar Más"
+                                    <div className="flex justify-center mt-4">
+                                        <button
+                                            onClick={handleShowMore}
+                                            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
+                                        >
+                                            Mostrar Más Resultados
+                                        </button>
+                                    </div>
+                                )}
+              </>
+            )}
+          {showNoFiltersMessage && !isLoading && !error && (
+            <p className="text-center text-gray-600 dark:text-gray-400">
+              No se encontraron filtros para los criterios seleccionados.
+            </p>
+          )}
 
-        {/* Tabla de Resultados */}
-        {sortedFilters.length > 0 && (
-          <ResultsTable
-            filters={sortedFilters}
-            recommended={filteredResults.recommended}
-            adequate={filteredResults.adequate}
-            recommendedCombinations={filteredResults.recommendedCombinations}
-            adequateCombinations={filteredResults.adequateCombinations}
-            sortConfig={sortConfig}
-            onSort={requestSort}
-            onFilterClick={handleFilterClick}
-          />
-        )}
+          <div className="flex justify-center mt-6">
+            {" "}
+            {/* Botón "Nueva Consulta" */}
+            <button
+              onClick={handleNewQuery}
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
+            >
+              Nueva Consulta
+            </button>
+          </div>
+        </>
+      )}
 
-        {/* Mensajes Informativos (Sump y Filtración) */}
-        {showFiltersCount && (
-          <>
-            {showSumpCriticalMessage ? (
-              <AlertMessage
-                type="warning"
-                title="¡Atención!"
-                message="Tu acuario necesita un sistema de filtración muy potente, o un sump, para mantener una buena calidad del agua."
-              />
-            ) : showSumpMessage ? (
-              <AlertMessage
-                type="info"
-                title="Considera un Sump"
-                message="Para acuarios de este volumen, un sump podría mejorar significativamente la filtración y el mantenimiento."
-              />
-            ) : null}
-          </>
-        )}
-
-        {/* Ficha de Detalles */}
-        {showDetails && selectedFilter && (
-          <FilterDetails filter={selectedFilter} onClose={handleCloseDetails} />
-        )}
-      </div>
-    </Layout>
+      <Tips tips={tips} />
+    </div>
   );
 }
