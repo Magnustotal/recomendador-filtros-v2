@@ -3,30 +3,29 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Filtro } from "@/types/Filtro";
 
-// Comprueba las variables de entorno *fuera* del handler
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Supabase URL and Anon Key must be defined in .env.local");
+  throw new Error(
+    "Supabase URL and Anon Key must be defined in .env.local",
+  );
 }
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }, // Corrección aquí
+  { params }: { params: { id: string } },  // Corrección aquí
 ) {
-  // Inicializa el cliente *dentro* del handler
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   try {
     const { id } = params;
 
-    // Consulta a Supabase para obtener el filtro por ID
     const { data, error } = await supabase
       .from("filtros")
-      .select("*") // Selecciona todos los campos
+      .select("*")
       .eq("id", id)
-      .single() as { data: Filtro | null; error: any }; // Usamos la interfaz Filtro
+      .single() as { data: Filtro | null; error: any };
 
     if (error) {
       throw error;
