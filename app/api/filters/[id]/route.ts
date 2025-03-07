@@ -13,7 +13,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: { id: string } }, // Corrección aquí
 ) {
   // Inicializa el cliente *dentro* del handler
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
