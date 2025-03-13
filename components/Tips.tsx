@@ -1,44 +1,83 @@
-// components/Tips.tsx
-import React, { useState } from "react";
+"use client";
+
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Box, IconButton, Typography, Paper, Tooltip } from "@mui/material";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 
 interface TipsProps {
-  tips: string[]; // Un array de strings (los consejos)
+  tips: string[];
 }
 
+// Componente para mostrar consejos con navegación
 const Tips: React.FC<TipsProps> = ({ tips }) => {
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const nextTip = () => {
+  // Función para mostrar el siguiente consejo
+  const nextTip = useCallback(() => {
     setCurrentTipIndex((prevIndex) => (prevIndex + 1) % tips.length);
-  };
+  }, [tips.length]);
 
-  const prevTip = () => {
+  // Función para mostrar el consejo anterior
+  const prevTip = useCallback(() => {
     setCurrentTipIndex((prevIndex) =>
-      prevIndex === 0 ? tips.length - 1 : prevIndex - 1,
+      prevIndex === 0 ? tips.length - 1 : prevIndex - 1
     );
-  };
+  }, [tips.length]);
+
+  // Efecto para cambiar el consejo cada 5 segundos
+  useEffect(() => {
+    intervalRef.current = setInterval(nextTip, 5000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [nextTip]);
 
   return (
-    <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 my-4 rounded relative">
-      <div className="absolute top-0 right-0 mt-2 mr-2">
-        {" "}
-        {/* Contenedor para los botones */}
-        <button
-          onClick={prevTip}
-          className="text-yellow-600 hover:text-yellow-800 mr-2 focus:outline-none"
+    <Paper
+      elevation={3}
+      sx={{
+        p: 3,
+        mb: 4,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        backgroundColor: "#fff9c4", // Color de fondo en tono amarillento
+        borderRadius: 4,
+        border: 1,
+        borderColor: "divider",
+      }}
+    >
+      <Tooltip title="Anterior consejo">
+        <IconButton onClick={prevTip} size="large" aria-label="Previous tip">
+          <ArrowBackIosNewIcon />
+        </IconButton>
+      </Tooltip>
+      <Box sx={{ flexGrow: 1, textAlign: "center" }}>
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{ fontWeight: "bold", color: "black", fontFamily: "Roboto" }}
         >
-          ⬅️
-        </button>
-        <button
-          onClick={nextTip}
-          className="text-yellow-600 hover:text-yellow-800 focus:outline-none"
+          Consejo:
+        </Typography>
+        <Typography
+          variant="body1"
+          sx={{ color: "black", mt: 1, fontFamily: "Roboto" }}
         >
-          ➡️
-        </button>
-      </div>
-      <p className="font-bold">Consejo:</p>
-      <p>{tips[currentTipIndex]}</p>
-    </div>
+          {tips[currentTipIndex]}
+        </Typography>
+      </Box>
+      <Tooltip title="Siguiente consejo">
+        <IconButton onClick={nextTip} size="large" aria-label="Next tip">
+          <ArrowForwardIosIcon />
+        </IconButton>
+      </Tooltip>
+    </Paper>
   );
 };
 

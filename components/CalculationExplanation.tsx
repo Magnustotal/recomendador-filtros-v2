@@ -1,69 +1,62 @@
-// components/CalculationExplanation.tsx
+import { Typography, Box, Divider, Paper } from "@mui/material";
 
-const CalculationExplanation: React.FC = () => {
+// Componente para mostrar la explicación de los cálculos
+const CalculationExplanation = () => {
   return (
-    <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow-md mb-4">
-      <h3 className="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">
-        Explicación de los Cálculos 🧮
-      </h3>
-      <p className="text-gray-700 dark:text-gray-300 mb-2">
-        La clasificación de los filtros se basa en dos criterios principales:
-        el caudal y el volumen del vaso del filtro.
-      </p>
-      <h4 className="text-lg font-semibold mb-1 text-gray-800 dark:text-gray-200">
-        Caudal 🌊
-      </h4>
-      <p className="text-gray-700 dark:text-gray-300 mb-4">
-        El caudal, medido en litros por hora (l/h), indica la cantidad de agua
-        que el filtro puede procesar en una hora. Para un filtrado efectivo,
-        recomendamos un caudal que sea al menos 10 veces el volumen de tu
-        acuario. Por ejemplo, para un acuario de 100 litros, el filtro
-        idealmente debería tener un caudal de 1000 l/h o más.
-      </p>
-      <h4 className="text-lg font-semibold mb-1 text-gray-800 dark:text-gray-200">
-        Volumen del Vaso del Filtro 🛢️
-      </h4>
-      <p className="text-gray-700 dark:text-gray-300 mb-4">
-        El volumen del vaso del filtro se refiere a la cantidad de material
-        filtrante que puede contener. Se recomienda que al menos el 90% de este
-        volumen esté ocupado por material filtrante biológico, y el resto por
-        material filtrante mecánico. Para que un filtro sea considerado
-        &quot;Recomendado&quot;, este volumen (al 90% de su capacidad) debe
-        ser al menos el 5% del volumen del acuario. Para ser considerado
-        &quot;Mínimo&quot;, debe ser al menos el 2.5% del volumen del acuario.
-      </p>
-      <h4 className="text-lg font-semibold mb-1 text-gray-800 dark:text-gray-200">
-        Clasificación de Filtros 🚦
-      </h4>
-      <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 mb-4">
-        <li>
-          <strong className="text-green-600 dark:text-green-400">
-            Recomendado:
-          </strong>{" "}
-          Cumple con ambos criterios (caudal y volumen del vaso).
-        </li>
-        <li>
-          <strong className="text-yellow-600 dark:text-yellow-400">
-            Mínimo:
-          </strong>{" "}
-          Cumple con el requisito de caudal, pero el volumen del vaso es menor
-          que el recomendado, aunque suficiente para una filtración básica.
-        </li>
-        <li>
-          <strong className="text-red-600 dark:text-red-400">
-            Insuficiente:
-          </strong>{" "}
-          No cumple con el requisito mínimo de caudal.
-        </li>
-      </ul>
-      <p className="text-gray-700 dark:text-gray-300">
-        <strong className="text-blue-600 dark:text-blue-400">
-          Combinaciones de filtros:
-        </strong>{" "}
-        Si un filtro individual no cumple con los requisitos, se mostrarán
-        combinaciones de dos filtros *del mismo modelo*.
-      </p>
-    </div>
+    <Paper
+      elevation={3}
+      sx={{
+        mb: 4,
+        p: 3,
+        borderRadius: 3,
+        backgroundColor: 'background.paper',
+      }}
+    >
+      <Typography variant="h5" gutterBottom>
+        Cálculo de Caudal y Volumen del Filtro
+      </Typography>
+      <Typography variant="body1" paragraph>
+        El caudal del filtro (en litros/hora) se recomienda que sea, como mínimo,
+        10 veces el volumen del acuario en litros. Es decir:
+      </Typography>
+      <Typography variant="body1" sx={{ pl: 3, fontStyle: 'italic' }}>
+        Caudal (l/h) ≥ Volumen del Acuario (l) × 10
+      </Typography>
+
+      <Typography variant="body1" paragraph sx={{ mt: 2 }}>
+        En cuanto al volumen del material filtrante (o volumen del vaso del filtro),
+        este se recomienda que sea, como mínimo, el 2.5% del volumen del acuario.
+        De forma ideal, debería ser el 5% del volumen del acuario:
+      </Typography>
+      <Typography variant="body1" sx={{ pl: 3, fontStyle: 'italic' }}>
+        Volumen del Material Filtrante (l) ≥ Volumen del Acuario (l) × 0.025 (mínimo)
+        <br />
+        Volumen del Material Filtrante (l) ≥ Volumen del Acuario (l) × 0.05 (ideal)
+      </Typography>
+
+      <Divider sx={{ my: 3 }} />
+
+      <Typography variant="h5" gutterBottom>
+        Volumen del Material Filtrante
+      </Typography>
+      <Typography variant="body1" paragraph>
+        En la base de datos se recoge el volumen total del vaso de los filtros, 
+        el volumen real del vaso y en caso de no existir se hace una estimación.
+        El volumen útil o real, que corresponde realmente al material filtrante,
+        depende de cada fabricante.
+      </Typography>
+      
+      <Divider sx={{ my: 3 }} />
+
+      <Typography variant="h5" gutterBottom>
+        Cálculo de Cargas (Biológica y Mecánica)
+      </Typography>
+      <Typography variant="body1" paragraph>
+        La capacidad de carga biológica y mecánica se calcula como un porcentaje
+        del volumen real del vaso del filtro. Si el volumen real está disponible, se utiliza directamente.
+        En caso contrario, se estima como el 59% del volumen del vaso en los filtros con cestas y sobre un 85% en los filtros sin cestas.
+      </Typography>
+    </Paper>
   );
 };
 

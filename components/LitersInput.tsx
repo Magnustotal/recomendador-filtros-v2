@@ -1,5 +1,5 @@
-// components/LitersInput.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { TextField, Box, Typography } from "@mui/material";
 
 interface LitersInputProps {
   label: string;
@@ -8,25 +8,29 @@ interface LitersInputProps {
   minValue?: number;
 }
 
+// Componente para la entrada de litros con validación
 const LitersInput: React.FC<LitersInputProps> = ({
   label,
   value,
   onChange,
   minValue = 0,
 }) => {
-  const [localValue, setLocalValue] = useState<string | undefined>(
-    value === undefined ? "" : String(value),
+  const [localValue, setLocalValue] = useState<string>(
+    value === undefined ? "" : String(value) // Inicializar el valor local con el valor prop o vacío
   );
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null); // Estado para gestionar los errores
 
+  // Actualizar el valor local cuando el valor prop cambie
   useEffect(() => {
     setLocalValue(value === undefined ? "" : String(value));
   }, [value]);
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Manejar cambios en el campo de entrada
+  const handleChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = event.target.value;
     setLocalValue(inputValue);
 
+    // Si el campo está vacío, se limpia el error y se pasa undefined al padre
     if (inputValue === "") {
       onChange(undefined);
       setError(null);
@@ -35,32 +39,38 @@ const LitersInput: React.FC<LitersInputProps> = ({
 
     const numValue = parseInt(inputValue, 10);
 
+    // Validar si el valor introducido es un número
     if (Number.isNaN(numValue)) {
       setError("Introduce un número válido.");
       onChange(undefined);
-    } else if (numValue < minValue) {
+    }
+    // Validar si el valor es menor que el mínimo
+    else if (numValue < minValue) {
       setError(`El valor debe ser mayor o igual a ${minValue}.`);
       onChange(undefined);
     } else {
-      setError(null);
-      onChange(numValue);
+      setError(null); // Si no hay errores, se limpia el error
+      onChange(numValue); // Se pasa el valor válido al padre
     }
-  };
+  }, [minValue, onChange]);
 
   return (
-    <div className="mb-4">
-      <label className="block text-gray-700 text-sm font-bold mb-2">
+    <Box sx={{ mb: 4 }}>
+      <Typography variant="h6" gutterBottom>
         {label}
-      </label>
-      <input
+      </Typography>
+      <TextField
         type="number"
         value={localValue}
         onChange={handleChange}
-        className="border rounded-md p-2 w-full"
-        min={minValue}
+        variant="outlined"
+        fullWidth
+        margin="normal"
+        inputProps={{ min: minValue }} // Asegura que el valor mínimo se respete en el input
+        error={Boolean(error)} // Muestra el error si existe
+        helperText={error} // Muestra el texto del error debajo del input
       />
-      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-    </div>
+    </Box>
   );
 };
 

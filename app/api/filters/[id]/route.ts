@@ -7,14 +7,12 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    "Supabase URL and Anon Key must be defined in .env.local",
-  );
+  throw new Error("Supabase URL and Anon Key must be defined in .env.local");
 }
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },  // Corrección aquí
+  { params }: { params: { id: string } },
 ) {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 

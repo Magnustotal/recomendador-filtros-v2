@@ -1,22 +1,20 @@
-// components/DimensionsInput.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { TextField, Box, Typography, Grid, Paper } from "@mui/material";
 
 interface DimensionsInputProps {
   onLitersChange: (liters: number | undefined) => void;
-  onSubmit?: (liters: number) => void; // onSubmit es opcional ahora
 }
 
-const DimensionsInput: React.FC<DimensionsInputProps> = ({
-  onLitersChange,
-  onSubmit,
-}) => {
+// Componente para ingresar las dimensiones del acuario y calcular el volumen
+const DimensionsInput: React.FC<DimensionsInputProps> = ({ onLitersChange }) => {
   const [length, setLength] = useState<number | undefined>();
   const [width, setWidth] = useState<number | undefined>();
   const [height, setHeight] = useState<number | undefined>();
   const [error, setError] = useState<string | null>(null);
+  const [calculatedLiters, setCalculatedLiters] = useState<number | undefined>();
 
   useEffect(() => {
-    if (length !== undefined && width !== undefined && height !== undefined) {
+    if (length && width && height) {
       if (
         Number.isInteger(length) &&
         length > 0 &&
@@ -26,60 +24,83 @@ const DimensionsInput: React.FC<DimensionsInputProps> = ({
         height > 0
       ) {
         const liters = (length * width * height) / 1000;
+        setCalculatedLiters(liters);
         onLitersChange(liters);
-        if (onSubmit) { // Llamamos a onSubmit *si existe*
-          onSubmit(liters);
-        }
         setError(null);
       } else {
         setError("Introduce números enteros positivos.");
         onLitersChange(undefined);
+        setCalculatedLiters(undefined);
       }
     } else {
       onLitersChange(undefined);
       setError(null);
+      setCalculatedLiters(undefined);
     }
-  }, [length, width, height, onLitersChange, onSubmit]); // Añadimos onSubmit a las dependencias
+  }, [length, width, height, onLitersChange]);
+
+  const handleChange = useCallback(
+    (setter: React.Dispatch<React.SetStateAction<number | undefined>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      setter(e.target.value === "" ? undefined : parseInt(e.target.value, 10));
+    },
+    []
+  );
 
   return (
-    <div className="mb-4">
-      <div className="grid grid-cols-3 gap-4 mb-2">
-        <input
-          type="number"
-          placeholder="Largo (cm)"
-          value={length === undefined ? "" : length}
-          onChange={(e) =>
-            setLength(
-              e.target.value === "" ? undefined : parseInt(e.target.value, 10),
-            )
-          }
-          className="border rounded-md p-2"
-        />
-        <input
-          type="number"
-          placeholder="Ancho (cm)"
-          value={width === undefined ? "" : width}
-          onChange={(e) =>
-            setWidth(
-              e.target.value === "" ? undefined : parseInt(e.target.value, 10),
-            )
-          }
-          className="border rounded-md p-2"
-        />
-        <input
-          type="number"
-          placeholder="Alto (cm)"
-          value={height === undefined ? "" : height}
-          onChange={(e) =>
-            setHeight(
-              e.target.value === "" ? undefined : parseInt(e.target.value, 10),
-            )
-          }
-          className="border rounded-md p-2"
-        />
-      </div>
-      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-    </div>
+    <Paper elevation={3} sx={{ p: 4, mb: 4, borderRadius: 3 }}>
+      <Typography variant="h6" gutterBottom align="center">
+        Ingresar Dimensiones del Acuario
+      </Typography>
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={4}>
+          <TextField
+            type="number"
+            label="Largo (cm)"
+            value={length === undefined ? "" : length}
+            onChange={handleChange(setLength)}
+            variant="outlined"
+            fullWidth
+            margin="normal"
+            inputProps={{ min: 1, step: "1" }}
+            error={Boolean(error)}
+            helperText={error ? error : ""}
+          />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField
+            type="number"
+            label="Ancho (cm)"
+            value={width === undefined ? "" : width}
+            onChange={handleChange(setWidth)}
+            variant="outlined"
+            fullWidth
+            margin="normal"
+            inputProps={{ min: 1, step: "1" }}
+            error={Boolean(error)}
+            helperText={error ? error : ""}
+          />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField
+            type="number"
+            label="Alto (cm)"
+            value={height === undefined ? "" : height}
+            onChange={handleChange(setHeight)}
+            variant="outlined"
+            fullWidth
+            margin="normal"
+            inputProps={{ min: 1, step: "1" }}
+            error={Boolean(error)}
+            helperText={error ? error : ""}
+          />
+        </Grid>
+      </Grid>
+      {calculatedLiters !== undefined && (
+        <Typography variant="body1" align="center" paragraph sx={{ mt: 2 }}>
+          Volumen Calculado: {calculatedLiters} litros 🧮
+        </Typography>
+      )}
+    </Paper>
   );
 };
 
