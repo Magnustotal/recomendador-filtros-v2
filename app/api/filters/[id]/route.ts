@@ -2,30 +2,27 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Filtro } from "@/types/Filtro";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Acceso seguro a variables de entorno
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Supabase URL and Anon Key must be defined in .env.local");
-}
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export async function GET(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
   try {
-    const { id } = params; // Obtén 'id' correctamente de 'params'
+    const { id } = params;
 
     const { data, error } = await supabase
       .from("filtros")
       .select("*")
       .eq("id", id)
-      .single() as { data: Filtro | null; error: any };
+      .single();
 
     if (error) {
-      throw error;
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     if (!data) {
@@ -37,9 +34,9 @@ export async function GET(
 
     return NextResponse.json(data, { status: 200 });
   } catch (error: any) {
-    console.error("Error fetching filter:", error);
+    console.error("Error en la API:", error);
     return NextResponse.json(
-      { error: error.message || "Error al obtener el filtro" },
+      { error: error.message || "Error interno del servidor" },
       { status: 500 }
     );
   }
