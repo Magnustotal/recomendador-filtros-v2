@@ -1,15 +1,16 @@
+// app/api/filters/[id]/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Filtro } from "@/types/Filtro";
 
-// Acceso seguro a variables de entorno
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export async function GET(
-  req: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -26,17 +27,13 @@ export async function GET(
     }
 
     if (!data) {
-      return NextResponse.json(
-        { error: "Filtro no encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Filtro no encontrado" }, { status: 404 });
     }
 
-    return NextResponse.json(data, { status: 200 });
+    return NextResponse.json(data);
   } catch (error: any) {
-    console.error("Error en la API:", error);
     return NextResponse.json(
-      { error: error.message || "Error interno del servidor" },
+      { error: error.message || "Error al obtener el filtro" },
       { status: 500 }
     );
   }
