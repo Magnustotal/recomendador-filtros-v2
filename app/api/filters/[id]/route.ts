@@ -1,4 +1,3 @@
-// app/api/filters/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Filtro } from "@/types/Filtro";
@@ -12,12 +11,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: { id: string } },
 ) {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   try {
-    const { id } = params;
+    const { id } = context.params;
 
     const { data, error } = await supabase
       .from("filtros")
