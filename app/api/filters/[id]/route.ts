@@ -11,12 +11,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } },
+  { params }: { params: { id: string } }
 ) {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   try {
-    const { id } = context.params;
+    const { id } = params; // Obtén 'id' correctamente de 'params'
 
     const { data, error } = await supabase
       .from("filtros")
@@ -31,7 +31,7 @@ export async function GET(
     if (!data) {
       return NextResponse.json(
         { error: "Filtro no encontrado" },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -40,7 +40,7 @@ export async function GET(
     console.error("Error fetching filter:", error);
     return NextResponse.json(
       { error: error.message || "Error al obtener el filtro" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
