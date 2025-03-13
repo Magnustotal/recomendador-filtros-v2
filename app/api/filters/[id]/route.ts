@@ -8,11 +8,13 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export async function GET(
-  req: NextRequest,
-  context: { params: { id: string } }
-) {
-  const { id } = context.params;
+export async function GET(req: NextRequest) {
+  // Extraer ID desde la URL
+  const id = req.nextUrl.pathname.split("/").pop();
+
+  if (!id) {
+    return NextResponse.json({ error: "ID no proporcionado" }, { status: 400 });
+  }
 
   const { data, error } = await supabase
     .from("filtros")

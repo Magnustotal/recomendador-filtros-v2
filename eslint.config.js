@@ -6,8 +6,8 @@ import next from "@next/eslint-plugin-next";
 
 export default [
   js.configs.recommended,
-  ...eslintPlugin.configs.recommendedTypeChecked,
-    ...next.configs.recommended(),
+  eslintPlugin.configs.recommendedTypeChecked,
+  next.configs.recommended,
   {
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
@@ -20,11 +20,9 @@ export default [
       "@typescript-eslint": eslintPlugin,
     },
     rules: {
-         "react-hooks/exhaustive-deps":"warn", // Comprueba las dependencias de los hooks
+      "react-hooks/exhaustive-deps": "warn", // Comprueba las dependencias de los hooks
     },
-
   },
-
   {
     ignores: ["dist/", "node_modules/", ".next/"],
   },
