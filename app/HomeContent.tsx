@@ -7,6 +7,7 @@ import {
   getFilterLevel,
   generateFilterCombinations,
 } from "@/lib/filters";
+import { combinarFiltros } from "@/utils/combinarFiltros";
 import { Filtro } from "@/types/Filtro";
 import FiltersDisplay from "@/components/FiltersDisplay";
 import Tips from "@/components/Tips";
