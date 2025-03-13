@@ -97,7 +97,7 @@ export default function HomeContent() {
 
   const handleFilterSubmit = useCallback((liters: number) => {
     setCalculatedLiters(liters);
-    let newFilteredFilters = getFilteredFilters({
+    let newFilteredFilters: (Filtro | { combination: Filtro[] })[] = getFilteredFilters({
       liters,
       filters,
     });
@@ -105,10 +105,10 @@ export default function HomeContent() {
     // Separar por nivel de cumplimiento
     const recommendedFilters = newFilteredFilters.filter(
       (filtro) => getFilterLevel(filtro, liters) === "recommended",
-    );
+    ) as Filtro[];
     const minimumFilters = newFilteredFilters.filter(
       (filtro) => getFilterLevel(filtro, liters) === "minimum",
-    );
+    ) as Filtro[];
 
     // Ordenar cada grupo por caudal (ascendente)
     recommendedFilters.sort((a, b) => a.caudal - b.caudal);
