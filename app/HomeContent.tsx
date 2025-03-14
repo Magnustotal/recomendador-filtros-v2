@@ -300,7 +300,7 @@ export default function HomeContent() {
                 label="Largo (cm)"
                 type="number"
                 inputProps={{ min: 1 }}
-                onChange={(e) => setLiters(parseInt(e.target.value))}
+                onChange={(e) => setCalculatedLiters(parseInt(e.target.value))}
                 fullWidth
                 required
                 sx={{ mb: 4 }}
@@ -309,7 +309,7 @@ export default function HomeContent() {
                 label="Ancho (cm)"
                 type="number"
                 inputProps={{ min: 1 }}
-                onChange={(e) => setLiters(parseInt(e.target.value))}
+                onChange={(e) => setCalculatedLiters(parseInt(e.target.value))}
                 fullWidth
                 required
                 sx={{ mb: 4 }}
@@ -318,7 +318,7 @@ export default function HomeContent() {
                 label="Alto (cm)"
                 type="number"
                 inputProps={{ min: 1 }}
-                onChange={(e) => setLiters(parseInt(e.target.value))}
+                onChange={(e) => setCalculatedLiters(parseInt(e.target.value))}
                 fullWidth
                 required
                 sx={{ mb: 4 }}
