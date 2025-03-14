@@ -104,10 +104,12 @@ export default function HomeContent() {
 
     // Separar por nivel de cumplimiento
     const recommendedFilters = newFilteredFilters.filter(
-      (filtro) => getFilterLevel(filtro, liters) === "recommended",
+      (filtro) => 
+        'id' in filtro && getFilterLevel(filtro, liters) === "recommended",
     ) as Filtro[];
     const minimumFilters = newFilteredFilters.filter(
-      (filtro) => getFilterLevel(filtro, liters) === "minimum",
+      (filtro) => 
+        'id' in filtro && getFilterLevel(filtro, liters) === "minimum",
     ) as Filtro[];
 
     // Ordenar cada grupo por caudal (ascendente)
