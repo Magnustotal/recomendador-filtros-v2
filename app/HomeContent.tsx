@@ -295,12 +295,40 @@ export default function HomeContent() {
           )}
 
           {inputMode === "dimensions" && (
-            <FilterForm
-              onSubmit={handleFilterSubmit}
-              inputMode={inputMode}
-              onLitersChange={handleLitersChange}
-              showSubmitButton={false} // No mostrar el botón de submit en el formulario de dimensiones
-            />
+            <Box component="form" onSubmit={(e) => { e.preventDefault(); handleFilterSubmit(calculatedLiters!); }}>
+              <TextField
+                label="Largo (cm)"
+                type="number"
+                inputProps={{ min: 1 }}
+                onChange={(e) => setLiters(parseInt(e.target.value))}
+                fullWidth
+                required
+                sx={{ mb: 4 }}
+              />
+              <TextField
+                label="Ancho (cm)"
+                type="number"
+                inputProps={{ min: 1 }}
+                onChange={(e) => setLiters(parseInt(e.target.value))}
+                fullWidth
+                required
+                sx={{ mb: 4 }}
+              />
+              <TextField
+                label="Alto (cm)"
+                type="number"
+                inputProps={{ min: 1 }}
+                onChange={(e) => setLiters(parseInt(e.target.value))}
+                fullWidth
+                required
+                sx={{ mb: 4 }}
+              />
+              <Box textAlign="center">
+                <Button type="submit" variant="contained" color="primary">
+                  ¿Qué filtros me recomiendas?
+                </Button>
+              </Box>
+            </Box>
           )}
 
           {calculatedLiters !== undefined && (

@@ -24,7 +24,7 @@ const CalculationExplanation = () => {
       </Typography>
 
       <Typography variant="body1" paragraph sx={{ mt: 2 }}>
-        En cuanto al volumen del material filtrante (o volumen del vaso del filtro),
+        En cuanto al volumen del material filtrante biológico,
         este se recomienda que sea, como mínimo, el 2.5% del volumen del acuario.
         De forma ideal, debería ser el 5% del volumen del acuario:
       </Typography>
@@ -41,8 +41,8 @@ const CalculationExplanation = () => {
       </Typography>
       <Typography variant="body1" paragraph>
         En la base de datos se recoge el volumen total del vaso de los filtros, 
-        el volumen real del vaso y en caso de no existir se hace una estimación.
-        El volumen útil o real, que corresponde realmente al material filtrante,
+        el volumen real del vaso y en caso de no tener el dato de este último, se hace una estimación.
+        El volumen útil o real, que corresponde al material filtrante,
         depende de cada fabricante.
       </Typography>
       

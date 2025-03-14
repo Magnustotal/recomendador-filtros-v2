@@ -197,7 +197,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
                 : width === undefined || height === undefined || depth === undefined
             }
           >
-            ¿Qué filtro me recomiendas? 🔍
+            ¿Qué filtros me recomiendas? 🔍
           </Button>
         </Box>
       )}
