@@ -16,61 +16,62 @@ const FilterTableRow: React.FC<FilterTableRowProps> = ({
   liters,
   onClick,
 }) => {
+  // Determinar si es una combinación de filtros
+  const isCombination = "combination" in filtro;
+  const filtersToDisplay = isCombination ? filtro.combination : [filtro];
+
   // Obtener el nivel del filtro (recomendado, mínimo o insuficiente)
-  const filterLevel = liters
-    ? "combination" in filtro
-      ? getFilterLevel(filtro.combination[0], liters)
-      : getFilterLevel(filtro as Filtro, liters)
-    : null;
+  const filterLevel = React.useMemo(() => {
+    if (!liters) return null;
+    return getFilterLevel(filtersToDisplay[0], liters);
+  }, [filtersToDisplay, liters]);
 
-  let levelText = "";
-  let colorScheme: "default" | "success" | "warning" | "error" = "default";
+  // Texto y color del nivel del filtro
+  const { levelText, colorScheme } = React.useMemo(() => {
+    switch (filterLevel) {
+      case "recommended":
+        return { levelText: "Recomendado", colorScheme: "success" as const };
+      case "minimum":
+        return { levelText: "Mínimo", colorScheme: "warning" as const };
+      default:
+        return { levelText: "Insuficiente", colorScheme: "error" as const };
+    }
+  }, [filterLevel]);
 
-  // Determinar el texto y color del nivel
-  if (filterLevel === "recommended") {
-    levelText = "Recomendado";
-    colorScheme = "success";
-  } else if (filterLevel === "minimum") {
-    levelText = "Mínimo";
-    colorScheme = "warning";
-  } else {
-    levelText = "Insuficiente";
-    colorScheme = "error";
-  }
+  // Texto y enlace de Amazon
+  const { amazonLinkText, amazonLink } = React.useMemo(() => {
+    const targetFiltro = filtersToDisplay[0];
+    if (!targetFiltro?.asin) return { amazonLinkText: "", amazonLink: "" };
 
-  // Determinar el texto del enlace de Amazon
-  const amazonLinkText =
-    "combination" in filtro
-      ? filtro.combination[0].asin
-        ? filtro.combination[0].asin.startsWith("http")
-          ? "Ver en Amazon"
-          : "¡Consíguelo en Amazon! 🛒"
-        : ""
-      : (filtro as Filtro).asin
-      ? (filtro as Filtro).asin.startsWith("http")
-        ? "Ver en Amazon"
-        : "¡Consíguelo en Amazon! 🛒"
-      : "";
+    const linkText = targetFiltro.asin.startsWith("http")
+      ? "Ver en Amazon"
+      : "¡Consíguelo en Amazon! 🛒";
 
-  // Calcular el caudal combinado si es una combinación de filtros
-  const combinedCaudal =
-    "combination" in filtro
-      ? filtro.combination.reduce((acc, f) => acc + f.caudal, 0)
-      : (filtro as Filtro).caudal;
+    const link = targetFiltro.asin.startsWith("http")
+      ? targetFiltro.asin
+      : `https://www.amazon.es/dp/${targetFiltro.asin}`;
 
-  // Calcular el volumen combinado si es una combinación de filtros
-  const combinedVolumen =
-    "combination" in filtro
-      ? filtro.combination.reduce((acc, f) => acc + f.volumen_vaso_filtro, 0)
-      : (filtro as Filtro).volumen_vaso_filtro;
+    return { amazonLinkText: linkText, amazonLink: link };
+  }, [filtersToDisplay]);
+
+  // Calcular el caudal y volumen combinados
+  const combinedCaudal = filtersToDisplay.reduce((acc, f) => acc + f.caudal, 0);
+  const combinedVolumen = filtersToDisplay.reduce(
+    (acc, f) => acc + f.volumen_vaso_filtro,
+    0
+  );
 
   // Color de fondo según el nivel del filtro
-  const backgroundColor =
-    filterLevel === "recommended"
-      ? "rgba(0, 255, 0, 0.1)" // Tono verdoso
-      : filterLevel === "minimum"
-      ? "rgba(255, 255, 0, 0.1)" // Tono amarillento
-      : "transparent";
+  const backgroundColor = React.useMemo(() => {
+    switch (filterLevel) {
+      case "recommended":
+        return "rgba(0, 255, 0, 0.1)"; // Tono verdoso
+      case "minimum":
+        return "rgba(255, 255, 0, 0.1)"; // Tono amarillento
+      default:
+        return "transparent";
+    }
+  }, [filterLevel]);
 
   return (
     <TableRow
@@ -83,24 +84,26 @@ const FilterTableRow: React.FC<FilterTableRowProps> = ({
         borderBottom: "2px solid rgba(0, 0, 0, 0.12)", // Márgenes más gruesos
         transition: "background-color 0.2s",
         "&:hover": {
-          backgroundColor: filterLevel === "recommended"
-            ? "rgba(0, 255, 0, 0.2)"
-            : filterLevel === "minimum"
-            ? "rgba(255, 255, 0, 0.2)"
-            : "rgba(0, 0, 0, 0.05)",
+          backgroundColor:
+            filterLevel === "recommended"
+              ? "rgba(0, 255, 0, 0.2)"
+              : filterLevel === "minimum"
+              ? "rgba(255, 255, 0, 0.2)"
+              : "rgba(0, 0, 0, 0.05)",
         },
       }}
+      aria-label={`Fila de filtro: ${isCombination ? "Combinación" : filtro.marca}`}
     >
       {/* Mostrar marca o "Combinación" según el tipo de filtro */}
       <TableCell component="th" scope="row">
-        {"combination" in filtro ? "Combinación" : (filtro as Filtro).marca}
+        {isCombination ? "Combinación" : filtro.marca}
       </TableCell>
 
       {/* Mostrar el modelo o una lista de modelos combinados */}
       <TableCell align="center">
-        {"combination" in filtro
-          ? filtro.combination.map((f) => `${f.modelo}`).join(" + ")
-          : (filtro as Filtro).modelo}
+        {isCombination
+          ? filtersToDisplay.map((f) => f.modelo).join(" + ")
+          : filtro.modelo}
       </TableCell>
 
       {/* Mostrar caudal combinado */}
@@ -119,15 +122,7 @@ const FilterTableRow: React.FC<FilterTableRowProps> = ({
         {amazonLinkText && (
           <Tooltip title="Comprar en Amazon">
             <Link
-              href={
-                "combination" in filtro
-                  ? filtro.combination[0].asin.startsWith("http")
-                    ? filtro.combination[0].asin
-                    : `https://www.amazon.es/dp/${filtro.combination[0].asin}`
-                  : (filtro as Filtro).asin.startsWith("http")
-                  ? (filtro as Filtro).asin
-                  : `https://www.amazon.es/dp/${(filtro as Filtro).asin}`
-              }
+              href={amazonLink}
               target="_blank"
               rel="noopener noreferrer"
               color="primary"

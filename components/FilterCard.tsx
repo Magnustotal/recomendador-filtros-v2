@@ -24,50 +24,52 @@ interface FilterCardProps {
 const FilterCard: React.FC<FilterCardProps> = ({ filtro, onClick, liters }) => {
   const theme = useTheme();
 
-  const filterLevel =
-    liters !== undefined
-      ? typeof filtro === "object" && "combination" in filtro
-        ? getFilterLevel(filtro.combination[0], liters)
-        : getFilterLevel(filtro as Filtro, liters)
-      : null;
+  // Determina el nivel de filtrado basado en los litros
+  const filterLevel = React.useMemo(() => {
+    if (liters === undefined) return null;
+    const targetFiltro = Array.isArray(filtro) ? filtro[0] : filtro;
+    return getFilterLevel(targetFiltro as Filtro, liters);
+  }, [filtro, liters]);
 
-  const backgroundColor =
-    filterLevel === "recommended"
-      ? theme.palette.success.light
-      : filterLevel === "minimum"
-      ? theme.palette.warning.light
-      : "#fff9c4"; // Fondo en tono amarillento
+  // Define el color de fondo basado en el nivel de filtrado
+  const backgroundColor = React.useMemo(() => {
+    switch (filterLevel) {
+      case "recommended":
+        return theme.palette.success.light;
+      case "minimum":
+        return theme.palette.warning.light;
+      default:
+        return "#fff9c4"; // Fondo en tono amarillento
+    }
+  }, [filterLevel, theme]);
 
-  const isCombination = typeof filtro === "object" && "combination" in filtro;
-  const filtersToDisplay = isCombination ? filtro.combination : [filtro];
+  // Verifica si es una combinación de filtros
+  const isCombination = Array.isArray(filtro);
+  const filtersToDisplay = isCombination ? filtro : [filtro];
 
+  // Calcula el caudal y volumen combinados
   const combinedCaudal = filtersToDisplay.reduce((acc, f) => acc + f.caudal, 0);
   const combinedVolumen = filtersToDisplay.reduce(
     (acc, f) => acc + f.volumen_vaso_filtro,
     0
   );
 
-  const amazonLinkText =
-    typeof filtro === "object" && "combination" in filtro
-      ? filtro.combination[0].asin && filtro.combination[0].asin.startsWith("http")
-        ? "Ver en Amazon"
-        : filtro.combination[0].asin
-        ? "¡Consíguelo en Amazon! 🛒"
-        : ""
-      : (filtro as Filtro).asin && (filtro as Filtro).asin.startsWith("http")
+  // Texto y enlace de Amazon
+  const amazonLinkText = React.useMemo(() => {
+    const targetFiltro = filtersToDisplay[0];
+    if (!targetFiltro?.asin) return "";
+    return targetFiltro.asin.startsWith("http")
       ? "Ver en Amazon"
-      : (filtro as Filtro).asin
-      ? "¡Consíguelo en Amazon! 🛒"
-      : "";
+      : "¡Consíguelo en Amazon! 🛒";
+  }, [filtersToDisplay]);
 
-  const amazonLink =
-    typeof filtro === "object" && "combination" in filtro
-      ? filtro.combination[0].asin && filtro.combination[0].asin.startsWith("http")
-        ? filtro.combination[0].asin
-        : `https://www.amazon.es/dp/${filtro.combination[0].asin}`
-      : (filtro as Filtro).asin && (filtro as Filtro).asin.startsWith("http")
-      ? (filtro as Filtro).asin
-      : `https://www.amazon.es/dp/${(filtro as Filtro).asin}`;
+  const amazonLink = React.useMemo(() => {
+    const targetFiltro = filtersToDisplay[0];
+    if (!targetFiltro?.asin) return "";
+    return targetFiltro.asin.startsWith("http")
+      ? targetFiltro.asin
+      : `https://www.amazon.es/dp/${targetFiltro.asin}`;
+  }, [filtersToDisplay]);
 
   return (
     <Card
@@ -80,6 +82,7 @@ const FilterCard: React.FC<FilterCardProps> = ({ filtro, onClick, liters }) => {
       }}
       onClick={onClick}
       data-testid="filter-card"
+      aria-label="Tarjeta de filtro"
     >
       <CardContent>
         {filtersToDisplay.map((f, index) => (
@@ -88,13 +91,13 @@ const FilterCard: React.FC<FilterCardProps> = ({ filtro, onClick, liters }) => {
               variant="h6"
               component="div"
               gutterBottom
-              sx={{ color: "black" }}
+              sx={{ color: "text.primary" }}
             >
               {isCombination ? `Combinación:` : `${f.marca} ${f.modelo}`}
               <FilterAltIcon sx={{ ml: 1, color: "text.secondary" }} />
             </Typography>
 
-            {isCombination ? null : (
+            {!isCombination && (
               <Chip
                 label={
                   filterLevel === "recommended"
@@ -114,8 +117,9 @@ const FilterCard: React.FC<FilterCardProps> = ({ filtro, onClick, liters }) => {
                 variant="outlined"
               />
             )}
+
             {index < filtersToDisplay.length - 1 && (
-              <Typography variant="body2" color="textSecondary">
+              <Typography variant="body2" color="text.secondary">
                 Combinado con:
               </Typography>
             )}
@@ -125,15 +129,14 @@ const FilterCard: React.FC<FilterCardProps> = ({ filtro, onClick, liters }) => {
 
         <Box display="flex" alignItems="center" mb={1}>
           <WaterIcon sx={{ mr: 1, color: "info.main" }} />
-          <Typography variant="body1" sx={{ color: "black" }}>
+          <Typography variant="body1" sx={{ color: "text.primary" }}>
             Caudal: {combinedCaudal} l/h
           </Typography>
         </Box>
 
         <Box display="flex" alignItems="center" mb={1}>
-          🛢️
-          <Typography variant="body1" sx={{ color: "black", ml: 1 }}>
-            Volumen del vaso: {combinedVolumen} l
+          <Typography variant="body1" sx={{ color: "text.primary", ml: 1 }}>
+            🛢️ Volumen del vaso: {combinedVolumen} l
           </Typography>
         </Box>
 
