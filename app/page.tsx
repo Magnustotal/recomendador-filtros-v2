@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "Recomendador de Filtros",
   description: "Encuentra el filtro perfecto para tu acuario",
   keywords: ["acuario", "filtro", "peces", "acuariofilia", "mantenimiento"],
-  authors: "Javier B. V.",
+  authors: { name: "Javier B. V." },
 };
 
 export default function Home() {
