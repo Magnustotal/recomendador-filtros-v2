@@ -1,4 +1,3 @@
-@ -1,14 +0,0 @@
 // app/page.tsx
 import type { Metadata } from "next";
 import HomeContent from "./HomeContent";

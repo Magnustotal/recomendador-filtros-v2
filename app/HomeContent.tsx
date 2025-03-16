@@ -1,4 +1,3 @@
-@ -1,478 +0,0 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import FilterCard from "@/components/FilterCard";

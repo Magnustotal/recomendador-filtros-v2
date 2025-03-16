@@ -1,4 +1,3 @@
-@ -1,89 +0,0 @@
 'use client';
 
 import { createTheme, responsiveFontSizes } from '@mui/material/styles';
