@@ -10,6 +10,7 @@ import {
   Link,
   useTheme,
   Divider,
+  Stack,
 } from "@mui/material";
 import WaterIcon from "@mui/icons-material/Water";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
@@ -39,7 +40,7 @@ const FilterCard: React.FC<FilterCardProps> = ({ filtro, onClick, liters }) => {
       case "minimum":
         return theme.palette.warning.light;
       default:
-        return "#fff9c4"; // Fondo en tono amarillento
+        return theme.palette.background.paper; // Usar el color de fondo predeterminado
     }
   }, [filterLevel, theme]);
 
@@ -76,8 +77,11 @@ const FilterCard: React.FC<FilterCardProps> = ({ filtro, onClick, liters }) => {
       sx={{
         mb: 2,
         cursor: "pointer",
-        transition: "transform 0.2s",
-        "&:hover": { transform: "scale(1.03)" },
+        transition: "transform 0.2s, box-shadow 0.2s",
+        "&:hover": {
+          transform: "translateY(-4px)",
+          boxShadow: theme.shadows[6],
+        },
         backgroundColor: backgroundColor,
       }}
       onClick={onClick}
@@ -85,72 +89,75 @@ const FilterCard: React.FC<FilterCardProps> = ({ filtro, onClick, liters }) => {
       aria-label="Tarjeta de filtro"
     >
       <CardContent>
-        {filtersToDisplay.map((f, index) => (
-          <Box key={f.id} mb={index < filtersToDisplay.length - 1 ? 2 : 0}>
-            <Typography
-              variant="h6"
-              component="div"
-              gutterBottom
-              sx={{ color: "text.primary" }}
-            >
-              {isCombination ? `Combinación:` : `${f.marca} ${f.modelo}`}
-              <FilterAltIcon sx={{ ml: 1, color: "text.secondary" }} />
+        <Stack spacing={2}>
+          {filtersToDisplay.map((f, index) => (
+            <Box key={f.id}>
+              <Box display="flex" alignItems="center" mb={1}>
+                <Typography
+                  variant="h6"
+                  component="div"
+                  sx={{ color: "text.primary", flexGrow: 1 }}
+                >
+                  {isCombination ? `Combinación:` : `${f.marca} ${f.modelo}`}
+                </Typography>
+                <FilterAltIcon sx={{ color: "text.secondary" }} />
+              </Box>
+
+              {!isCombination && (
+                <Chip
+                  label={
+                    filterLevel === "recommended"
+                      ? "Recomendado"
+                      : filterLevel === "minimum"
+                      ? "Mínimo"
+                      : "No Recomendado"
+                  }
+                  color={
+                    filterLevel === "recommended"
+                      ? "success"
+                      : filterLevel === "minimum"
+                      ? "warning"
+                      : "error"
+                  }
+                  variant="outlined"
+                  sx={{ mb: 1 }}
+                />
+              )}
+
+              {index < filtersToDisplay.length - 1 && (
+                <Typography variant="body2" color="text.secondary">
+                  Combinado con:
+                </Typography>
+              )}
+              <Divider sx={{ my: 1 }} />
+            </Box>
+          ))}
+
+          <Box display="flex" alignItems="center">
+            <WaterIcon sx={{ mr: 1, color: "info.main" }} />
+            <Typography variant="body1" sx={{ color: "text.primary" }}>
+              Caudal: {combinedCaudal} l/h
             </Typography>
-
-            {!isCombination && (
-              <Chip
-                label={
-                  filterLevel === "recommended"
-                    ? "Recomendado"
-                    : filterLevel === "minimum"
-                    ? "Mínimo"
-                    : "No Recomendado"
-                }
-                color={
-                  filterLevel === "recommended"
-                    ? "success"
-                    : filterLevel === "minimum"
-                    ? "warning"
-                    : "error"
-                }
-                sx={{ mb: 1 }}
-                variant="outlined"
-              />
-            )}
-
-            {index < filtersToDisplay.length - 1 && (
-              <Typography variant="body2" color="text.secondary">
-                Combinado con:
-              </Typography>
-            )}
-            <Divider sx={{ my: 1 }} />
           </Box>
-        ))}
 
-        <Box display="flex" alignItems="center" mb={1}>
-          <WaterIcon sx={{ mr: 1, color: "info.main" }} />
-          <Typography variant="body1" sx={{ color: "text.primary" }}>
-            Caudal: {combinedCaudal} l/h
-          </Typography>
-        </Box>
+          <Box display="flex" alignItems="center">
+            <Typography variant="body1" sx={{ color: "text.primary", ml: 1 }}>
+              🛢️ Volumen del vaso: {combinedVolumen} l
+            </Typography>
+          </Box>
 
-        <Box display="flex" alignItems="center" mb={1}>
-          <Typography variant="body1" sx={{ color: "text.primary", ml: 1 }}>
-            🛢️ Volumen del vaso: {combinedVolumen} l
-          </Typography>
-        </Box>
-
-        {amazonLinkText && (
-          <Link
-            href={amazonLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            color="primary"
-            sx={{ mt: 1, display: "inline-block" }}
-          >
-            {amazonLinkText}
-          </Link>
-        )}
+          {amazonLinkText && (
+            <Link
+              href={amazonLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              color="primary"
+              sx={{ mt: 1, display: "inline-block", fontWeight: "bold" }}
+            >
+              {amazonLinkText}
+            </Link>
+          )}
+        </Stack>
       </CardContent>
     </Card>
   );

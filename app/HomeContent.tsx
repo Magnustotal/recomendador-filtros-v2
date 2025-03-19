@@ -1,13 +1,12 @@
 "use client";
+
 import { useState, useEffect, useCallback } from "react";
 import FilterCard from "@/components/FilterCard";
-import FilterForm from "@/components/FilterForm";
 import {
   getFilteredFilters,
   getFilterLevel,
   generateFilterCombinations,
 } from "@/lib/filters";
-import { combinarFiltros } from "@/utils/combinarFiltros";
 import { Filtro } from "@/types/Filtro";
 import FiltersDisplay from "@/components/FiltersDisplay";
 import Tips from "@/components/Tips";
@@ -23,7 +22,25 @@ import {
   TextField,
   Paper,
   Divider,
+  useTheme,
+  Grid,
+  InputAdornment,
+  IconButton,
+  Tooltip,
+  Collapse,
 } from "@mui/material";
+
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import WaterDropIcon from '@mui/icons-material/WaterDrop';
+import StraightenIcon from '@mui/icons-material/Straighten';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import ReplayIcon from '@mui/icons-material/Replay';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import ErrorIcon from '@mui/icons-material/Error';
+
 
 const tips = [
   "💧 Realiza cambios parciales de agua regularmente (10-20% cada semana).",
@@ -48,6 +65,8 @@ const tips = [
   "⚡️ Asegúrate de que todos los equipos eléctricos estén conectados a una regleta con protección para sobretensiones.",
 ];
 
+
+
 export default function HomeContent() {
   const [filters, setFilters] = useState<Filtro[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -56,12 +75,14 @@ export default function HomeContent() {
     Filtro | { combination: Filtro[] }
   )[]>([]);
   const [showNoFiltersMessage, setShowNoFiltersMessage] = useState(false);
-  const [inputMode, setInputMode] = useState<"liters" | "dimensions" | null>(
-    null,
-  );
+  const [inputMode, setInputMode] = useState<"liters" | "dimensions" | null>(null);
   const [liters, setLiters] = useState<number | undefined>();
-  const [calculatedLiters, setCalculatedLiters] =
-    useState<number | undefined>();
+  const [dimensions, setDimensions] = useState<{
+    length: number;
+    width: number;
+    height: number;
+  }>({ length: 0, width: 0, height: 0 });
+  const [calculatedLiters, setCalculatedLiters] = useState<number | undefined>();
   const [displayMode, setDisplayMode] = useState<"cards" | "table">("cards");
   const [hasSearched, setHasSearched] = useState(false);
   const [showForm, setShowForm] = useState(true);
@@ -70,109 +91,121 @@ export default function HomeContent() {
     Filtro | { combination: Filtro[] } | null
   >(null);
   const [showExplanation, setShowExplanation] = useState(false);
+  const theme = useTheme();
 
-  useEffect(() => {
-    const fetchFilters = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetch("/api/filters");
-        if (!response.ok) {
-          throw new Error(
-            `Error al obtener los filtros: ${response.status} ${response.statusText}`,
-          );
-        }
-        const data = await response.json();
-        // TODO: Validar data con Zod aquí
-        setFilters(data);
-      } catch (err: any) {
-        setError(err.message || "Error al cargar los filtros");
-      } finally {
-        setIsLoading(false);
+    //Calculo del caudal máximo.
+    const maxCaudal =
+    filters.length > 0 ? Math.max(...filters.map((f) => f.caudal)) : 0;
+
+    //Variable para controlar si se debe mostrar el mensaje de priorizar combinaciones.
+    const showCombinationPriorityMessage = calculatedLiters !== undefined && calculatedLiters >= 200 && calculatedLiters <= (maxCaudal * 2) / 10;
+
+
+  const calculateLiters = useCallback(() => {
+      if (dimensions.length && dimensions.width && dimensions.height) {
+          const liters = (dimensions.length * dimensions.width * dimensions.height) / 1000;
+          setCalculatedLiters(liters);
+          return liters;
       }
-    };
+      return undefined;
+  }, [dimensions]);
 
-    fetchFilters();
-  }, []);
 
-  const handleFilterSubmit = useCallback((liters: number) => {
-    setCalculatedLiters(liters);
-    let newFilteredFilters: (Filtro | { combination: Filtro[] })[] = getFilteredFilters({
-      liters,
-      filters,
-    });
+    useEffect(() => {
+        const fetchFilters = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const response = await fetch("/api/filters");
+                if (!response.ok) {
+                    throw new Error(
+                        `Error al obtener los filtros: ${response.status} ${response.statusText}`,
+                    );
+                }
+                const data = await response.json();
+                const validFilters = data.filter((filter: Filtro) => filter.volumen && filter.caudal);
+                setFilters(validFilters);
 
-    // Separar por nivel de cumplimiento
-    const recommendedFilters = newFilteredFilters.filter(
-      (filtro) => 
-        'id' in filtro && getFilterLevel(filtro, liters) === "recommended",
-    ) as Filtro[];
-    const minimumFilters = newFilteredFilters.filter(
-      (filtro) => 
-        'id' in filtro && getFilterLevel(filtro, liters) === "minimum",
-    ) as Filtro[];
+            } catch (err: any) {
+                setError(err.message || "Error al cargar los filtros");
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-    // Ordenar cada grupo por caudal (ascendente)
-    recommendedFilters.sort((a, b) => a.caudal - b.caudal);
-    minimumFilters.sort((a, b) => a.caudal - b.caudal);
+        fetchFilters();
+    }, []);
 
-    // Combinaciones de filtros (si no hay suficientes filtros individuales y >= 200 litros)
-    if (liters >= 200 && newFilteredFilters.length < 20) {
-      const combinations = generateFilterCombinations(filters, liters);
+    const handleFilterSubmit = useCallback(
+        (litersInput: number | undefined) => {
+            const litersToUse = litersInput !== undefined ? litersInput : calculatedLiters;
 
-      // Filtrar combinaciones por nivel.
-      const recommendedCombinations = combinations.filter((combo) =>
-        combo.combination.every(
-          (f) => getFilterLevel(f, liters) === "recommended",
-        ),
-      );
-      const minimumCombinations = combinations.filter(
-        (combo) =>
-          !recommendedCombinations.some(
-            (recCombo) => recCombo.combination[0].id === combo.combination[0].id,
-          ) && //Evitar duplicados.
-          combo.combination.every(
-            (f) =>
-              getFilterLevel(f, liters) === "minimum" ||
-              getFilterLevel(f, liters) === "recommended",
-          ),
-      );
+            if (litersToUse === undefined) {
+                setError("Por favor, introduce el volumen o las dimensiones del acuario.");
+                return;
+            }
 
-      // Añadir combinaciones, respetando el límite. Primero mínimos, luego recomendados.
-      newFilteredFilters = [
-        ...minimumFilters,
-        ...minimumCombinations,
-        ...recommendedFilters.slice(
-          0,
-          20 - minimumFilters.length - minimumCombinations.length,
-        ),
-        ...recommendedCombinations.slice(
-          0,
-          20 -
-            minimumFilters.length -
-            minimumCombinations.length -
-            recommendedFilters.length,
-        ),
-      ];
-    } else {
-      // Combinar: primero los mínimos, luego los recomendados
-      newFilteredFilters = [...minimumFilters, ...recommendedFilters];
-    }
+            // Comprobar si se deben mostrar resultados.
+            if (litersToUse > (maxCaudal * 2) / 10) {
+              setHasSearched(true);
+              setShowForm(false);
+              setFilteredFilters([]); // No hay resultados de filtros.
+              setShowNoFiltersMessage(false);
+              return; // Importante salir para no ejecutar el resto.
+            }
 
-    setFilteredFilters(newFilteredFilters);
-    setShowNoFiltersMessage(newFilteredFilters.length === 0);
-    setInputMode(null);
-    setLiters(liters);
-    setHasSearched(true);
-    setShowForm(false);
-    setVisibleFilters(20);
-    setSelectedFilter(null);
-  }, [filters]);
+            setCalculatedLiters(litersToUse);
+
+            let newFilteredFilters: (Filtro | { combination: Filtro[] })[] =
+            getFilteredFilters({
+                liters: litersToUse,
+                filters,
+            });
+
+            // Filtrar para obtener solo filtros individuales
+            const individualFilters = newFilteredFilters.filter(
+                (filtro) => "id" in filtro
+            ) as Filtro[];
+
+            // Filtrar para 'recommended' y 'minimum', y ordenarlos
+            const recommendedFilters = individualFilters.filter(
+                (filtro) => getFilterLevel(filtro, litersToUse) === "recommended"
+            );
+            const minimumFilters = individualFilters.filter(
+                (filtro) => getFilterLevel(filtro, litersToUse) === "minimum"
+            );
+
+            recommendedFilters.sort((a, b) => a.caudal - b.caudal);
+            minimumFilters.sort((a, b) => a.caudal - b.caudal);
+
+
+            // Combinaciones (solo si >= 200 litros)
+            if (litersToUse >= 200) {
+                const combinations = generateFilterCombinations(filters, litersToUse);
+                newFilteredFilters = [...combinations, ...minimumFilters, ...recommendedFilters,];
+
+            } else {
+                newFilteredFilters = [...minimumFilters, ...recommendedFilters];
+            }
+
+            setFilteredFilters(newFilteredFilters);
+            setShowNoFiltersMessage(newFilteredFilters.length === 0);
+            setInputMode(null);
+            setHasSearched(true);
+            setShowForm(false);
+            setVisibleFilters(20);
+            setSelectedFilter(null);
+        },
+        [filters, calculatedLiters, maxCaudal]
+    );
+
+
 
   const handleNewQuery = useCallback(() => {
     setShowForm(true);
     setInputMode(null);
     setLiters(undefined);
+    setDimensions({ length: 0, width: 0, height: 0 });
     setCalculatedLiters(undefined);
     setFilteredFilters([]);
     setHasSearched(false);
@@ -180,12 +213,14 @@ export default function HomeContent() {
     setVisibleFilters(20);
     setSelectedFilter(null);
     setShowExplanation(false);
+    setError(null);
   }, []);
 
-  const handleLitersChange = useCallback((newLitros: number | undefined) => {
-    setLiters(newLitros);
-    setCalculatedLiters(newLitros);
-  }, []);
+
+    const handleLitersChange = useCallback((newLitros: number | undefined) => {
+        setLiters(newLitros);
+    }, []);
+
 
   const handleShowMore = useCallback(() => {
     setVisibleFilters((prevVisibleFilters) => prevVisibleFilters + 20);
@@ -198,8 +233,8 @@ export default function HomeContent() {
     [],
   );
 
-  const maxCaudal =
-    filters.length > 0 ? Math.max(...filters.map((f) => f.caudal)) : 0;
+
+
 
   const toggleExplanation = useCallback(() => {
     setShowExplanation((prev) => !prev);
@@ -219,33 +254,41 @@ export default function HomeContent() {
         Esta aplicación ha sido diseñada por y para aficionados a la
         acuariofilia.
       </Typography>
-      {/* Botón para mostrar/ocultar explicación */}
-      <Box textAlign="center" mb={4}>
-        <Button
-          onClick={toggleExplanation}
-          variant="outlined"
-          color="primary"
-        >
-          {showExplanation ? "Ocultar explicación de los cálculos" : "¿Cómo se realizan los cálculos?"}
-        </Button>
-      </Box>
+        <Typography variant="caption" display="block" align="center" sx={{ mb: 3, color: 'text.secondary' }}>
+          * Solo se consideran para los cálculos los filtros con datos completos de volumen del vaso y caudal.
+        </Typography>
 
-      {/* Explicación de los cálculos (condicional) */}
-      {showExplanation && <CalculationExplanation />}
+      <Box textAlign="center" mb={4}>
+                <Button
+                    onClick={toggleExplanation}
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<HelpOutlineIcon />}
+                >
+                    {showExplanation
+                        ? "Ocultar explicación de los cálculos"
+                        : "¿Cómo se realizan los cálculos?"}
+                </Button>
+            </Box>
+
+            <Collapse in={showExplanation}>
+                <CalculationExplanation />
+            </Collapse>
+
       <Tips tips={tips} />
-      {filters.length > 0 && (
-        <Box textAlign="center" mb={4} p={2} component={Paper} elevation={3}>
-          <Typography variant="body2" sx={{ color: "text.secondary" }}>
-            Filtros en la base de datos: {filters.length} 🗄️
-          </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary" }}>
-            (Base de datos en constante actualización)
-          </Typography>
-        </Box>
-      )}
-      {showForm && (
+
+        <Paper elevation={3} sx={{ p: 2, mb: 4, textAlign: "center" }}>
+        <Typography variant="body2" sx={{ color: "text.secondary" }}>
+          Filtros en la base de datos: {filters.length} 🗄️
+        </Typography>
+        <Typography variant="body2" sx={{ color: "text.secondary" }}>
+          (Base de datos en constante actualización)
+        </Typography>
+      </Paper>
+
+        {showForm && (
         <>
-          <Typography
+           <Typography
             variant="body1"
             align="center"
             paragraph
@@ -258,34 +301,48 @@ export default function HomeContent() {
           <Box display="flex" justifyContent="center" gap={4} mb={6}>
             <Button
               onClick={() => setInputMode("liters")}
-              variant= {inputMode === "liters" ? "contained" : "outlined"}
+              variant={inputMode === "liters" ? "contained" : "outlined"}
               color="primary"
-              startIcon={<span >💧</span>}
+              startIcon={<WaterDropIcon />}
             >
               Introducir Volumen (L)
             </Button>
             <Button
               onClick={() => setInputMode("dimensions")}
-              variant= {inputMode === "dimensions" ? "contained" : "outlined"}
+              variant={inputMode === "dimensions" ? "contained" : "outlined"}
               color="primary"
-              startIcon={<span>📏</span>}
+              startIcon={<StraightenIcon />}
             >
               Introducir Dimensiones (cm)
             </Button>
           </Box>
 
           {inputMode === "liters" && (
-            <Box component="form" onSubmit={(e) => { e.preventDefault(); handleFilterSubmit(liters!); }}>
-              <TextField
+            <Box
+              component="form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleFilterSubmit(liters);
+              }}
+            >
+                <TextField
                 label="Volumen en litros"
                 type="number"
                 inputProps={{ min: 1 }}
-                value={liters}
-                onChange={(e) => setLiters(parseInt(e.target.value))}
+                value={liters || ""}
+                onChange={(e) => handleLitersChange(parseInt(e.target.value, 10))}
                 fullWidth
                 required
                 sx={{ mb: 4 }}
-              />
+                InputProps={{
+                    startAdornment: (
+                    <InputAdornment position="start">
+                        <WaterDropIcon />
+                    </InputAdornment>
+                    ),
+                }}
+                />
+
               <Box textAlign="center">
                 <Button type="submit" variant="contained" color="primary">
                   Calcular
@@ -294,108 +351,181 @@ export default function HomeContent() {
             </Box>
           )}
 
-          {inputMode === "dimensions" && (
-            <Box component="form" onSubmit={(e) => { e.preventDefault(); handleFilterSubmit(calculatedLiters!); }}>
-              <TextField
-                label="Largo (cm)"
-                type="number"
-                inputProps={{ min: 1 }}
-                onChange={(e) => setCalculatedLiters(parseInt(e.target.value))}
-                fullWidth
-                required
-                sx={{ mb: 4 }}
-              />
-              <TextField
-                label="Ancho (cm)"
-                type="number"
-                inputProps={{ min: 1 }}
-                onChange={(e) => setCalculatedLiters(parseInt(e.target.value))}
-                fullWidth
-                required
-                sx={{ mb: 4 }}
-              />
-              <TextField
-                label="Alto (cm)"
-                type="number"
-                inputProps={{ min: 1 }}
-                onChange={(e) => setCalculatedLiters(parseInt(e.target.value))}
-                fullWidth
-                required
-                sx={{ mb: 4 }}
-              />
-              <Box textAlign="center">
-                <Button type="submit" variant="contained" color="primary">
+            {inputMode === "dimensions" && (
+                <Box
+                component="form"
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    const liters = calculateLiters();
+                    if (liters !== undefined) {
+                      handleFilterSubmit(liters);
+                    }
+                }}
+                >
+                <Grid container spacing={2} mb={4}>
+                    <Grid item xs={12} sm={4}>
+                    <TextField
+                        label="Largo (cm)"
+                        type="number"
+                        inputProps={{ min: 1 }}
+                        value={dimensions.length || ""}
+                        onChange={(e) =>
+                        setDimensions({
+                            ...dimensions,
+                            length: parseInt(e.target.value, 10),
+                        })
+                        }
+                        fullWidth
+                        required
+                        InputProps={{
+                            startAdornment: (
+                            <InputAdornment position="start">
+                                <StraightenIcon />
+                            </InputAdornment>
+                            ),
+                        }}
+                    />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                    <TextField
+                        label="Ancho (cm)"
+                        type="number"
+                        inputProps={{ min: 1 }}
+                        value={dimensions.width || ""}
+                        onChange={(e) =>
+                        setDimensions({
+                            ...dimensions,
+                            width: parseInt(e.target.value, 10),
+                        })
+                        }
+                        fullWidth
+                        required
+                        InputProps={{
+                            startAdornment: (
+                            <InputAdornment position="start">
+                                <StraightenIcon />
+                            </InputAdornment>
+                            ),
+                        }}
+                    />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                          label="Alto (cm)"
+                          type="number"
+                          inputProps={{ min: 1 }}
+                          value={dimensions.height || ""}
+                          onChange={(e) =>
+                              setDimensions({
+                                  ...dimensions,
+                                  height: parseInt(e.target.value, 10),
+                              })
+                          }
+                          fullWidth
+                          required
+                          InputProps={{
+                              startAdornment: (
+                                  <InputAdornment position="start">
+                                      <StraightenIcon />
+                                  </InputAdornment>
+                              ),
+                          }}
+                      />
+                  </Grid>
+                </Grid>
+                <Box textAlign="center">
+                  <Button type="submit" variant="contained" color="primary">
                   ¿Qué filtros me recomiendas?
-                </Button>
+                  </Button>
+                </Box>
               </Box>
-            </Box>
-          )}
+            )}
 
-          {calculatedLiters !== undefined && (
-            <Typography
-              variant="body1"
-              align="center"
-              paragraph
-              sx={{ color: "text.secondary" }}
-            >
-              Volumen Calculado: {calculatedLiters} litros 🧮
-            </Typography>
-          )}
-        </>
-      )}
+            {calculatedLiters !== undefined && (
+                <Typography
+                variant="body1"
+                align="center"
+                paragraph
+                sx={{ color: "text.secondary" }}
+                >
+                Volumen Calculado: {calculatedLiters} litros 🧮
+                </Typography>
+            )}
+        </>  // Cierre del fragment que engloba el formulario
+        )}
 
       {hasSearched && (
         <>
-        <Box display="flex" justifyContent="space-between" alignItems="center" width="100%" mt={6} mb={2}>
-          <Button
-            onClick={handleNewQuery}
-            variant="contained"
-            color="primary"
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            width="100%"
+            mt={6}
+            mb={2}
           >
-            Nueva Consulta 🔄
-          </Button>
+            <Button
+              onClick={handleNewQuery}
+              variant="contained"
+              color="primary"
+              startIcon={<ReplayIcon />}
+            >
+              Nueva Consulta 🔄
+            </Button>
           </Box>
-          <Box display="flex" justifyContent="center" gap={2} mb={4}>
-            <Box component={Paper} elevation={3} p={2}>
-              <Typography variant="h6" gutterBottom>
-                Leyenda:
+          <Paper elevation={3} sx={{ p: 2, mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              Leyenda:
+            </Typography>
+            <Box display="flex" alignItems="center" mb={1}>
+              <Box
+                sx={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  backgroundColor: "green",
+                  mr: 1,
+                }}
+              />
+              <Typography variant="body2">
+                Recomendados ✅ (Caudal ≥{" "}
+                {calculatedLiters ? calculatedLiters * 10 : "-"} l/h, Volumen ≥{" "}
+                {calculatedLiters ? (calculatedLiters * 0.05 / 0.9).toFixed(1) : "-"} l)
               </Typography>
-              <Box display="flex" alignItems="center" mb={1}>
-                <Box
-                  sx={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: '50%',
-                    backgroundColor: 'green',
-                    mr: 1,
-                  }}
-                />
-                <Typography variant="body2">
-                  Recomendados ✅ (Caudal ≥ {liters ? liters * 10 : "-"} l/h, Volumen ≥ {liters ? (liters * 0.05 / 0.9).toFixed(1) : "-"} l)
-                </Typography>
-              </Box>
-              <Box display="flex" alignItems="center">
-                <Box
-                  sx={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: '50%',
-                    backgroundColor: 'yellow',
-                    mr: 1,
-                  }}
-                />
-                <Typography variant="body2">
-                  Mínimos ⚠️ (Caudal ≥ {liters ? liters * 10 : "-"} l/h, Volumen ≥ {liters ? (liters * 0.025 / 0.9).toFixed(1) : "-"} l)
-                </Typography>
-              </Box>
             </Box>
-          </Box>
+            <Box display="flex" alignItems="center">
+              <Box
+                sx={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  backgroundColor: "yellow",
+                  mr: 1,
+                }}
+              />
+              <Typography variant="body2">
+                Mínimos ⚠️ (Caudal ≥{" "}
+                {calculatedLiters ? calculatedLiters * 10 : "-"} l/h, Volumen ≥{" "}
+                {calculatedLiters
+                  ? (calculatedLiters * 0.025 / 0.9).toFixed(1)
+                  : "-"} l)
+              </Typography>
+            </Box>
+          </Paper>
+
+          {showCombinationPriorityMessage && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Para acuarios de 200 litros o más, recomendamos priorizar las
+              combinaciones de filtros para una mejor circulación del agua.
+            </Alert>
+          )}
 
           <Box display="flex" justifyContent="center" gap={2} mb={6}>
             <Button
               onClick={() => setDisplayMode("cards")}
               variant={displayMode === "cards" ? "contained" : "outlined"}
               color="primary"
+              startIcon={<ViewModuleIcon />}
             >
               Tarjetas 🎴
             </Button>
@@ -403,6 +533,7 @@ export default function HomeContent() {
               onClick={() => setDisplayMode("table")}
               variant={displayMode === "table" ? "contained" : "outlined"}
               color="primary"
+              startIcon={<TableChartIcon />}
             >
               Tabla 📊
             </Button>
@@ -419,20 +550,22 @@ export default function HomeContent() {
             </Alert>
           )}
 
-          {liters && liters * 10 > maxCaudal * 2 && (
-            <Typography align="center" color="error" fontWeight="bold" paragraph>
-              Para un acuario de ese volumen, recomendamos encarecidamente el uso
-              de filtración mediante sump como alternativa al uso de filtros
-              externos. 📢
-            </Typography>
-          )}
+          {/* Mensajes de recomendación de Sump */}
+          {calculatedLiters &&
+            calculatedLiters >= 450 &&
+            calculatedLiters <= (maxCaudal * 2) / 10 && (
+              <Alert severity="warning" icon={<WarningAmberIcon />} sx={{ mt: 2, mb: 2 }}>
+                A partir de 450 litros, considere seriamente la filtración por
+                sump como una alternativa superior a los filtros externos.
+              </Alert>
+            )}
 
-          {liters && liters * 10 > maxCaudal && liters * 10 <= maxCaudal * 2 && (
-            <Typography align="center" color="warning.main" fontWeight="bold" paragraph>
-              Para un acuario de ese volumen, podríamos considerar el uso de
-              filtración mediante sump como alternativa al uso de filtros
-              externos. 🤔
-            </Typography>
+          {calculatedLiters && calculatedLiters > (maxCaudal * 2) / 10 && (
+            <Alert severity="error" icon={<ErrorIcon />} sx={{ mt: 2, mb: 2 }}>
+              Para este volumen de acuario ({calculatedLiters} litros), la
+              filtración con filtros externos NO es adecuada. Debe utilizar
+              EXCLUSIVAMENTE filtración por sump.
+            </Alert>
           )}
 
           {!isLoading &&
@@ -442,7 +575,7 @@ export default function HomeContent() {
                 <FiltersDisplay
                   filters={filteredFilters.slice(0, visibleFilters)}
                   displayMode={displayMode}
-                  liters={liters}
+                  liters={calculatedLiters}
                   onFilterClick={handleFilterClick}
                 />
                 {filteredFilters.length > visibleFilters && (
@@ -451,6 +584,7 @@ export default function HomeContent() {
                       variant="contained"
                       color="primary"
                       onClick={handleShowMore}
+                      startIcon={<FilterListIcon />}
                     >
                       Mostrar Más Resultados ➕
                     </Button>
@@ -468,7 +602,7 @@ export default function HomeContent() {
             <FilterDetails
               filter={selectedFilter}
               onClose={() => setSelectedFilter(null)}
-              liters={liters}
+              liters={calculatedLiters}
             />
           )}
         </>
