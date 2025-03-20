@@ -123,7 +123,7 @@ export default function HomeContent() {
                     );
                 }
                 const data = await response.json();
-                const validFilters = data.filter((filter: Filtro) => filter.volumen && filter.caudal);
+                const validFilters = data.filter((filter: Filtro) => filter.volumen_vaso_filtro && filter.caudal);
                 setFilters(validFilters);
 
             } catch (err: any) {
