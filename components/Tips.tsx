@@ -38,6 +38,13 @@ const Tips: React.FC<TipsProps> = ({ tips }) => {
     };
   }, [nextTip]);
 
+    // Define una paleta de colores personalizada
+    const customPalette = {
+        bicBlue: '#1E90FF', // Azul Bic
+        paperBackground: '#fdf5e6', // Similar a #fafafa, pero un poco más "crema"
+        paperLine: '#d3d3d3',  // Gris claro, más suave que #e0e0e0
+    };
+
   return (
     <Paper
       elevation={3}
@@ -47,12 +54,12 @@ const Tips: React.FC<TipsProps> = ({ tips }) => {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        backgroundColor: "#fafafa", // Fondo ligeramente amarillento (papel envejecido)
-        borderRadius: "16px 16px 16px 0", // Bordes redondeados solo en la parte superior e izquierda
-        border: "1px solid #e0e0e0", // Borde sutil
+        backgroundColor: customPalette.paperBackground, // Usar color crema
+        borderRadius: "16px 16px 16px 0",
+        border: `1px solid ${customPalette.paperLine}`, // Usar gris claro
         position: "relative",
         overflow: "hidden",
-        fontFamily: "inherit", // Usa la misma fuente que el resto de la aplicación
+        fontFamily: '"Indie Flower", cursive',  // Fuente estilo "escrito a mano"
         "&::before": {
           content: '""',
           position: "absolute",
@@ -64,11 +71,11 @@ const Tips: React.FC<TipsProps> = ({ tips }) => {
             to bottom,
             transparent,
             transparent 24px,
-            #e0e0e0 24px,
-            #e0e0e0 25px
-          )`, // Líneas horizontales para simular un cuaderno
+            ${customPalette.paperLine} 24px,  // Usar gris claro
+            ${customPalette.paperLine} 25px   // Usar gris claro
+          )`,
           zIndex: 0,
-          opacity: 0.5,
+          opacity: 0.7, // Aumenté un poco la opacidad
         },
         "&::after": {
           content: '""',
@@ -77,23 +84,23 @@ const Tips: React.FC<TipsProps> = ({ tips }) => {
           right: -10,
           width: "20px",
           height: "20px",
-          backgroundColor: "#fafafa",
-          border: "1px solid #e0e0e0",
-          transform: "rotate(45deg)", // Esquina arrancada
+          backgroundColor: customPalette.paperBackground, // Usar color crema
+          border: `1px solid ${customPalette.paperLine}`,   // Usar gris claro
+          transform: "rotate(45deg)",
           zIndex: 1,
         },
-        transform: "rotate(-1deg)", // Inclinación para simular una hoja arrancada
+        transform: "rotate(-1deg)",
         transition: "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
         "&:hover": {
-          transform: "rotate(0deg) scale(1.02)", // Efecto al hacer hover
-          boxShadow: theme.shadows[6], // Sombra más pronunciada al hacer hover
+          transform: "rotate(0deg) scale(1.02)",
+          boxShadow: theme.shadows[6],
         },
       }}
     >
       <Box
         sx={{
           position: "relative",
-          zIndex: 2, // Asegura que el contenido esté por encima de las líneas
+          zIndex: 2,
           width: "100%",
           display: "flex",
           alignItems: "center",
@@ -116,8 +123,8 @@ const Tips: React.FC<TipsProps> = ({ tips }) => {
             component="div"
             sx={{
               fontWeight: "bold",
-              color: "text.primary",
-              fontFamily: "inherit", // Usa la misma fuente que el resto de la aplicación
+              color: "black", // Negro para "Consejo:"
+              fontFamily: '"Indie Flower", cursive', // Fuente estilo "escrito a mano"
             }}
           >
             Consejo:
@@ -125,9 +132,9 @@ const Tips: React.FC<TipsProps> = ({ tips }) => {
           <Typography
             variant="body1"
             sx={{
-              color: "text.secondary",
+              color: customPalette.bicBlue, // Azul Bic para el texto del consejo
               mt: 1,
-              fontFamily: "inherit", // Usa la misma fuente que el resto de la aplicación
+              fontFamily: '"Indie Flower", cursive', // Fuente estilo "escrito a mano"
             }}
           >
             {tips[currentTipIndex]}
@@ -139,6 +146,7 @@ const Tips: React.FC<TipsProps> = ({ tips }) => {
             size="large"
             aria-label="Next tip"
             sx={{ color: theme.palette.text.primary }}
+
           >
             <ArrowForwardIosIcon />
           </IconButton>
