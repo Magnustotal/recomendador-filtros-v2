@@ -1,93 +1,63 @@
 // lib/filters.ts
+
 import { Filtro } from "@/types/Filtro";
 
-// Interfaz para los argumentos de la función getFilteredFilters
-interface GetFilteredFiltersArgs {
-  liters: number;
-  filters: Filtro[];
-}
+/**
+ * Para cada filtro:
+ *  - Si filtro.volumen_vaso_real es null, estimamos como 0.5382 × volumen_vaso_filtro.
+ *  - Caudal mínimo y recomendado = 10 × litros_del_acuario.
+ *  - Para volumen real (o estimado):
+ *      • Mínimo: 0.9 × volumen_real ≥ 0.025 × litros_del_acuario
+ *      • Recomendado: 0.9 × volumen_real ≥ 0.05 ×  litros_del_acuario
+ *
+ * Devuelve:
+ *  - "recommended" si cumple ambos (caudal y volumen_real) para recomendado.
+ *  - "minimum" si cumple ambos (caudal y volumen_real) para mínimo (pero no recomendado).
+ *  - undefined en caso contrario.
+ */
+export function getFilterLevel(f: Filtro, litrosAcuario: number): "recommended" | "minimum" | undefined {
+  // 1) Umbral de caudal (tanto mínimo como recomendado)
+  const umbralCaudal = 10 * litrosAcuario; // 10 × volumen del acuario
 
-// Función para filtrar los filtros que cumplen con los requisitos mínimos
-export function getFilteredFilters({
-  liters,
-  filters,
-}: GetFilteredFiltersArgs): Filtro[] {
-  return filters.filter((filtro) => {
-    // Excluimos filtros sin volumen de vaso o caudal definido
-    if (!filtro.volumen_vaso_filtro || !filtro.caudal) {
-      return false; // Si falta caudal o volumen, no lo incluimos
-    }
+  // No tiene caudal definido => no entra en ninguna categoría
+  if (f.caudal == null) return undefined;
 
-    // El filtro debe mover al menos 10 veces el volumen del acuario
-    if (filtro.caudal >= liters * 10) {
-      return true; // Si cumple con el caudal, lo incluimos
-    }
-    return false; // Si no cumple, lo excluimos
-  });
-}
+  // 2) Determinar volumen_real (si existe) o estimado
+  let volumenReal: number;
+  let isEstimado = false;
 
-// Función para determinar el nivel de cumplimiento de un filtro
-export function getFilterLevel(
-  filtro: Filtro,
-  liters: number,
-): "recommended" | "minimum" | "insufficient" {
-  // 1. Verificamos si el filtro tiene caudal y volumen definidos
-  if (!filtro.caudal || !filtro.volumen_vaso_filtro) {
-    return "insufficient"; // Si falta alguno, no cumple
-  }
-
-  // 2. Verificamos el caudal: debe ser al menos 10 veces el volumen del acuario
-  const requiredFlow = liters * 10;
-  if (filtro.caudal < requiredFlow) {
-    return "insufficient"; // Si no cumple el caudal mínimo
-  }
-
-  // 3. Volumen útil del vaso del filtro: tomamos el 90% del volumen del vaso
-  const usefulFilterVolume = filtro.volumen_vaso_filtro * 0.9;
-
-  // 4. Definimos los requisitos de volumen del vaso
-  const recommendedVolume = liters * 0.05; // 5% del volumen del acuario
-  const minimumVolume = liters * 0.025; // 2.5% del volumen del acuario
-
-  // 5. Clasificación del filtro según su volumen útil
-  if (usefulFilterVolume >= recommendedVolume) {
-    return "recommended"; // Cumple con el caudal y volumen recomendado
-  } else if (usefulFilterVolume >= minimumVolume) {
-    return "minimum"; // Cumple con el caudal y volumen mínimo
+  if (f.volumen_vaso_real != null) {
+    volumenReal = f.volumen_vaso_real;
+  } else if (f.volumen_vaso_filtro != null) {
+    // Estimación = 53.82 % del volumen_vaso_filtro
+    volumenReal = f.volumen_vaso_filtro * 0.5382;
+    isEstimado = true; // podríamos usar esta bandera si quisiéramos, pero aquí solo usamos el valor numérico
   } else {
-    return "insufficient"; // Cumple con el caudal, pero no con el volumen mínimo
-  }
-}
-
-// Función para calcular una "puntuación" del filtro basada en caudal y volumen del vaso
-export function calculateFilterScore(filtro: Filtro): number {
-  // Calculamos la puntuación dando mayor peso al caudal que al volumen del vaso
-  return filtro.caudal * 10 + (filtro.volumen_vaso_filtro || 0);
-}
-
-// Función para generar combinaciones de filtros del mismo modelo
-export function generateFilterCombinations(
-  filters: Filtro[],
-  liters: number,
-): { combination: Filtro[] }[] {
-  const combinations: { combination: Filtro[] }[] = [];
-
-  // Recorremos todos los filtros disponibles
-  for (let i = 0; i < filters.length; i++) {
-    const filter1 = filters[i];
-
-    // Comprobamos si el filtro individual cumple con los requisitos mínimos
-    if (getFilterLevel(filter1, liters) !== "insufficient") {
-
-      // Buscamos un segundo filtro del mismo modelo
-      for (let j = i + 1; j < filters.length; j++) { // Empezamos desde el siguiente filtro
-        if (filters[j].modelo === filter1.modelo) {
-          const filter2 = filters[j];
-          combinations.push({ combination: [filter1, filter2] }); // Añadimos la combinación
-        }
-      }
-    }
+    // Ni volumen_real ni volumen_vaso_filtro están definidos => no entra en ninguna categoría
+    return undefined;
   }
 
-  return combinations; // Retornamos todas las combinaciones generadas
+  // 3) Calcular 90 % de volumen_real
+  const noventaPorCiento = 0.9 * volumenReal;
+
+  // 4) Umbrales sobre volumen_real:
+  const umbralVolumenMin = 0.025 * litrosAcuario; // 2.5 %
+  const umbralVolumenRec = 0.05 * litrosAcuario;  // 5 %
+
+  // 5) Comprobar condiciones:
+  const cumpleCaudal = f.caudal >= umbralCaudal;
+  const cumpleVolumenMin = noventaPorCiento >= umbralVolumenMin;
+  const cumpleVolumenRec = noventaPorCiento >= umbralVolumenRec;
+
+  // Recomended si cumple caudal y volumen_recomendado
+  if (cumpleCaudal && cumpleVolumenRec) {
+    return "recommended";
+  }
+
+  // Minimum si no era recomendado, pero cumple caudal y volumen_mínimo
+  if (cumpleCaudal && cumpleVolumenMin) {
+    return "minimum";
+  }
+
+  return undefined;
 }

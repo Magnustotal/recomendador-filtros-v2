@@ -1,13 +1,18 @@
-// app/layout.tsx
+import React from "react";
 import type { Metadata } from "next";
-import "./globals.css";
-import { ThemeProvider } from "@mui/material/styles";
-import CssBaseline from "@mui/material/CssBaseline";
-import theme from "./theme";
+import { Box } from "@mui/material";
+import ThemeRegistry from './ThemeRegistry';
+import Header from "./components/Header";
+import Footer from "./components/Footer";
 
+// La metadata no cambia
 export const metadata: Metadata = {
-  title: "Recomendador de Filtros",
-  description: "Encuentra el filtro perfecto para tu acuario",
+  title: "Recomendador de Filtros para Acuarios",
+  description: "Calcula el mejor filtro para tu acuario. Herramienta 100% gratuita, moderna y sin necesidad de registro.",
+  themeColor: "#2A81F7",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -17,19 +22,33 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="icon" href="/favicon.ico" />
-        <meta name="description" content="Encuentra el filtro perfecto para tu acuario" />
-        <meta name="keywords" content="acuario, filtro, peces, acuariofilia, mantenimiento" />
-        <meta name="author" content="Tu Nombre" />
-      </head>
       <body>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          {children}
-        </ThemeProvider>
+        <ThemeRegistry>
+          {/* Ya no necesitamos el <GlobalStyles/> aquí, ThemeRegistry lo gestiona */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              minHeight: "100vh",
+            }}
+          >
+            <Header />
+            <Box
+              component="main"
+              sx={{
+                flex: 1,
+                width: "100%",
+                maxWidth: "1100px",
+                mx: "auto",
+                py: { xs: 2, md: 4 },
+                px: { xs: 2, md: 4 },
+              }}
+            >
+              {children}
+            </Box>
+            <Footer />
+          </Box>
+        </ThemeRegistry>
       </body>
     </html>
   );
