@@ -1,6 +1,6 @@
 ---
 name: ai-team
-description: Coordina el trabajo con otros modelos de IA (Gemini vía API gratuita) como apoyo de Claude en una tarea. Actívala cuando el usuario pida trabajar "en equipo" con Gemini o ChatGPT, pedir una segunda opinión a otra IA, dividir el trabajo entre varios modelos, o contrastar un plan/diseño con otro modelo.
+description: Coordina el trabajo con otros modelos de IA (Gemini vía API gratuita) como apoyo de Claude en una tarea. Úsala cuando el usuario pida explícitamente trabajar "en equipo" con Gemini/ChatGPT, o por iniciativa propia de Claude cuando una tarea se beneficie de una segunda opinión (decisiones de arquitectura no triviales, algo difícil de deshacer, o el cierre de una función compleja) — en ambos casos, avisando siempre al usuario en el momento de que se ha consultado a Gemini y por qué.
 argument-hint: "[consulta|segunda-opinion] <tarea>"
 metadata:
   author: recomendador-filtros-v2
@@ -48,6 +48,16 @@ La capa gratuita de Gemini tiene límites diarios bajos (del orden de decenas a
 cientos de peticiones/día según el modelo). No la uses para tareas triviales que
 Claude ya resuelve solo; resérvala para cuando aporte una perspectiva realmente
 distinta, y agrupa varias preguntas en una sola llamada cuando se pueda.
+
+## Uso autónomo: aviso obligatorio
+
+Claude puede decidir por su cuenta consultar a Gemini, sin que el usuario lo pida
+explícitamente, cuando la tarea lo justifique según los criterios de arriba. Pero
+nunca en silencio: cada vez que se llame a `ask_gemini.py` por iniciativa propia,
+hay que decírselo al usuario en ese mismo momento — qué se le preguntó a Gemini y
+por qué se consideró necesario — antes o junto con el resultado. Esto es
+irrenunciable: mantiene visible el consumo de la cuota gratuita aunque el usuario
+no haya autorizado esa llamada en concreto.
 
 ## Uso
 
