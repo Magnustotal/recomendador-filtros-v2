@@ -50,7 +50,7 @@ menu-semanal/
 
 ## Desplegar en Netlify
 
-**Opción A, arrastrar y soltar (la más rápida):** en Netlify → *Add new site* → *Deploy manually* y arrastra la carpeta `public/`.
+**Opción A, Netlify Drop (la más rápida, también desde el móvil):** descarga `dist/menu-semanal-netlify.zip` y súbelo en Netlify → *Add new site* → *Deploy manually* (o arrástralo). Si cambias algo en `public/`, regenera el zip con `npm run zip`. También vale arrastrar la carpeta `public/`.
 
 **Opción B, desde Git:** *Add new site* → *Import from Git*, y en la configuración:
 
