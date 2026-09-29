@@ -1,0 +1,3 @@
+# Sitio 100 % estático: no hay comando de build. Solo se publica la carpeta `public`.
+[build]
+  publish = "public"

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Menú semanal</title>
+  <meta name="description" content="Planifica el menú de la semana, repite tus platos guardados y compártelo por WhatsApp.">
+  <meta name="theme-color" content="#FFF8F5" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1A110D" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Menú">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#view">Saltar al contenido</a>
+
+  <header class="topbar">
+    <p class="eyebrow" id="eyebrow">Tu cocina, organizada</p>
+    <h1 id="title">Menú semanal</h1>
+  </header>
+
+  <main id="view" tabindex="-1"></main>
+
+  <button id="fab" class="fab" type="button" hidden>
+    <span aria-hidden="true">💬</span> Enviar por WhatsApp
+  </button>
+
+  <nav class="navbar" aria-label="Principal">
+    <button type="button" class="nav-item" data-view="week"><span class="pill" aria-hidden="true">🗓️</span><span>Semana</span></button>
+    <button type="button" class="nav-item" data-view="dishes"><span class="pill" aria-hidden="true">🍲</span><span>Platos</span></button>
+    <button type="button" class="nav-item" data-view="settings"><span class="pill" aria-hidden="true">⚙️</span><span>Ajustes</span></button>
+  </nav>
+
+  <dialog id="dlg" aria-labelledby="dlg-title"></dialog>
+  <div id="snack" class="snack" role="status" aria-live="polite"></div>
+
+  <noscript><p class="noscript">Esta aplicación necesita JavaScript para funcionar.</p></noscript>
+</body>
+</html>
