@@ -13,6 +13,9 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # Runtime data
 pids
 *.pid
+
+# gossipcat local runtime state (ports, logs, session auth key — never commit)
+.gossip/
 *.seed
 *.pid.lock
 
