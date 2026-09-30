@@ -44,13 +44,14 @@ menu-semanal/
 │   ├── lib.js         (lógica pura: fechas, sugerencias, WhatsApp, validación)
 │   ├── sw.js, manifest.webmanifest, _headers, icons/
 ├── test/              (unitarias con node:test + E2E con Playwright)
+├── dist/              (menu-semanal-v<versión>.zip listo para Netlify Drop)
 ├── scripts/make-icons.mjs
 └── netlify.toml       (publish = "public")
 ```
 
 ## Desplegar en Netlify
 
-**Opción A, Netlify Drop (la más rápida, también desde el móvil):** descarga `dist/menu-semanal-netlify.zip` y súbelo en Netlify → *Add new site* → *Deploy manually* (o arrástralo). Si cambias algo en `public/`, regenera el zip con `npm run zip`. También vale arrastrar la carpeta `public/`.
+**Opción A, Netlify Drop (la más rápida, también desde el móvil):** descarga `dist/menu-semanal-v<versión>.zip` y súbelo en Netlify → *Add new site* → *Deploy manually* (o arrástralo). Si cambias algo en `public/`, regenera el zip con `npm run zip`. También vale arrastrar la carpeta `public/`.
 
 **Opción B, desde Git:** *Add new site* → *Import from Git*, y en la configuración:
 
@@ -68,8 +69,18 @@ npx --yes serve public        # servir en local (http://localhost:3000)
 npm install && npm run e2e    # prueba E2E en Chromium (instala Playwright)
 node scripts/make-icons.mjs   # regenerar los PNG desde icons/icon.svg
 node scripts/make-screenshots.mjs   # regenerar las capturas del manifest
-npm run zip                   # regenerar dist/menu-semanal-netlify.zip
+node scripts/make-splash.mjs  # regenerar las pantallas de arranque de iOS
+npm run zip                   # regenerar dist/menu-semanal-v<versión>.zip
 ```
+
+## Versiones
+
+La versión vive en `public/version.js` (se muestra en **Ajustes**) y en `package.json`; `npm test` falla si difieren. Para publicar una nueva: súbela en ambos sitios (`1.1.0` → `1.1.1` para arreglos, `1.2.0` para novedades), ejecuta `npm test` y `npm run zip`. El zip resultante se llama `menu-semanal-v<versión>.zip` y sustituye al anterior en `dist/`.
+
+| Versión | Cambios |
+|---|---|
+| 1.1.0 | Auditoría responsive/PWA: palabras largas sin desbordes, alto contraste, landscape, safe areas, texto grande, barra lateral en escritorio, pantallas de arranque iOS, rutas por hash |
+| 1.0.0 | Primera versión |
 
 ## Notas
 

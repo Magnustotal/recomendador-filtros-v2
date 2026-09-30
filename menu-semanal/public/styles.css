@@ -34,6 +34,7 @@
   --font: 'Google Sans Flex', 'Google Sans', 'Roboto Flex', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --safe-b: env(safe-area-inset-bottom, 0px);
   --nav-h: 5rem; /* escala con el tamaño de texto del usuario */
+  --rail-w: 0px;
 }
 :root[data-theme='light'] { color-scheme: light; }
 :root[data-theme='dark'] { color-scheme: dark; }
@@ -87,9 +88,8 @@ main { outline: none; }
 .btn.text { background: transparent; color: var(--primary); padding: 0 16px; }
 .btn.danger { background: var(--error-container); color: var(--on-error-container); }
 .btn[disabled] { opacity: 0.45; pointer-events: none; }
-.btn.small { padding: 0 16px; }
 .btn { padding-block: 10px; }
-.btn.text, .btn.small { padding-block: 10px; }
+.btn.small { padding-inline: 16px; }
 
 .icon-btn {
   display: inline-grid; place-items: center; width: 48px; height: 48px; border: 0; border-radius: 50%;
@@ -102,7 +102,7 @@ main { outline: none; }
 .icon { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 .fab {
-  position: fixed; z-index: 20; right: max(16px, env(safe-area-inset-right), calc((100% - 1040px) / 2 + 16px));
+  position: fixed; z-index: 20; right: max(16px, env(safe-area-inset-right), calc((100% - var(--rail-w) - 1040px) / 2 + 16px));
   bottom: calc(var(--nav-h) + var(--safe-b) + 16px);
   display: inline-flex; align-items: center; gap: 10px; min-height: 64px; padding: 0 28px;
   border: 0; border-radius: 22px; font-weight: 700; font-size: 1rem;
@@ -203,6 +203,7 @@ button.row[aria-disabled='true'] { opacity: 0.55; cursor: default; }
 .card h2 { font-size: 1.25rem; font-weight: 700; }
 .card p { color: var(--on-surface-variant); }
 .card .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.version { text-align: center; font-size: 0.8125rem; color: var(--on-surface-variant); padding: 8px 0 16px; }
 .empty { padding: 32px 16px; text-align: center; color: var(--on-surface-variant); }
 .empty .big { font-size: 3rem; display: block; }
 
@@ -291,4 +292,17 @@ dialog.sheet { width: 100%; max-width: 640px; margin: auto auto 0; border-radius
   .seg input:checked + span { forced-color-adjust: none; background: Highlight; color: HighlightText; }
   .nav-item[aria-current='page'] .pill, .day.today { outline: 2px solid Highlight; }
   .badge, .fab, .btn { border: 1px solid ButtonText; }
+}
+
+/* ---------- Escritorio: la navegación pasa a barra lateral ---------- */
+@media (min-width: 1024px) {
+  :root { --rail-w: 96px; }
+  body { padding-bottom: 32px; padding-left: calc(var(--rail-w) + 16px); }
+  .navbar {
+    top: 0; right: auto; bottom: 0; width: var(--rail-w); height: 100dvh;
+    flex-direction: column; justify-content: flex-start; align-items: center; gap: 16px;
+    padding: 32px 8px;
+  }
+  .nav-item { flex: none; display: grid; width: 100%; }
+  .fab, .snack { bottom: 24px; }
 }

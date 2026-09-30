@@ -5,6 +5,7 @@ import {
   removeFromSlot, sanitizeState, shortDate, slotIds, suggest, todayISO, updateDish, upsertDishByName,
   weekDays, weekRangeLabel, weekStart,
 } from './lib.js';
+import { VERSION } from './version.js';
 
 /* ---------- Utilidades DOM ---------- */
 
@@ -558,6 +559,7 @@ function renderSettings() {
       h('h2', {}, 'Zona delicada'),
       h('div', { class: 'actions' }, h('button', { class: 'btn danger', type: 'button', onclick: resetAll }, 'Borrar todos los datos')),
     ),
+    h('p', { class: 'version' }, `Menú semanal · versión ${VERSION}`),
   );
 }
 

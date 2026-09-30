@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { VERSION } from '../public/version.js';
 
 const ROOT = fileURLToPath(new URL('../public/', import.meta.url));
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -201,7 +202,16 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
     check(marked.includes('✓'), 'forced-colors: el segmento activo lleva ✓');
     await c.close();
   }
+  {
+    const [c, p] = await open(1280, 720);
+    const geo = await p.evaluate(() => { const n = document.querySelector('.navbar').getBoundingClientRect(); return { left: n.left, w: Math.round(n.width), h: Math.round(n.height), vh: innerHeight, dayLeft: document.querySelector('.day').getBoundingClientRect().left }; });
+    check(geo.left === 0 && geo.w <= 100 && geo.h === geo.vh, 'escritorio: navegación en barra lateral');
+    check(geo.dayLeft >= geo.w, 'escritorio: el contenido no queda bajo la barra lateral');
+    check(await noHScroll(p), 'escritorio: sin scroll horizontal');
+    await c.close();
+  }
   await page.locator('.nav-item[data-view=settings]').click();
+  check((await page.locator('.version').innerText()).includes(`versión ${VERSION}`), `Ajustes muestra la versión ${VERSION}`);
   await page.locator('.seg label', { hasText: 'Oscuro' }).click();
   check(await page.evaluate(() => [...document.querySelectorAll('meta[name=theme-color]')].every((m) => m.content === '#1A110D')), 'theme-color sigue al tema oscuro elegido');
   await page.locator('.seg label', { hasText: 'Automático' }).click();
