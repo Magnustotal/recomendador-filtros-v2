@@ -67,9 +67,14 @@ npm test                      # pruebas unitarias (Node ≥ 20, sin dependencias
 npx --yes serve public        # servir en local (http://localhost:3000)
 npm install && npm run e2e    # prueba E2E en Chromium (instala Playwright)
 node scripts/make-icons.mjs   # regenerar los PNG desde icons/icon.svg
+node scripts/make-screenshots.mjs   # regenerar las capturas del manifest
+npm run zip                   # regenerar dist/menu-semanal-netlify.zip
 ```
 
 ## Notas
+
+- **Enlaces:** `#platos` y `#ajustes` abren esas pantallas (el botón atrás funciona). Atajos de la app instalada: «Enviar menú por WhatsApp» (`?action=share`) y «Mis platos».
+- **Seguridad:** CSP estricta (sin scripts ni estilos inline) tanto en `_headers` como en una `<meta>` de respaldo, HSTS y `nosniff`. Los nombres de platos se insertan siempre como texto, nunca como HTML, y las copias importadas se validan.
 
 - **Actualizaciones:** el service worker usa «red primero» (4 s) y cae a la caché sin conexión, así que los cambios publicados llegan solos. Si añades archivos nuevos a `public/`, agrégalos a la lista `CORE` de `sw.js` para que estén disponibles offline.
 - **Datos y navegador:** al vivir en `localStorage`, se pierden si se borran los datos del sitio o se desinstala la app; algunos navegadores (Safari en iOS, por ejemplo) pueden limpiar datos de sitios poco usados. La app pide almacenamiento persistente al guardar, pero conviene hacer una copia desde *Ajustes* de vez en cuando. Los datos no se comparten entre dispositivos.

@@ -76,7 +76,7 @@ await page.evaluate(() => {
   const s = JSON.parse(localStorage.getItem('menu-semanal:v1'));
   const d = new Date(); d.setDate(d.getDate() - 40);
   const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  s.dishes.lent = { id: 'lent', name: 'Lentejas', emoji: '', meals: ['lunch'], createdAt: '2026-01-01' };
+  s.dishes.lent = { id: 'lent', name: 'Lentejas', emoji: '', meals: [], createdAt: '2026-01-01' };
   s.plan[iso] = { lunch: ['lent'] };
   localStorage.setItem('menu-semanal:v1', JSON.stringify(s));
 });
@@ -116,6 +116,20 @@ check(true, 'eliminar plato con confirmación');
 await page.locator('.nav-item[data-view=settings]').click();
 const [download] = await Promise.all([page.waitForEvent('download'), page.locator('button', { hasText: 'Exportar copia' }).click()]);
 check(download.suggestedFilename().startsWith('menu-semanal-'), 'exportar copia');
+
+// Rutas por hash, botón atrás y atajos de la PWA
+check(await page.evaluate(() => location.hash) === '#ajustes', 'la navegación actualiza la URL');
+await page.goBack();
+await page.waitForSelector('.row');
+check(await page.locator('.nav-item[aria-current=page]').getAttribute('data-view') === 'dishes', 'botón atrás vuelve a Platos');
+await page.goto(`${base}#platos`);
+check(await page.locator('.nav-item[aria-current=page]').getAttribute('data-view') === 'dishes', 'enlace directo #platos');
+await page.goto(`${base}?action=share`);
+await page.waitForSelector('dialog[open] textarea');
+check(true, 'atajo ?action=share abre WhatsApp');
+check(await page.evaluate(() => location.search) === '', 'el atajo limpia la URL');
+await page.keyboard.press('Escape');
+check(await page.locator('main h1, header h1').count() === 1 && await page.locator('.day h2').count() === 7, 'jerarquía h1 → h2');
 
 // Offline
 await page.locator('.nav-item[data-view=week]').click();

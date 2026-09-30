@@ -55,7 +55,9 @@ body > * { max-width: 1040px; margin-inline: auto; }
 
 h1, h2, h3, p { margin: 0; }
 button, input, textarea { font: inherit; color: inherit; }
+button, a, label, input, textarea { touch-action: manipulation; }
 button { cursor: pointer; }
+h1, h2 { text-wrap: balance; }
 
 :focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; border-radius: 8px; }
 .skip { position: absolute; left: -999px; top: 8px; background: var(--primary); color: var(--on-primary); padding: 12px 16px; border-radius: 999px; z-index: 50; }
@@ -135,7 +137,7 @@ main { outline: none; }
 .day { padding: 16px; border-radius: 28px; background: var(--surface-1); scroll-margin-top: 12px; display: grid; gap: 8px; align-content: start; }
 .day.today { background: var(--surface-2); box-shadow: inset 0 0 0 2px var(--primary); }
 .day-head { display: flex; align-items: baseline; gap: 8px; padding: 0 4px; }
-.day-head h3 { font-size: 1.375rem; font-weight: 800; letter-spacing: -0.02em; }
+.day-head h2 { font-size: 1.375rem; font-weight: 800; letter-spacing: -0.02em; }
 .day-head .date { color: var(--on-surface-variant); font-size: 0.9375rem; }
 .badge { margin-left: auto; align-self: center; padding: 2px 12px; border-radius: 999px; font-size: 0.8125rem; font-weight: 700; background: var(--primary); color: var(--on-primary); }
 
@@ -206,16 +208,17 @@ button.row[aria-disabled='true'] { opacity: 0.55; cursor: default; }
   height: calc(var(--nav-h) + var(--safe-b)); padding: 12px 16px calc(16px + var(--safe-b));
   background: var(--surface-2);
 }
-.nav-item { flex: 1; max-width: 200px; display: grid; justify-items: center; gap: 4px; border: 0; background: transparent; font-size: 0.75rem; font-weight: 600; color: var(--on-surface-variant); }
-.nav-item .pill { display: grid; place-items: center; width: 64px; height: 32px; border-radius: 16px; font-size: 1.125rem; transition: background-color 0.25s, width 0.4s var(--spring); }
+.nav-item { flex: 1; max-width: 200px; display: grid; justify-items: center; align-content: start; gap: 4px; border: 0; background: transparent; font-size: 0.75rem; font-weight: 600; color: var(--on-surface-variant); text-decoration: none; }
+.nav-item .pill { display: grid; place-items: center; width: 64px; height: 32px; border-radius: 16px; font-size: 1.125rem; transition: background-color 0.25s, transform 0.4s var(--spring); }
+.nav-item:hover .pill { background: var(--surface-3); }
 .nav-item[aria-current='page'] { color: var(--on-surface); }
-.nav-item[aria-current='page'] .pill { background: var(--primary-container); width: 72px; }
+.nav-item[aria-current='page'] .pill { background: var(--primary-container); transform: scaleX(1.12); }
 
 /* ---------- Diálogo / bottom sheet ---------- */
 dialog {
   border: 0; padding: 0; color: var(--on-surface); background: var(--surface-1);
   width: min(560px, calc(100% - 32px)); max-height: min(88dvh, 760px); overflow: auto;
-  border-radius: 28px; margin: auto;
+  border-radius: 28px; margin: auto; overscroll-behavior: contain;
   transition: opacity 0.25s var(--ease), transform 0.4s var(--spring), overlay 0.3s allow-discrete, display 0.3s allow-discrete;
 }
 dialog::backdrop { background: var(--scrim); transition: opacity 0.25s, overlay 0.3s allow-discrete, display 0.3s allow-discrete; }

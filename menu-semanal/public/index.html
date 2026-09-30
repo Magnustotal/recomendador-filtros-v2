@@ -7,7 +7,11 @@
   <meta name="description" content="Planifica el menú de la semana, repite tus platos guardados y compártelo por WhatsApp.">
   <meta name="theme-color" content="#FFF8F5" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#1A110D" media="(prefers-color-scheme: dark)">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Menú">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
@@ -30,9 +34,9 @@
   </button>
 
   <nav class="navbar" aria-label="Principal">
-    <button type="button" class="nav-item" data-view="week"><span class="pill" aria-hidden="true">🗓️</span><span>Semana</span></button>
-    <button type="button" class="nav-item" data-view="dishes"><span class="pill" aria-hidden="true">🍲</span><span>Platos</span></button>
-    <button type="button" class="nav-item" data-view="settings"><span class="pill" aria-hidden="true">⚙️</span><span>Ajustes</span></button>
+    <a href="#semana" class="nav-item" data-view="week"><span class="pill" aria-hidden="true">🗓️</span><span>Semana</span></a>
+    <a href="#platos" class="nav-item" data-view="dishes"><span class="pill" aria-hidden="true">🍲</span><span>Platos</span></a>
+    <a href="#ajustes" class="nav-item" data-view="settings"><span class="pill" aria-hidden="true">⚙️</span><span>Ajustes</span></a>
   </nav>
 
   <dialog id="dlg" aria-labelledby="dlg-title"></dialog>

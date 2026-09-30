@@ -92,7 +92,10 @@ function commit(next) {
 
 /* ---------- Estado de la interfaz ---------- */
 
-const ui = { view: 'week', weekStart: weekStart(todayISO()), idea: 0, sort: 'old', query: '' };
+const HASH_VIEWS = { '#platos': 'dishes', '#ajustes': 'settings' };
+const viewFromHash = () => HASH_VIEWS[location.hash] ?? 'week';
+
+const ui = { view: viewFromHash(), weekStart: weekStart(todayISO()), idea: 0, sort: 'old', query: '' };
 let pendingFocus = null;
 let installEvent = null;
 
@@ -226,7 +229,7 @@ function dayCard(date, today) {
   const isToday = date === today;
   return h('article', { class: `day${isToday ? ' today' : ''}`, 'data-date': date, 'aria-label': `${dayName(date)} ${shortDate(date)}` },
     h('header', { class: 'day-head' },
-      h('h3', {}, dayName(date)),
+      h('h2', {}, dayName(date)),
       h('span', { class: 'date' }, shortDate(date)),
       isToday && h('span', { class: 'badge' }, 'Hoy'),
     ),
@@ -300,7 +303,7 @@ function segmented(name, options, current, onChange) {
 function openAddSheet(date, initialMeal) {
   let meal = initialMeal;
   const input = h('input', {
-    class: 'field', type: 'text', maxlength: '80', autocomplete: 'off', enterkeyhint: 'done',
+    class: 'field', type: 'text', name: 'plato', maxlength: '80', autocomplete: 'off', enterkeyhint: 'done',
     placeholder: 'Escribe un plato nuevo o busca…', 'aria-label': 'Nombre del plato',
   });
   const lists = h('div', { class: 'sheet-lists' });
@@ -383,7 +386,7 @@ function openAddSheet(date, initialMeal) {
 function openShare() {
   let includeEmpty = false;
   const text = () => formatWhatsApp(ui.weekStart, state, { includeEmpty });
-  const area = h('textarea', { class: 'field', id: 'share-text', 'aria-label': 'Mensaje de WhatsApp', spellcheck: 'false' });
+  const area = h('textarea', { class: 'field', id: 'share-text', name: 'mensaje', 'aria-label': 'Mensaje de WhatsApp', spellcheck: 'false' });
   const wa = h('a', { class: 'btn', target: '_blank', rel: 'noopener noreferrer' }, '💬 Abrir WhatsApp');
 
   const sync = () => { wa.href = `https://wa.me/?text=${encodeURIComponent(area.value)}`; };
@@ -425,7 +428,7 @@ function openShare() {
 function renderDishes() {
   const list = h('div', { class: 'list' });
   const search = h('input', {
-    class: 'field', type: 'search', 'aria-label': 'Buscar plato', placeholder: 'Buscar plato…', value: ui.query, autocomplete: 'off',
+    class: 'field', type: 'search', name: 'buscar', 'aria-label': 'Buscar plato', placeholder: 'Buscar plato…', value: ui.query, autocomplete: 'off',
   });
 
   function fill() {
@@ -473,8 +476,8 @@ function renderDishes() {
 
 function openDishEditor(id) {
   const dish = id ? state.dishes[id] : null;
-  const name = h('input', { class: 'field', type: 'text', maxlength: '80', required: true, value: dish?.name ?? '', autocomplete: 'off', 'aria-label': 'Nombre del plato', placeholder: 'Nombre del plato' });
-  const emoji = h('input', { class: 'field', type: 'text', maxlength: '8', value: dish?.emoji ?? '', autocomplete: 'off', 'aria-label': 'Emoji (opcional)', placeholder: `Emoji opcional (auto: ${dish ? guessEmoji(dish.name) : '🍽️'})` });
+  const name = h('input', { class: 'field', type: 'text', name: 'nombre', maxlength: '80', required: true, value: dish?.name ?? '', autocomplete: 'off', 'aria-label': 'Nombre del plato', placeholder: 'Nombre del plato…' });
+  const emoji = h('input', { class: 'field', type: 'text', name: 'emoji', maxlength: '8', value: dish?.emoji ?? '', autocomplete: 'off', 'aria-label': 'Emoji (opcional)', placeholder: `Emoji opcional (auto: ${dish ? guessEmoji(dish.name) : '🍽️'})…` });
 
   const save = (e) => {
     e.preventDefault();
@@ -636,9 +639,10 @@ function render() {
   if (fk) view.querySelector(`[data-fk="${CSS.escape(fk)}"]`)?.focus({ preventScroll: true });
 }
 
-function navigate(name) {
-  if (ui.view === name) return;
-  ui.view = name;
+function onRoute() {
+  const next = viewFromHash();
+  if (next === ui.view) return;
+  ui.view = next;
   ui.query = '';
   render();
   window.scrollTo(0, 0);
@@ -646,7 +650,7 @@ function navigate(name) {
 
 /* ---------- Arranque ---------- */
 
-document.querySelectorAll('.nav-item').forEach((b) => b.addEventListener('click', () => navigate(b.dataset.view)));
+addEventListener('hashchange', onRoute);
 fab.addEventListener('click', openShare);
 
 addEventListener('storage', (e) => { if (e.key === KEY) { state = loadState(); render(); } });
@@ -656,6 +660,12 @@ addEventListener('appinstalled', () => { installEvent = null; if (ui.view === 's
 applyTheme(readStorage(THEME_KEY) ?? 'auto');
 render();
 document.querySelector('.day.today')?.scrollIntoView({ block: 'start' });
+
+// Atajo de la PWA: ./?action=share abre directamente el mensaje de WhatsApp.
+if (new URLSearchParams(location.search).get('action') === 'share') {
+  history.replaceState(null, '', location.pathname + location.hash);
+  if (ui.view === 'week') openShare();
+}
 
 if ('serviceWorker' in navigator) {
   addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
