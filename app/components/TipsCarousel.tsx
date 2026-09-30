@@ -1,17 +1,18 @@
 "use client";
 
 import React, { FC, ReactNode } from "react";
-import { Paper, Typography, Box, IconButton, Stack } from "@mui/material";
-import { styled, alpha } from "@mui/material/styles";
+import { Paper, Typography, Box, IconButton, Stack, ButtonBase } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import PauseIcon from "@mui/icons-material/Pause";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";
 import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
-import { motion, AnimatePresence } from "framer-motion";
-// 👇 AQUÍ ESTÁ LA CORRECCIÓN
-import { useCarousel } from "../hooks/useCarousel"; 
+import { motion, AnimatePresence, useReducedMotion, PanInfo } from "framer-motion";
+import { useCarousel } from "../hooks/useCarousel";
 
 // --- DATOS ---
 const tips: { icon: ReactNode; text: string }[] = [
@@ -24,19 +25,19 @@ const tips: { icon: ReactNode; text: string }[] = [
   { icon: <ReportProblemOutlinedIcon color="warning" />, text: "No limpies todos los materiales filtrantes al mismo tiempo para no destruir la colonia bacteriana." },
 ];
 
+const SWIPE_DISTANCE = 50;
+const SWIPE_VELOCITY = 500;
+
 // --- COMPONENTES ESTILIZADOS ---
-const CarouselWrapper = styled(motion.div)(({ theme }) => ({
+const CarouselWrapper = styled('section')(({ theme }) => ({
   position: "relative",
   maxWidth: 700,
-  margin: `${theme.spacing(6)} auto`,
-  "&:hover .nav-button": {
-    opacity: 1,
-  },
+  margin: `${theme.spacing(4)} auto`,
 }));
 
 const SlidePaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
-  minHeight: 180,
+  minHeight: 200,
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
@@ -45,70 +46,62 @@ const SlidePaper = styled(Paper)(({ theme }) => ({
   overflow: 'hidden',
   position: 'relative',
   [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(3, 2.5),
-    minHeight: 220,
+    padding: theme.spacing(3, 2),
+    minHeight: 260,
   },
 }));
 
-const NavButton = styled(IconButton)(({ theme }) => ({
-  position: "absolute",
-  top: "50%",
-  transform: "translateY(-50%)",
-  zIndex: 2,
-  backgroundColor: alpha(theme.palette.background.paper, 0.5),
-  border: `1px solid ${theme.palette.divider}`,
-  backdropFilter: "blur(4px)",
-  opacity: 0,
-  transition: "opacity 0.2s ease-in-out",
-  "&:hover": {
-    backgroundColor: alpha(theme.palette.background.paper, 0.8),
-  },
-}));
-
-const Dot: FC<{ active: boolean; onClick: () => void }> = ({ active, onClick }) => (
-  <Box
-    component="button"
-    onClick={onClick}
-    aria-label={`Ir al consejo ${active ? 'actual' : ''}`}
-    sx={{
-      width: 10, height: 10, borderRadius: '50%', border: 'none', p: 0, cursor: 'pointer',
-      bgcolor: active ? 'primary.main' : 'text.disabled',
-      transition: 'background-color 0.2s ease',
-      position: 'relative',
-    }}
-  >
-    {active && (
-      <motion.div
-        layoutId="active-dot"
-        style={{ position: 'absolute', inset: -4, border: '2px solid', borderColor: 'primary.main', borderRadius: '50%' }}
-      />
-    )}
-  </Box>
+// Zona táctil de 24×48 px con el punto visible de 10 px en el centro.
+const Dot: FC<{ active: boolean; label: string; onClick: () => void }> = ({ active, label, onClick }) => (
+  <ButtonBase onClick={onClick} aria-label={label} aria-current={active ? "true" : undefined} sx={{ width: 24, height: 48, borderRadius: 1 }}>
+    <Box
+      sx={{
+        width: 10, height: 10, borderRadius: '50%',
+        bgcolor: active ? 'primary.main' : 'text.disabled',
+        outline: active ? '2px solid' : 'none', outlineColor: 'primary.main', outlineOffset: 3,
+        transition: 'background-color 0.2s ease',
+      }}
+    />
+  </ButtonBase>
 );
 
 // --- COMPONENTE PRINCIPAL ---
 export default function TipsCarousel() {
-  const { activeIndex, handlers } = useCarousel({ itemCount: tips.length });
+  const prefersReducedMotion = useReducedMotion();
+  const { activeIndex, direction, isPlaying, handlers } = useCarousel({
+    itemCount: tips.length,
+    autoPlay: !prefersReducedMotion,
+  });
 
   const slideVariants = {
-    enter: (direction: number) => ({ x: direction > 0 ? "100%" : "-100%", opacity: 0 }),
+    enter: (dir: number) => ({ x: dir > 0 ? "100%" : "-100%", opacity: 0 }),
     center: { x: 0, opacity: 1 },
-    exit: (direction: number) => ({ x: direction < 0 ? "100%" : "-100%", opacity: 0 }),
+    exit: (dir: number) => ({ x: dir < 0 ? "100%" : "-100%", opacity: 0 }),
   };
-  
-  // Almacenar la dirección para la animación
-  const [direction, setDirection] = React.useState(0);
-  const handleNext = () => { setDirection(1); handlers.next(); };
-  const handlePrev = () => { setDirection(-1); handlers.prev(); };
+
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
+    if (info.offset.x < -SWIPE_DISTANCE || info.velocity.x < -SWIPE_VELOCITY) handlers.next();
+    else if (info.offset.x > SWIPE_DISTANCE || info.velocity.x > SWIPE_VELOCITY) handlers.prev();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowLeft") { e.preventDefault(); handlers.prev(); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); handlers.next(); }
+  };
 
   return (
     <CarouselWrapper
-      onMouseEnter={handlers.pause}
-      onMouseLeave={handlers.resume}
+      // Solo el ratón real o el foco de teclado pausan: en táctil, el "hover"
+      // sintético y el foco tras tocar dejarían el carrusel parado sin motivo.
+      onPointerEnter={(e) => { if (e.pointerType === "mouse") handlers.hoverStart(); }}
+      onPointerLeave={handlers.hoverEnd}
+      onFocus={(e) => { if (e.target.matches(":focus-visible")) handlers.focusStart(); }}
+      onBlur={handlers.focusEnd}
+      onKeyDown={handleKeyDown}
       aria-roledescription="carousel"
       aria-label="Carrusel de consejos sobre acuariofilia"
     >
-      <SlidePaper variant="outlined">
+      <SlidePaper variant="outlined" aria-live={isPlaying ? "off" : "polite"}>
         <AnimatePresence initial={false} custom={direction}>
           <motion.div
             key={activeIndex}
@@ -118,12 +111,18 @@ export default function TipsCarousel() {
             animate="center"
             exit="exit"
             transition={{ type: "spring", stiffness: 200, damping: 25 }}
-            style={{ position: "absolute", width: '100%', padding: '0 40px' }} // Padding para que el texto no toque los bordes
-            aria-hidden={false}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.3}
+            onDragEnd={handleDragEnd}
+            role="group"
+            aria-roledescription="slide"
+            aria-label={`${activeIndex + 1} de ${tips.length}`}
+            style={{ position: "absolute", width: '100%', padding: '0 24px', cursor: 'grab' }}
           >
             <Stack spacing={2} alignItems="center">
               <Box sx={{ fontSize: 40 }}>{tips[activeIndex].icon}</Box>
-              <Typography variant="h6" color="text.primary" fontWeight={600}>
+              <Typography variant="h6" component="p" color="text.primary" fontWeight={600}>
                 {tips[activeIndex].text}
               </Typography>
             </Stack>
@@ -131,19 +130,35 @@ export default function TipsCarousel() {
         </AnimatePresence>
       </SlidePaper>
 
-      {/* Navegación */}
-      <NavButton className="nav-button" onClick={handlePrev} sx={{ left: 16 }} aria-label="Consejo anterior">
-        <ArrowBackIosNewIcon fontSize="small" />
-      </NavButton>
-      <NavButton className="nav-button" onClick={handleNext} sx={{ right: 16 }} aria-label="Siguiente consejo">
-        <ArrowForwardIosIcon fontSize="small" />
-      </NavButton>
-      
-      {/* Indicadores */}
-      <Stack direction="row" justifyContent="center" spacing={2} mt={2}>
-        {tips.map((_, i) => (
-          <Dot key={i} active={activeIndex === i} onClick={() => { setDirection(i > activeIndex ? 1 : -1); handlers.set(i); }} />
-        ))}
+      {/* Controles siempre visibles (no dependen de :hover) */}
+      <Stack direction="row" justifyContent="center" alignItems="center" mt={1}>
+        <IconButton size="large" onClick={handlers.prev} aria-label="Consejo anterior" sx={{ width: 48, height: 48 }}>
+          <ArrowBackIosNewIcon fontSize="small" />
+        </IconButton>
+
+        <Typography variant="body2" color="text.secondary" sx={{ minWidth: 56, textAlign: 'center', display: { xs: 'block', sm: 'none' } }}>
+          {activeIndex + 1} / {tips.length}
+        </Typography>
+        <Stack direction="row" sx={{ display: { xs: 'none', sm: 'flex' } }}>
+          {tips.map((_, i) => (
+            <Dot key={i} active={activeIndex === i} label={`Ir al consejo ${i + 1}`} onClick={() => handlers.goTo(i)} />
+          ))}
+        </Stack>
+
+        <IconButton size="large" onClick={handlers.next} aria-label="Consejo siguiente" sx={{ width: 48, height: 48 }}>
+          <ArrowForwardIosIcon fontSize="small" />
+        </IconButton>
+
+        {!prefersReducedMotion && (
+          <IconButton
+            size="large"
+            onClick={handlers.togglePlay}
+            aria-label={isPlaying ? "Pausar rotación automática" : "Reanudar rotación automática"}
+            sx={{ ml: 0.5 }}
+          >
+            {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+          </IconButton>
+        )}
       </Stack>
     </CarouselWrapper>
   );

@@ -1,66 +1,71 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface UseCarouselProps {
   itemCount: number;
   intervalDuration?: number;
+  /** false desactiva por completo el auto-avance (p. ej. con "reducir movimiento"). */
+  autoPlay?: boolean;
 }
 
 /**
- * Hook personalizado para gestionar la lógica de un carrusel.
- * @param itemCount - El número total de elementos en el carrusel.
- * @param intervalDuration - La duración en milisegundos para el auto-avance.
- * @returns El estado y los manejadores para controlar el carrusel.
+ * Lógica de un carrusel con auto-avance que se pausa con ratón, foco de teclado
+ * o el botón de pausa del usuario (WCAG 2.2.2: el movimiento automático debe
+ * poder detenerse también en pantallas táctiles).
  */
-export function useCarousel({ itemCount, intervalDuration = 7000 }: UseCarouselProps) {
+export function useCarousel({ itemCount, intervalDuration = 7000, autoPlay = true }: UseCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [direction, setDirection] = useState(0);
+  const [hoverPaused, setHoverPaused] = useState(false);
+  const [focusPaused, setFocusPaused] = useState(false);
+  const [userPaused, setUserPaused] = useState(false);
+  // Se incrementa con cada interacción manual para reiniciar el temporizador.
+  const [tick, setTick] = useState(0);
 
-  const goToNext = useCallback(() => {
-    setActiveIndex((prevIndex) => (prevIndex + 1) % itemCount);
+  const isPlaying = autoPlay && !userPaused;
+  const isPaused = !isPlaying || hoverPaused || focusPaused;
+
+  const next = useCallback(() => {
+    setDirection(1);
+    setActiveIndex((i) => (i + 1) % itemCount);
+    setTick((t) => t + 1);
   }, [itemCount]);
 
-  const goToPrev = () => {
-    setActiveIndex((prevIndex) => (prevIndex - 1 + itemCount) % itemCount);
-  };
+  const prev = useCallback(() => {
+    setDirection(-1);
+    setActiveIndex((i) => (i - 1 + itemCount) % itemCount);
+    setTick((t) => t + 1);
+  }, [itemCount]);
 
-  const goToIndex = (index: number) => {
+  const goTo = useCallback((index: number) => {
+    setDirection(index > activeIndex ? 1 : -1);
     setActiveIndex(index);
-  };
+    setTick((t) => t + 1);
+  }, [activeIndex]);
 
-  const startInterval = useCallback(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(goToNext, intervalDuration);
-  }, [goToNext, intervalDuration]);
-
-  // Efecto para controlar el auto-avance
   useEffect(() => {
-    if (!isPaused) {
-      startInterval();
-    } else if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [isPaused, startInterval]);
-  
-  // Reiniciar el intervalo cuando el usuario interactúa
-  const handleInteraction = () => {
-    startInterval();
-  };
+    if (isPaused) return;
+    const id = setInterval(() => {
+      setDirection(1);
+      setActiveIndex((i) => (i + 1) % itemCount);
+    }, intervalDuration);
+    return () => clearInterval(id);
+  }, [isPaused, itemCount, intervalDuration, tick]);
 
   return {
     activeIndex,
-    isPaused,
+    direction,
+    isPlaying,
     handlers: {
-      next: () => { handleInteraction(); goToNext(); },
-      prev: () => { handleInteraction(); goToPrev(); },
-      set: (index: number) => { handleInteraction(); goToIndex(index); },
-      pause: () => setIsPaused(true),
-      resume: () => setIsPaused(false),
+      next,
+      prev,
+      goTo,
+      togglePlay: () => setUserPaused((p) => !p),
+      hoverStart: () => setHoverPaused(true),
+      hoverEnd: () => setHoverPaused(false),
+      focusStart: () => setFocusPaused(true),
+      focusEnd: () => setFocusPaused(false),
     },
   };
 }

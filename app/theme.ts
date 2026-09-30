@@ -1,4 +1,4 @@
-import { createTheme, PaletteMode, alpha } from "@mui/material";
+import { createTheme, responsiveFontSizes, PaletteMode, alpha } from "@mui/material";
 
 // Opciones base del tema que son comunes a ambos modos (claro y oscuro)
 const baseThemeOptions = {
@@ -15,7 +15,7 @@ const baseThemeOptions = {
     h6: { fontWeight: 600 },
     subtitle1: { fontWeight: 600 },
     subtitle2: { fontWeight: 600 },
-    button: { fontWeight: 700, textTransform: "none", letterSpacing: "0.2px" },
+    button: { fontWeight: 700, textTransform: "none" as const, letterSpacing: "0.2px" },
   },
 };
 
@@ -87,7 +87,7 @@ const darkPalette = {
 export const getTheme = (mode: PaletteMode) => {
   const palette = mode === "light" ? lightPalette : darkPalette;
 
-  return createTheme({
+  const theme = createTheme({
     ...baseThemeOptions,
     palette: palette,
     components: {
@@ -156,4 +156,6 @@ export const getTheme = (mode: PaletteMode) => {
       },
     },
   });
+
+  return responsiveFontSizes(theme);
 };

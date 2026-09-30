@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Paper, Typography, Divider, Box, Stack, Chip, Tooltip, Link } from "@mui/material";
+import { Typography, Divider, Box, Stack, Chip, Link, useMediaQuery } from "@mui/material";
 import { styled, useTheme, alpha } from "@mui/material/styles";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import WaterIcon from "@mui/icons-material/Water";
@@ -24,6 +24,7 @@ interface ExplanationItemData {
 // Diagrama animado de la filtración
 function FiltrationDiagram() {
   const theme = useTheme();
+  const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   return (
     <Box sx={{ my: 2, display: 'flex', justifyContent: 'center' }}>
       <svg width="120" height="180" viewBox="0 0 120 180">
@@ -51,11 +52,12 @@ function FiltrationDiagram() {
         <rect x="20" y="25" width="80" height="35" fill={alpha(theme.palette.success.light, 0.7)} />
         <text x="60" y="47" textAnchor="middle" fontSize="9" fill={theme.palette.text.secondary}>Biológico</text>
 
-        {/* Flujo de Agua Animado */}
-        <circle r="3" fill={theme.palette.info.main} style={{ animation: 'flow 4s linear infinite', animationDelay: '0s' }}><animateMotion dur="4s" repeatCount="indefinite" path="M 60 170 V 20" /></circle>
-        <circle r="3" fill={theme.palette.info.main} style={{ animation: 'flow 4s linear infinite', animationDelay: '1s' }}><animateMotion dur="4s" repeatCount="indefinite" path="M 60 170 V 20" /></circle>
-        <circle r="3" fill={theme.palette.info.main} style={{ animation: 'flow 4s linear infinite', animationDelay: '2s' }}><animateMotion dur="4s" repeatCount="indefinite" path="M 60 170 V 20" /></circle>
-        <circle r="3" fill={theme.palette.info.main} style={{ animation: 'flow 4s linear infinite', animationDelay: '3s' }}><animateMotion dur="4s" repeatCount="indefinite" path="M 60 170 V 20" /></circle>
+        {/* Flujo de Agua Animado (se omite con "reducir movimiento") */}
+        {!reduceMotion && [0, 1, 2, 3].map((delay) => (
+          <circle key={delay} r="3" fill={theme.palette.info.main} style={{ animation: 'flow 4s linear infinite', animationDelay: `${delay}s` }}>
+            <animateMotion dur="4s" repeatCount="indefinite" path="M 60 170 V 20" />
+          </circle>
+        ))}
       </svg>
     </Box>
   );

@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, createContext, useContext, useEffect } from 'react';
 import { ThemeProvider, useMediaQuery, CssBaseline, PaletteMode, GlobalStyles } from '@mui/material';
+import { MotionConfig } from 'framer-motion';
 import { getTheme } from './theme';
 
 export const ColorModeContext = createContext({
@@ -21,6 +22,9 @@ const animatedGradientStyles = (
         : `linear-gradient(-45deg, ${theme.palette.background.default}, ${theme.palette.background.paper}, #121826, #1A2233)`,
       backgroundSize: '400% 400%',
       animation: 'gradient-animation 25s ease infinite',
+      '@media (prefers-reduced-motion: reduce)': {
+        animation: 'none',
+      },
     }
   })} />
 );
@@ -64,7 +68,7 @@ export default function ThemeRegistry({ children }: { children: React.ReactNode 
       <ThemeProvider theme={theme}>
         <CssBaseline enableColorScheme />
         {animatedGradientStyles}
-        {children}
+        <MotionConfig reducedMotion="user">{children}</MotionConfig>
       </ThemeProvider>
     </ColorModeContext.Provider>
   );

@@ -9,7 +9,7 @@ export interface ExtendedFiltro extends Filtro {
   web_oficial?: string;
   isPair?: boolean;
   baseCaudal?: number;
-  baseVolumenVaso?: number;
+  baseVolumenVaso?: number | null;
 }
 
 // --- LÓGICA DE PROCESAMIENTO (Funciones Puras) ---

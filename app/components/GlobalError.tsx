@@ -20,7 +20,7 @@ interface GlobalErrorProps {
 
 // --- COMPONENTES ESTILIZADOS ---
 const ErrorContainer = styled(Container)(({ theme }) => ({
-  minHeight: "100vh",
+  minHeight: "60dvh",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -55,7 +55,7 @@ const GlobalError: React.FC<GlobalErrorProps> = ({ error, reset }) => {
     : "Ha ocurrido un error inesperado. Nuestro equipo ha sido notificado.";
 
   return (
-    <ErrorContainer component="main" maxWidth={false}>
+    <ErrorContainer maxWidth={false}>
       <Fade in appear timeout={500}>
         <motion.div
             initial={{ opacity: 0, scale: 0.95 }}

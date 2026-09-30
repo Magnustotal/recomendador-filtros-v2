@@ -51,14 +51,22 @@ const InfoTooltipContent: FC = () => (
 const Branding: FC = React.memo(() => (
     <Stack direction="row" alignItems="center" spacing={1.5} sx={{ flexGrow: 1, minWidth: 0 }}>
       <motion.div whileHover={{ scale: 1.05 }}>
-        <NextLink href="/" aria-label="Ir a la página de inicio" style={{ display: 'flex' }}>
+        <NextLink href="/" aria-label="Ir a la página de inicio" style={{ display: 'flex', padding: 4 }}>
           <Image src="/logo.svg" alt="Logo de la aplicación" width={40} height={40} priority />
         </NextLink>
       </motion.div>
       <Tooltip title={<InfoTooltipContent />} arrow placement="bottom-start">
-        <Stack direction="row" alignItems="center" spacing={1} sx={{ cursor: "help", overflow: 'hidden' }}>
-          <Typography variant="h6" fontWeight={700} noWrap color="text.primary">{APP_NAME}</Typography>
-          <InfoOutlinedIcon color="info" fontSize="small" />
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ cursor: "help", minWidth: 0 }}>
+          <Typography
+            variant="h6"
+            component="span"
+            fontWeight={700}
+            color="text.primary"
+            sx={{ lineHeight: 1.25, fontSize: { xs: '1rem', sm: '1.25rem' } }}
+          >
+            {APP_NAME}
+          </Typography>
+          <InfoOutlinedIcon color="info" fontSize="small" sx={{ display: { xs: 'none', sm: 'block' } }} />
         </Stack>
       </Tooltip>
     </Stack>
@@ -72,13 +80,13 @@ const ActionButtons: FC = React.memo(() => {
   return (
     <Stack direction="row" alignItems="center" spacing={0.5}>
       <Tooltip title="Sugerencias o correcciones">
-        <IconButton component="a" href="mailto:contacto@tudominio.com" target="_blank" rel="noopener"><MailOutlineIcon /></IconButton>
+        <IconButton size="large" component="a" href="mailto:contacto@tudominio.com" target="_blank" rel="noopener" aria-label="Sugerencias o correcciones" sx={{ display: { xs: 'none', sm: 'inline-flex' } }}><MailOutlineIcon /></IconButton>
       </Tooltip>
       <Tooltip title="Código fuente en GitHub">
-        <IconButton component="a" href="https://github.com/Magnustotal/Recomendador-Filtros" target="_blank" rel="noopener"><GitHubIcon /></IconButton>
+        <IconButton size="large" component="a" href="https://github.com/Magnustotal/Recomendador-Filtros" target="_blank" rel="noopener" aria-label="Código fuente en GitHub" sx={{ display: { xs: 'none', sm: 'inline-flex' } }}><GitHubIcon /></IconButton>
       </Tooltip>
       <Tooltip title={`Cambiar a modo ${theme.palette.mode === 'dark' ? 'claro' : 'oscuro'}`}>
-        <IconButton onClick={toggleColorMode}>
+        <IconButton size="large" onClick={toggleColorMode} aria-label="Cambiar entre modo claro y oscuro">
           {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
         </IconButton>
       </Tooltip>

@@ -9,15 +9,9 @@ import {
   Water as WaterIcon, Science as ScienceIcon, Layers as LayersIcon, Category as CategoryIcon, Power as PowerIcon, Info as InfoIcon,
   Shop as ShopIcon, Public as PublicIcon, OpenInNew as OpenInNewIcon, Close as CloseIcon, ErrorOutline as ErrorOutlineIcon
 } from "@mui/icons-material";
-import { Filtro } from "@/types/Filtro";
+import { ExtendedFiltro } from "@/app/hooks/useProcessedFilters";
 
 // --- TIPOS ---
-interface ExtendedFiltro extends Filtro {
-  web_oficial?: string;
-  isPair?: boolean;
-  baseCaudal?: number;
-  baseVolumenVaso?: number;
-}
 
 interface FilterDetailDialogProps {
   open: boolean;
@@ -28,8 +22,8 @@ interface FilterDetailDialogProps {
 interface DetailRowData {
   label: string;
   icon: ReactNode;
-  individual: number | null;
-  total: number | null;
+  individual?: number | null;
+  total?: number | null;
   tooltip: string;
   isEstimated?: boolean;
   unit?: string;

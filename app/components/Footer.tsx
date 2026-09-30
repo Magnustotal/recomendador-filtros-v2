@@ -45,7 +45,7 @@ const FooterWrapper = styled('footer')(({ theme }) => ({
 
 const SocialButton: React.FC<{ href: string; title: string; children: React.ReactNode }> = ({ href, title, children }) => (
   <Tooltip title={title} arrow>
-    <IconButton component="a" href={href} target="_blank" rel="noopener noreferrer" aria-label={title}>
+    <IconButton size="large" component="a" href={href} target="_blank" rel="noopener noreferrer" aria-label={title}>
       {children}
     </IconButton>
   </Tooltip>
@@ -120,7 +120,7 @@ export default function Footer() {
               </Stack>
 
               <Tooltip title="Volver arriba" arrow>
-                <Fab color="primary" size="small" onClick={handleScrollTop} aria-label="Volver arriba">
+                <Fab color="primary" size="medium" onClick={handleScrollTop} aria-label="Volver arriba">
                   <KeyboardArrowUpIcon />
                 </Fab>
               </Tooltip>
