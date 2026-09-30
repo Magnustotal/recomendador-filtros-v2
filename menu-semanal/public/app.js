@@ -239,22 +239,24 @@ function dayCard(date, today) {
 
 function slotBlock(date, meal) {
   const ids = slotIds(state, date, meal).filter((id) => state.dishes[id]);
-  const label = `${MEAL_LABEL[meal].toLowerCase()} del ${dayName(date).toLowerCase()} ${shortDate(date)}`;
+  const when = `del ${dayName(date).toLowerCase()} ${shortDate(date)}`;
+  const addTo = `${meal === 'lunch' ? 'al almuerzo' : 'a la cena'} ${when}`;
+  const removeFrom = `${meal === 'lunch' ? 'del almuerzo' : 'de la cena'} ${when}`;
   const openSheet = () => openAddSheet(date, meal);
   return h('section', { class: `slot ${meal}`, 'aria-label': MEAL_LABEL[meal] },
     h('div', { class: 'slot-head' },
       h('span', {}, `${MEAL_EMOJI[meal]} ${MEAL_LABEL[meal]}`),
-      ids.length > 0 && h('button', { class: 'icon-btn', type: 'button', 'data-fk': `add:${date}:${meal}`, 'aria-label': `Añadir plato al ${label}`, onclick: openSheet }, icon('plus')),
+      ids.length > 0 && h('button', { class: 'icon-btn', type: 'button', 'data-fk': `add:${date}:${meal}`, 'aria-label': `Añadir plato ${addTo}`, onclick: openSheet }, icon('plus')),
     ),
     ids.length
       ? h('ul', { class: 'items' }, ids.map((id) => {
         const dish = state.dishes[id];
         return h('li', { class: 'item' },
           h('span', {}, `${dishEmoji(dish)} ${dish.name}`),
-          h('button', { class: 'x', type: 'button', 'aria-label': `Quitar ${dish.name} del ${label}`, onclick: () => removeDish(date, meal, id) }, icon('close')),
+          h('button', { class: 'x', type: 'button', 'aria-label': `Quitar ${dish.name} ${removeFrom}`, onclick: () => removeDish(date, meal, id) }, icon('close')),
         );
       }))
-      : h('button', { class: 'slot-empty', type: 'button', 'data-fk': `add:${date}:${meal}`, 'aria-label': `Añadir plato al ${label}`, onclick: openSheet }, icon('plus'), 'Añadir plato'),
+      : h('button', { class: 'slot-empty', type: 'button', 'data-fk': `add:${date}:${meal}`, 'aria-label': `Añadir plato ${addTo}`, onclick: openSheet }, icon('plus'), 'Añadir plato'),
   );
 }
 
@@ -559,9 +561,17 @@ function renderSettings() {
   );
 }
 
+const THEME_COLORS = { light: '#FFF8F5', dark: '#1A110D' };
+
 function applyTheme(t) {
-  if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+  const forced = t === 'light' || t === 'dark';
+  if (forced) document.documentElement.dataset.theme = t;
   else delete document.documentElement.dataset.theme;
+  // La barra de estado sigue el tema elegido (o el del sistema en automático).
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+    const own = m.getAttribute('media')?.includes('dark') ? 'dark' : 'light';
+    m.content = THEME_COLORS[forced ? t : own];
+  });
 }
 
 async function install() {
@@ -659,7 +669,9 @@ addEventListener('appinstalled', () => { installEvent = null; if (ui.view === 's
 
 applyTheme(readStorage(THEME_KEY) ?? 'auto');
 render();
-document.querySelector('.day.today')?.scrollIntoView({ block: 'start' });
+// window.scrollTo (y no scrollIntoView) para no mover el punto de partida del Tab.
+const todayCard = document.querySelector('.day.today');
+if (todayCard) window.scrollTo(0, todayCard.getBoundingClientRect().top + scrollY - 12);
 
 // Atajo de la PWA: ./?action=share abre directamente el mensaje de WhatsApp.
 if (new URLSearchParams(location.search).get('action') === 'share') {

@@ -140,6 +140,74 @@ await page.reload();
 await page.waitForSelector('.day');
 check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
 
+// Regresiones de la auditoría responsive (fecha fija: martes 29 sep 2026)
+{
+  const mk = (id, name, meals = []) => ({ id, name, emoji: '', meals, createdAt: '2026-01-01' });
+  const seed = {
+    version: 1,
+    dishes: { a: mk('a', 'Macarrones'), e: mk('e', 'Lentejas'), f: mk('f', 'Supercalifragilisticoespialidosoextraordinariamentelargo') },
+    plan: { '2026-09-28': { lunch: ['a'], dinner: ['a'] }, '2026-09-29': { lunch: ['f'], dinner: ['f'] }, '2026-08-01': { lunch: ['e'] } },
+  };
+  const open = async (w, h, opts = {}) => {
+    const c = await browser.newContext({ viewport: { width: w, height: h }, locale: 'es-ES', ...opts });
+    const p = await c.newPage();
+    await p.clock.setFixedTime(new Date('2026-09-29T10:00:00'));
+    await p.addInitScript((s) => localStorage.setItem('menu-semanal:v1', JSON.stringify(s)), seed);
+    await p.goto(base);
+    await p.waitForSelector('.day');
+    await p.waitForTimeout(600);
+    return [c, p];
+  };
+  const noHScroll = (p) => p.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+
+  for (const w of [320, 375, 768, 1024]) {
+    const [c, p] = await open(w, 800);
+    check(await noHScroll(p), `palabra larga sin scroll horizontal a ${w}px`);
+    await c.close();
+  }
+  {
+    const [c, p] = await open(1024, 768);
+    await p.locator('.day').nth(2).locator('.slot.lunch .slot-empty').click();
+    await p.waitForSelector('dialog[open]', { timeout: 3000 }).then(() => check(true, 'con palabra larga, el botón vecino sigue abriendo la hoja'), () => check(false, 'con palabra larga, el botón vecino sigue abriendo la hoja'));
+    await c.close();
+  }
+  {
+    const [c, p] = await open(320, 640);
+    const idea = await p.evaluate(() => { const b = document.querySelector('.idea .btn'); return b.textContent + '|' + (b.getBoundingClientRect().right <= b.closest('.idea').getBoundingClientRect().right); });
+    check(idea.endsWith('true'), `botón de idea cabe a 320px (${idea.split('|')[0]})`);
+    await p.keyboard.press('Tab');
+    check(await p.evaluate(() => document.activeElement.classList.contains('skip')), 'primer Tab va al enlace «Saltar al contenido»');
+    check((await p.locator('.slot-empty').first().getAttribute('aria-label')).includes('a la cena') || !(await p.locator('[aria-label*="al cena"]').count()), 'aria-labels con «a la cena»');
+    check(await p.locator('[aria-label*="al cena"]').count() === 0, 'sin «al cena» en la interfaz');
+    await c.close();
+  }
+  {
+    const [c, p] = await open(667, 375);
+    const fits = await p.evaluate(() => document.querySelector('.navbar').getBoundingClientRect().height <= 64);
+    check(fits, 'landscape móvil: navegación compacta');
+    await c.close();
+  }
+  {
+    const [c, p] = await open(375, 667);
+    await p.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
+    await p.waitForTimeout(200);
+    check(await p.evaluate(() => { const n = document.querySelector('.navbar'); return n.scrollHeight <= n.clientHeight + 1; }), 'texto al 200%: etiquetas de navegación sin recortar');
+    await c.close();
+  }
+  {
+    const [c, p] = await open(390, 844, { forcedColors: 'active' });
+    await p.locator('.day').first().locator('.slot.lunch .slot-empty, .slot.lunch .icon-btn').first().click();
+    const marked = await p.evaluate(() => getComputedStyle(document.querySelector('.seg input:checked + span'), '::before').content);
+    check(marked.includes('✓'), 'forced-colors: el segmento activo lleva ✓');
+    await c.close();
+  }
+  await page.locator('.nav-item[data-view=settings]').click();
+  await page.locator('.seg label', { hasText: 'Oscuro' }).click();
+  check(await page.evaluate(() => [...document.querySelectorAll('meta[name=theme-color]')].every((m) => m.content === '#1A110D')), 'theme-color sigue al tema oscuro elegido');
+  await page.locator('.seg label', { hasText: 'Automático' }).click();
+  await page.locator('.nav-item[data-view=week]').click();
+}
+
 check(errors.length === 0, `sin errores de consola${errors.length ? `: ${errors.join(' | ')}` : ''}`);
 
 await browser.close();

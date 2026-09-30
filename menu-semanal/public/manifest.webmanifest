@@ -7,7 +7,7 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#FFF8F5",
   "theme_color": "#9A4521",
   "categories": ["food", "lifestyle", "productivity"],
@@ -17,7 +17,8 @@
   ],
   "screenshots": [
     { "src": "screenshots/semana.png", "sizes": "780x1688", "type": "image/png", "form_factor": "narrow", "label": "Semana con almuerzos y cenas" },
-    { "src": "screenshots/whatsapp.png", "sizes": "780x1688", "type": "image/png", "form_factor": "narrow", "label": "Mensaje de WhatsApp listo para enviar" }
+    { "src": "screenshots/whatsapp.png", "sizes": "780x1688", "type": "image/png", "form_factor": "narrow", "label": "Mensaje de WhatsApp listo para enviar" },
+    { "src": "screenshots/escritorio.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide", "label": "Semana en pantalla grande" }
   ],
   "icons": [
     { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
