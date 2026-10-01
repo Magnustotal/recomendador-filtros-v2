@@ -183,8 +183,7 @@ function setSlot(plan, date, meal, ids) {
 /** Devuelve el id de un plato existente con ese nombre o crea uno nuevo. */
 export function upsertDishByName(state, name, { id = newId(), today = todayISO() } = {}) {
   const clean = cleanName(name);
-  const key = normalizeName(clean);
-  const found = Object.values(state.dishes).find((d) => normalizeName(d.name) === key);
+  const found = findDishByName(state, clean);
   if (found) return { state, id: found.id, created: false };
   const dish = { id, name: clean, emoji: '', meals: [], createdAt: today };
   return { state: { ...state, dishes: { ...state.dishes, [id]: dish } }, id, created: true };

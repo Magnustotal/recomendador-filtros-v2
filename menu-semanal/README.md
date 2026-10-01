@@ -44,14 +44,14 @@ menu-semanal/
 │   ├── lib.js         (lógica pura: fechas, sugerencias, WhatsApp, validación)
 │   ├── sw.js, manifest.webmanifest, _headers, icons/
 ├── test/              (unitarias con node:test + E2E con Playwright)
-├── dist/              (menu-semanal-v<versión>.zip listo para Netlify Drop)
+├── dist/              (zip generado con `npm run zip`; ignorado por Git)
 ├── scripts/make-icons.mjs
 └── netlify.toml       (publish = "public")
 ```
 
 ## Desplegar en Netlify
 
-**Opción A, Netlify Drop (la más rápida, también desde el móvil):** descarga `dist/menu-semanal-v<versión>.zip` y súbelo en Netlify → *Add new site* → *Deploy manually* (o arrástralo). Si cambias algo en `public/`, regenera el zip con `npm run zip`. También vale arrastrar la carpeta `public/`.
+**Opción A, Netlify Drop (la más rápida):** genera el zip con `npm run zip` (queda en `dist/menu-semanal-v<versión>.zip`; esa carpeta **no se sube a Git**) y súbelo en Netlify → *Add new site* → *Deploy manually*. También vale arrastrar la carpeta `public/`.
 
 **Opción B, desde Git:** *Add new site* → *Import from Git*, y en la configuración:
 
@@ -79,6 +79,7 @@ La versión vive en `public/version.js` (se muestra en **Ajustes**) y en `packag
 
 | Versión | Cambios |
 |---|---|
+| 1.2.1 | El resaltado de «hoy» se ve sobre la tira de paño; README aclara que el zip se genera, no se versiona |
 | 1.2.0 | Solo modo claro (sin tema oscuro) y estilo de cocina |
 | 1.1.0 | Auditoría responsive/PWA: palabras largas sin desbordes, alto contraste, landscape, safe areas, texto grande, barra lateral en escritorio, pantallas de arranque iOS, rutas por hash |
 | 1.0.0 | Primera versión |
