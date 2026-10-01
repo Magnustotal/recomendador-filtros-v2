@@ -5,7 +5,7 @@ PWA sencilla para planificar el menú de la semana: almuerzo y cena por día, pl
 - **Sin servidor, sin cuenta, sin dependencias, sin build.** HTML + CSS + JS (módulos ES).
 - **Los datos se guardan en el móvil** (`localStorage`). Nada sale del dispositivo.
 - **Funciona sin conexión** (service worker) y es instalable.
-- Diseño Material 3 Expressive hecho a mano: colores con `light-dark()` (claro/oscuro automático), formas grandes, movimiento con muelle, View Transitions al cambiar de semana. Respeta `prefers-reduced-motion`.
+- Diseño Material 3 Expressive hecho a mano, **solo modo claro** (también si el sistema está en oscuro) y con motivos de cocina: mantel de cuadros vichy, tira de paño de cocina en cada día, tipografía de carta y verduras de adorno. Formas grandes, movimiento con muelle y View Transitions. Respeta `prefers-reduced-motion`.
 
 ## Qué hace
 
@@ -15,7 +15,7 @@ PWA sencilla para planificar el menú de la semana: almuerzo y cena por día, pl
 | **Memoria de platos** | Todo lo que escribes queda guardado y se ofrece al añadir de nuevo (con búsqueda). Pestaña **Platos** para editar, borrar y ordenar por «hace tiempo», A–Z o más usados. |
 | **Sugerencias** | Tarjeta verde: el plato que más tiempo lleva sin aparecer (≥ 14 días, o guardado y nunca planificado) para el primer hueco libre desde hoy. La hoja de «Añadir plato» también propone «Hace tiempo que no los comes». No sugiere lo ya planificado en los próximos 7 días. |
 | **WhatsApp** | Botón «Enviar por WhatsApp»: mensaje con emojis, un bloque por día, almuerzo y cena diferenciados. Editable antes de enviar; abre `wa.me`, copia o usa el menú «Compartir» del sistema. |
-| **Ajustes** | Exportar/importar copia en JSON, tema claro/oscuro, instalar, borrar todo. |
+| **Ajustes** | Exportar/importar copia en JSON, instalar, borrar todo. |
 
 Ejemplo de mensaje:
 
@@ -79,6 +79,7 @@ La versión vive en `public/version.js` (se muestra en **Ajustes**) y en `packag
 
 | Versión | Cambios |
 |---|---|
+| 1.2.0 | Solo modo claro (sin tema oscuro) y estilo de cocina |
 | 1.1.0 | Auditoría responsive/PWA: palabras largas sin desbordes, alto contraste, landscape, safe areas, texto grande, barra lateral en escritorio, pantallas de arranque iOS, rutas por hash |
 | 1.0.0 | Primera versión |
 

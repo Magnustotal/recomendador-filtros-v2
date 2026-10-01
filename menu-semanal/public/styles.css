@@ -1,43 +1,42 @@
 /* Menú semanal · Material 3 Expressive hecho a mano (sin dependencias) */
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
-  --primary: light-dark(#9a4521, #ffb598);
-  --on-primary: light-dark(#ffffff, #5a1e00);
-  --primary-container: light-dark(#ffdbcc, #7b2f0d);
-  --on-primary-container: light-dark(#3a0b00, #ffdbcc);
+  --primary: #9a4521;
+  --on-primary: #ffffff;
+  --primary-container: #ffdbcc;
+  --on-primary-container: #3a0b00;
 
-  --lunch: light-dark(#ffe2a8, #5a4300);
-  --on-lunch: light-dark(#2a1a00, #ffe2a8);
-  --dinner: light-dark(#dde1ff, #3a4479);
-  --on-dinner: light-dark(#00105a, #dde1ff);
-  --sage: light-dark(#cdebc2, #364d2f);
-  --on-sage: light-dark(#0a2008, #cdebc2);
+  --lunch: #ffe2a8;
+  --on-lunch: #2a1a00;
+  --dinner: #d8e6f7;
+  --on-dinner: #0b2447;
+  --sage: #cdebc2;
+  --on-sage: #0a2008;
 
-  --surface: light-dark(#fff8f5, #1a110d);
-  --surface-1: light-dark(#fbefe9, #241a16);
-  --surface-2: light-dark(#f6e9e2, #2d221d);
-  --surface-3: light-dark(#f0e3dc, #382c27);
-  --on-surface: light-dark(#221a16, #f1dfd8);
-  --on-surface-variant: light-dark(#52443d, #d8c2b9);
-  --outline: light-dark(#85736b, #a08d85);
-  --outline-variant: light-dark(#d8c2b9, #52443d);
-  --error: light-dark(#ba1a1a, #ffb4ab);
-  --error-container: light-dark(#ffdad6, #93000a);
-  --on-error-container: light-dark(#410002, #ffdad6);
+  --surface: #fff8f5;
+  --surface-1: #fbefe9;
+  --surface-2: #f6e9e2;
+  --surface-3: #f0e3dc;
+  --on-surface: #221a16;
+  --on-surface-variant: #52443d;
+  --outline: #85736b;
+  --outline-variant: #d8c2b9;
+  --error: #ba1a1a;
+  --error-container: #ffdad6;
+  --on-error-container: #410002;
   --scrim: rgb(0 0 0 / 0.42);
 
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --spring: linear(0, 0.35 8%, 0.82 20%, 1.07 34%, 1.03 50%, 0.995 70%, 1);
 
+  --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
   --font: 'Google Sans Flex', 'Google Sans', 'Roboto Flex', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --safe-b: env(safe-area-inset-bottom, 0px);
   --nav-h: 5rem; /* escala con el tamaño de texto del usuario */
   --rail-w: 0px;
 }
-:root[data-theme='light'] { color-scheme: light; }
-:root[data-theme='dark'] { color-scheme: dark; }
 
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -46,7 +45,12 @@ html { -webkit-text-size-adjust: 100%; scroll-padding-bottom: 200px; }
 body {
   margin: 0;
   min-height: 100dvh;
-  background: var(--surface);
+  /* Mantel de cuadros vichy: dos bandas translúcidas que se cruzan */
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(90deg, rgb(154 69 33 / 0.07) 50%, transparent 50%),
+    linear-gradient(rgb(154 69 33 / 0.07) 50%, transparent 50%);
+  background-size: 32px 32px;
   color: var(--on-surface);
   font: 400 1rem/1.5 var(--font);
   padding: 0 max(16px, env(safe-area-inset-right)) calc(var(--nav-h) + var(--safe-b) + 96px) max(16px, env(safe-area-inset-left));
@@ -67,8 +71,9 @@ h1, h2 { text-wrap: balance; }
 
 /* ---------- Cabecera ---------- */
 .topbar { padding: calc(28px + env(safe-area-inset-top, 0px)) 4px 12px; }
+.garnish { margin-top: 6px; font-size: 1.25rem; letter-spacing: 0.35em; }
 .eyebrow { font-size: 0.875rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--primary); }
-.topbar h1 { font-size: clamp(2.25rem, 9vw, 3.5rem); line-height: 1.05; font-weight: 800; letter-spacing: -0.03em; }
+.topbar h1 { font-family: var(--font-display); font-size: clamp(2.25rem, 9vw, 3.5rem); line-height: 1.05; font-weight: 800; letter-spacing: 0; }
 
 main { outline: none; }
 .view-enter { animation: rise 0.45s var(--spring) both; }
@@ -119,7 +124,7 @@ main { outline: none; }
   padding: 8px; border-radius: 28px; background: var(--surface-2);
 }
 .weekbar .range { flex: 1; min-width: 150px; text-align: center; line-height: 1.2; }
-.weekbar .range strong { display: block; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; }
+.weekbar .range strong { font-family: var(--font-display); display: block; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; }
 .weekbar .range span { font-size: 0.8125rem; color: var(--on-surface-variant); }
 .weekbar .extra { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 4px 8px; justify-content: center; }
 
@@ -128,7 +133,7 @@ main { outline: none; }
   background: var(--sage); color: var(--on-sage);
 }
 .idea .kicker { font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-.idea .dish { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+.idea .dish { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
 .idea .why { font-size: 0.9375rem; }
 .idea .actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .idea .btn { background: var(--on-sage); color: var(--sage); }
@@ -136,10 +141,16 @@ main { outline: none; }
 
 /* ---------- Días ---------- */
 .days { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
-.day { padding: 16px; border-radius: 28px; background: var(--surface-1); scroll-margin-top: 12px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; }
+.day { position: relative; overflow: hidden; padding: 26px 16px 16px; border-radius: 28px; background: var(--surface-1); scroll-margin-top: 12px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; }
+/* Tira de paño de cocina */
+.day::before {
+  content: ''; position: absolute; inset: 0 0 auto 0; height: 10px;
+  background: repeating-linear-gradient(90deg, var(--primary) 0 14px, var(--surface) 14px 28px);
+  border-bottom: 2px solid var(--primary);
+}
 .day.today { background: var(--surface-2); box-shadow: inset 0 0 0 2px var(--primary); }
 .day-head { display: flex; align-items: baseline; gap: 8px; padding: 0 4px; }
-.day-head h2 { font-size: 1.375rem; font-weight: 800; letter-spacing: -0.02em; }
+.day-head h2 { font-family: var(--font-display); font-size: 1.375rem; font-weight: 800; letter-spacing: -0.02em; }
 .day-head .date { color: var(--on-surface-variant); font-size: 0.9375rem; }
 .badge { margin-left: auto; align-self: center; padding: 2px 12px; border-radius: 999px; font-size: 0.8125rem; font-weight: 700; background: var(--primary); color: var(--on-primary); }
 
@@ -159,7 +170,7 @@ main { outline: none; }
 .items > li { min-width: 0; max-width: 100%; }
 .item {
   display: inline-flex; align-items: center; min-height: 40px; padding: 4px 4px 4px 14px; border-radius: 14px;
-  background: light-dark(rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.12)); color: inherit; font-weight: 500;
+  background: rgb(255 255 255 / 0.55); color: inherit; font-weight: 500;
   animation: pop 0.45s var(--spring) both; min-width: 0; max-width: 100%;
 }
 .item > span:first-child { min-width: 0; overflow-wrap: anywhere; }
@@ -200,7 +211,7 @@ button.row[aria-disabled='true'] { opacity: 0.55; cursor: default; }
 .row .tools { display: flex; flex: none; }
 
 .card { padding: 20px; border-radius: 28px; background: var(--surface-1); display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin-bottom: 12px; }
-.card h2 { font-size: 1.25rem; font-weight: 700; }
+.card h2 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; }
 .card p { color: var(--on-surface-variant); }
 .card .actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .version { text-align: center; font-size: 0.8125rem; color: var(--on-surface-variant); padding: 8px 0 16px; }
@@ -237,7 +248,7 @@ dialog:not([open])::backdrop { opacity: 0; }
 dialog.sheet { width: 100%; max-width: 640px; margin: auto auto 0; border-radius: 28px 28px 0 0; padding-bottom: var(--safe-b); }
 @media (min-width: 720px) { dialog.sheet { margin: auto; border-radius: 28px; } }
 .dlg { padding: 24px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
-.dlg h2 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
+.dlg h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
 .dlg .sub { color: var(--on-surface-variant); margin-top: -12px; }
 .dlg .buttons { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .dlg form { display: grid; gap: 12px; }
@@ -253,11 +264,11 @@ dialog.sheet { width: 100%; max-width: 640px; margin: auto auto 0; border-radius
 .snack {
   position: fixed; z-index: 60; left: 0; right: 0; margin-inline: auto; bottom: calc(var(--nav-h) + var(--safe-b) + 88px);
   width: max-content; max-width: calc(100% - 32px); display: none; align-items: center; gap: 8px;
-  padding: 4px 4px 4px 20px; border-radius: 16px; background: light-dark(#382e29, #f1dfd8); color: light-dark(#fbeee8, #382e29);
+  padding: 4px 4px 4px 20px; border-radius: 16px; background: #382e29; color: #fbeee8;
   box-shadow: 0 6px 20px rgb(0 0 0 / 0.3);
 }
 .snack.show { display: flex; animation: rise 0.4s var(--spring) both; }
-.snack button { min-height: 48px; padding: 0 16px; border: 0; border-radius: 12px; background: transparent; font-weight: 700; color: light-dark(#ffb598, #9a4521); }
+.snack button { min-height: 48px; padding: 0 16px; border: 0; border-radius: 12px; background: transparent; font-weight: 700; color: #ffb598; }
 .snack.error { background: var(--error-container); color: var(--on-error-container); }
 
 /* ---------- Transición entre semanas (View Transitions) ---------- */
@@ -276,7 +287,7 @@ dialog.sheet { width: 100%; max-width: 640px; margin: auto auto 0; border-radius
 /* ---------- Móvil en horizontal (poca altura) ---------- */
 @media (orientation: landscape) and (max-height: 500px) {
   :root { --nav-h: 56px; }
-  .eyebrow { display: none; }
+  .eyebrow, .garnish { display: none; }
   .topbar { padding-block: calc(8px + env(safe-area-inset-top, 0px)) 4px; }
   .topbar h1 { font-size: 1.75rem; }
   .navbar { padding-block: 4px calc(4px + var(--safe-b)); }
@@ -292,6 +303,7 @@ dialog.sheet { width: 100%; max-width: 640px; margin: auto auto 0; border-radius
   .seg input:checked + span { forced-color-adjust: none; background: Highlight; color: HighlightText; }
   .nav-item[aria-current='page'] .pill, .day.today { outline: 2px solid Highlight; }
   .badge, .fab, .btn { border: 1px solid ButtonText; }
+  .day::before { background: CanvasText; }
 }
 
 /* ---------- Escritorio: la navegación pasa a barra lateral ---------- */

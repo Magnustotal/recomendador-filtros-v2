@@ -16,6 +16,6 @@ test('el service worker precachea version.js (la app lo importa)', () => {
 
 test('cada pantalla de arranque enlazada en index.html existe', () => {
   const hrefs = [...read('../public/index.html').matchAll(/apple-touch-startup-image" href="([^"]+)"/g)].map((m) => m[1]);
-  assert.ok(hrefs.length >= 16);
+  assert.ok(hrefs.length >= 8);
   for (const h of hrefs) assert.ok(readFileSync(new URL(`../public/${h}`, import.meta.url)).length > 100, h);
 });

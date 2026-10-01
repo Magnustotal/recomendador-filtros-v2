@@ -1,4 +1,4 @@
-// Genera public/splash/*.png (pantallas de arranque de iOS, claras y oscuras) y
+// Genera public/splash/*.png (pantallas de arranque de iOS, solo modo claro) y
 // reescribe los <link rel="apple-touch-startup-image"> de index.html entre los marcadores.
 // Uso: node scripts/make-splash.mjs   (requiere Playwright + Chromium)
 import { chromium } from 'playwright';
@@ -11,7 +11,7 @@ await mkdir(new URL('splash/', pub), { recursive: true });
 
 // [ancho CSS, alto CSS, ratio de píxeles] de iPhone en vertical
 const DEVICES = [[430, 932, 3], [393, 852, 3], [390, 844, 3], [375, 812, 3], [414, 896, 3], [414, 896, 2], [375, 667, 2], [414, 736, 3]];
-const THEMES = { light: '#FFF8F5', dark: '#1A110D' };
+const THEMES = { light: '#FFF8F5' };
 
 const browser = await chromium.launch();
 const links = [];
@@ -23,7 +23,7 @@ for (const [w, h, r] of DEVICES) {
     await page.setContent(`<body style="margin:0;background:${bg};display:grid;place-items:center;height:100vh"><div style="width:${size}px;height:${size}px;border-radius:22%;overflow:hidden">${icon.replace('<svg ', '<svg width="100%" height="100%" ')}</div></body>`);
     await page.screenshot({ path: fileURLToPath(new URL(file, pub)) });
     await page.close();
-    links.push(`  <link rel="apple-touch-startup-image" href="${file}" media="(device-width: ${w}px) and (device-height: ${h}px) and (-webkit-device-pixel-ratio: ${r}) and (orientation: portrait) and (prefers-color-scheme: ${theme})">`);
+    links.push(`  <link rel="apple-touch-startup-image" href="${file}" media="(device-width: ${w}px) and (device-height: ${h}px) and (-webkit-device-pixel-ratio: ${r}) and (orientation: portrait)">`);
   }
 }
 await browser.close();

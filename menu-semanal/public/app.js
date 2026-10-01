@@ -61,7 +61,6 @@ const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 /* ---------- Almacenamiento (todo queda en el móvil) ---------- */
 
 const KEY = 'menu-semanal:v1';
-const THEME_KEY = 'menu-semanal:theme';
 
 const readStorage = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
 const writeStorage = (key, value) => { try { localStorage.setItem(key, value); return true; } catch { return false; } };
@@ -103,7 +102,7 @@ let installEvent = null;
 const VIEWS = {
   week: { title: 'Menú semanal', eyebrow: 'Tu cocina, organizada' },
   dishes: { title: 'Tus platos', eyebrow: 'Guardados en tu móvil' },
-  settings: { title: 'Ajustes', eyebrow: 'Copia y apariencia' },
+  settings: { title: 'Ajustes', eyebrow: 'Copia de seguridad' },
 };
 
 /* ---------- Avisos ---------- */
@@ -208,7 +207,7 @@ function ideaCard(days, today) {
   if (!ideas.length) return null;
   const { dish, days: ago, never } = ideas[ui.idea % ideas.length];
   return h('section', { class: 'idea', 'aria-label': 'Sugerencia' },
-    h('p', { class: 'kicker' }, '💡 Hace tiempo que no lo comes'),
+    h('p', { class: 'kicker' }, '🍅 Hace tiempo que no lo comes'),
     h('p', { class: 'dish' }, `${dishEmoji(dish)} ${dish.name}`),
     h('p', { class: 'why' }, never ? 'Lo guardaste y aún no lo has planificado.' : `Última vez: ${relativeDays(ago)}.`),
     h('div', { class: 'actions' },
@@ -358,7 +357,7 @@ function openAddSheet(date, initialMeal) {
     }
     if (!q) {
       const ideas = suggest(state.dishes, state.plan, today, { meal, minDays: 7, limit: 4 }).filter((x) => !inSlot.has(x.dish.id));
-      if (ideas.length) nodes.push(section('💡 Hace tiempo que no los comes', ideas.map((x) => dishRow(x.dish, stats, today, inSlot))));
+      if (ideas.length) nodes.push(section('🍅 Hace tiempo que no los comes', ideas.map((x) => dishRow(x.dish, stats, today, inSlot))));
     }
     const all = Object.values(state.dishes)
       .filter((d) => !q || normalizeName(d.name).includes(q))
@@ -449,7 +448,7 @@ function renderDishes() {
 
     if (!rows.length) {
       list.replaceChildren(h('div', { class: 'empty' },
-        h('span', { class: 'big', 'aria-hidden': 'true' }, '🍽️'),
+        h('span', { class: 'big', 'aria-hidden': 'true' }, '🍳'),
         Object.keys(state.dishes).length ? 'Ningún plato coincide con la búsqueda.' : 'Aquí aparecerán los platos que añadas al menú, para repetirlos cuando quieras.',
       ));
       return;
@@ -532,7 +531,6 @@ const isStandalone = () => matchMedia('(display-mode: standalone)').matches || n
 function renderSettings() {
   const dishCount = Object.keys(state.dishes).length;
   const dayCount = Object.keys(state.plan).length;
-  const theme = readStorage(THEME_KEY) ?? 'auto';
   const fileInput = h('input', { type: 'file', accept: 'application/json,.json', hidden: true, onchange: importFile });
 
   return h('div', { class: 'view-enter' },
@@ -546,10 +544,6 @@ function renderSettings() {
         fileInput,
       ),
     ),
-    h('section', { class: 'card' },
-      h('h2', {}, 'Apariencia'),
-      segmented('Tema', [['auto', 'Automático'], ['light', 'Claro'], ['dark', 'Oscuro']], theme, (v) => { writeStorage(THEME_KEY, v); applyTheme(v); }),
-    ),
     !isStandalone() && h('section', { class: 'card' },
       h('h2', {}, 'Instalar en el móvil'),
       h('p', {}, 'Instálala para abrirla como una app y usarla sin conexión. En iPhone o iPad: botón Compartir → «Añadir a pantalla de inicio».'),
@@ -561,19 +555,6 @@ function renderSettings() {
     ),
     h('p', { class: 'version' }, `Menú semanal · versión ${VERSION}`),
   );
-}
-
-const THEME_COLORS = { light: '#FFF8F5', dark: '#1A110D' };
-
-function applyTheme(t) {
-  const forced = t === 'light' || t === 'dark';
-  if (forced) document.documentElement.dataset.theme = t;
-  else delete document.documentElement.dataset.theme;
-  // La barra de estado sigue el tema elegido (o el del sistema en automático).
-  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
-    const own = m.getAttribute('media')?.includes('dark') ? 'dark' : 'light';
-    m.content = THEME_COLORS[forced ? t : own];
-  });
 }
 
 async function install() {
@@ -669,7 +650,6 @@ addEventListener('storage', (e) => { if (e.key === KEY) { state = loadState(); r
 addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvent = e; if (ui.view === 'settings') render(); });
 addEventListener('appinstalled', () => { installEvent = null; if (ui.view === 'settings') render(); });
 
-applyTheme(readStorage(THEME_KEY) ?? 'auto');
 render();
 // window.scrollTo (y no scrollIntoView) para no mover el punto de partida del Tab.
 const todayCard = document.querySelector('.day.today');

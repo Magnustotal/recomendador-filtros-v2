@@ -212,9 +212,16 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
   }
   await page.locator('.nav-item[data-view=settings]').click();
   check((await page.locator('.version').innerText()).includes(`versión ${VERSION}`), `Ajustes muestra la versión ${VERSION}`);
-  await page.locator('.seg label', { hasText: 'Oscuro' }).click();
-  check(await page.evaluate(() => [...document.querySelectorAll('meta[name=theme-color]')].every((m) => m.content === '#1A110D')), 'theme-color sigue al tema oscuro elegido');
-  await page.locator('.seg label', { hasText: 'Automático' }).click();
+  check(await page.locator('.seg', { hasText: 'Oscuro' }).count() === 0, 'Ajustes ya no ofrece tema oscuro');
+  {
+    // Aunque el sistema esté en oscuro, la app sigue clara
+    const [c, p] = await open(390, 844, { colorScheme: 'dark' });
+    const look = await p.evaluate(() => ({ scheme: getComputedStyle(document.documentElement).colorScheme, bg: getComputedStyle(document.body).backgroundColor, field: (() => { const i = document.createElement('input'); document.body.append(i); const bgc = getComputedStyle(i).backgroundColor; i.remove(); return bgc; })() }));
+    check(look.scheme === 'light' && look.bg === 'rgb(255, 248, 245)', `sistema en oscuro → la app sigue clara (${look.bg})`);
+    const kitchen = await p.evaluate(() => ({ stripe: getComputedStyle(document.querySelector('.day'), '::before').content, gingham: getComputedStyle(document.body).backgroundImage.includes('linear-gradient'), garnish: !!document.querySelector('.garnish[aria-hidden=true]') }));
+    check(kitchen.stripe !== 'none' && kitchen.gingham && kitchen.garnish, 'motivos de cocina presentes (vichy, tira de paño, verduras)');
+    await c.close();
+  }
   await page.locator('.nav-item[data-view=week]').click();
 }
 

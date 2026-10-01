@@ -1,5 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs><pattern id="g" width="64" height="64" patternUnits="userSpaceOnUse"><rect width="32" height="64" fill="#fff" fill-opacity=".09"/><rect width="64" height="32" fill="#fff" fill-opacity=".09"/></pattern></defs>
   <rect width="512" height="512" fill="#9A4521"/>
+  <rect width="512" height="512" fill="url(#g)"/>
   <circle cx="256" cy="256" r="104" fill="#FFF8F5"/>
   <circle cx="256" cy="256" r="72" fill="none" stroke="#FFDBCC" stroke-width="12"/>
   <g fill="none" stroke="#FFF8F5" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
