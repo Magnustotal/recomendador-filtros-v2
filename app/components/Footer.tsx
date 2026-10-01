@@ -12,6 +12,8 @@ import {
 } from "@mui/icons-material";
 import { motion } from "framer-motion";
 
+const AUTHOR_LINKEDIN = "https://www.linkedin.com/in/javier-barrero-vazquez-/";
+
 // --- Componentes Estilizados y Sub-componentes ---
 const FooterWrapper = styled('footer')(({ theme }) => ({
   backgroundColor: withAlpha(paletteOf(theme).background.paper, 70),
@@ -64,14 +66,21 @@ export default function Footer() {
               spacing={{ xs: 3, md: 2 }}
               pt={3}
             >
-              <Typography variant="body2" color="text.secondary">
-                Hecho con <FavoriteIcon color="error" sx={{ fontSize: 'inherit', verticalAlign: 'middle' }} /> por{' '}
-                <b>Magnustotal</b>
-                {' · '}
-                <Link href="/privacidad" underline="hover" color="text.secondary">
-                  Privacidad
-                </Link>
-              </Typography>
+              <Stack spacing={0.5} alignItems={{ xs: 'center', md: 'flex-start' }} textAlign={{ xs: 'center', md: 'left' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Hecho con <FavoriteIcon color="error" sx={{ fontSize: 'inherit', verticalAlign: 'middle' }} /> para el equipo cadete del C.&nbsp;D.&nbsp;Almena
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Diseño y desarrollo:{' '}
+                  <Link href={AUTHOR_LINKEDIN} target="_blank" rel="noopener noreferrer" fontWeight="bold">
+                    Javier B. V.
+                  </Link>
+                  {' · '}
+                  <Link href="/privacidad" underline="hover" color="text.secondary">
+                    Privacidad
+                  </Link>
+                </Typography>
+              </Stack>
 
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Chip label={`v${APP_VERSION} · ${LAST_UPDATE}`} size="small" variant="outlined"/>
