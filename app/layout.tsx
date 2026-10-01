@@ -1,6 +1,7 @@
 import React from "react";
 import type { Metadata, Viewport } from "next";
 import { Box } from "@mui/material";
+import InitColorSchemeScript from "@mui/material/InitColorSchemeScript";
 import ThemeRegistry from './ThemeRegistry';
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -34,8 +35,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body>
+        <InitColorSchemeScript attribute="data" defaultMode="system" />
         <ThemeRegistry>
           <Box
             sx={{

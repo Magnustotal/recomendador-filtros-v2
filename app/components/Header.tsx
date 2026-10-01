@@ -1,17 +1,16 @@
 "use client";
 
-import React, { FC, useContext } from "react";
+import React, { FC } from "react";
 import { AppBar, Toolbar, Typography, Box, Container, Tooltip, IconButton, useScrollTrigger, Stack } from "@mui/material";
-// 👇 AQUÍ ESTÁ LA CORRECCIÓN: Añadimos useTheme
-import { styled, useTheme, alpha } from "@mui/material/styles";
+import { styled, useColorScheme } from "@mui/material/styles";
 import Image from "next/image";
 import NextLink from "next/link";
 import {
-  InfoOutlined as InfoOutlinedIcon, MailOutline as MailOutlineIcon, GitHub as GitHubIcon,
+  InfoOutlined as InfoOutlinedIcon, FeedbackOutlined as FeedbackOutlinedIcon, GitHub as GitHubIcon,
   Brightness4 as Brightness4Icon, Brightness7 as Brightness7Icon,
 } from "@mui/icons-material";
 import { motion } from "framer-motion";
-import { ColorModeContext } from "../ThemeRegistry"; 
+import { paletteOf, withAlpha } from "../theme";
 
 // --- Constantes ---
 const APP_NAME = "Recomendador de Filtros";
@@ -28,8 +27,8 @@ const StyledAppBar = styled(AppBar, {
   }),
   ...(scrolled && {
     backdropFilter: "blur(8px)",
-    backgroundColor: alpha(theme.palette.background.paper, 0.85),
-    borderBottom: `1px solid ${theme.palette.divider}`,
+    backgroundColor: withAlpha(paletteOf(theme).background.paper, 85),
+    borderBottom: `1px solid ${paletteOf(theme).divider}`,
     boxShadow: theme.shadows[1],
   }),
   ...(!scrolled && {
@@ -74,20 +73,22 @@ const Branding: FC = React.memo(() => (
 Branding.displayName = "Branding";
 
 const ActionButtons: FC = React.memo(() => {
-  const theme = useTheme();
-  const { toggleColorMode } = useContext(ColorModeContext);
+  const { mode, systemMode, setMode } = useColorScheme();
+  const resolvedMode = mode === 'system' ? systemMode : mode;
 
   return (
     <Stack direction="row" alignItems="center" spacing={0.5}>
-      <Tooltip title="Sugerencias o correcciones">
-        <IconButton size="large" component="a" href="mailto:contacto@tudominio.com" target="_blank" rel="noopener" aria-label="Sugerencias o correcciones" sx={{ display: { xs: 'none', sm: 'inline-flex' } }}><MailOutlineIcon /></IconButton>
+      <Tooltip title="Sugerencias o correcciones (GitHub)">
+        <IconButton size="large" component="a" href="https://github.com/Magnustotal/recomendador-filtros-v2/issues" target="_blank" rel="noopener noreferrer" aria-label="Sugerencias o correcciones" sx={{ display: { xs: 'none', sm: 'inline-flex' } }}><FeedbackOutlinedIcon /></IconButton>
       </Tooltip>
       <Tooltip title="Código fuente en GitHub">
         <IconButton size="large" component="a" href="https://github.com/Magnustotal/Recomendador-Filtros" target="_blank" rel="noopener" aria-label="Código fuente en GitHub" sx={{ display: { xs: 'none', sm: 'inline-flex' } }}><GitHubIcon /></IconButton>
       </Tooltip>
-      <Tooltip title={`Cambiar a modo ${theme.palette.mode === 'dark' ? 'claro' : 'oscuro'}`}>
-        <IconButton size="large" onClick={toggleColorMode} aria-label="Cambiar entre modo claro y oscuro">
-          {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+      <Tooltip title="Cambiar entre modo claro y oscuro">
+        <IconButton size="large" onClick={() => setMode(resolvedMode === 'dark' ? 'light' : 'dark')} aria-label="Cambiar entre modo claro y oscuro">
+          {/* Ambos iconos van en el HTML y el CSS elige el visible: así el servidor y el cliente coinciden. */}
+          <Brightness4Icon sx={(theme) => ({ display: 'block', ...theme.applyStyles('dark', { display: 'none' }) })} />
+          <Brightness7Icon sx={(theme) => ({ display: 'none', ...theme.applyStyles('dark', { display: 'block' }) })} />
         </IconButton>
       </Tooltip>
     </Stack>

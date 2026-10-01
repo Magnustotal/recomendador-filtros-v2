@@ -13,7 +13,8 @@ import {
 } from "@mui/icons-material";
 import { motion } from 'framer-motion';
 import { ExtendedFiltro } from '@/app/hooks/useProcessedFilters';
-import { getBrandLogo } from '@/lib/branding'; // Ajusta la ruta si es necesario
+import { getBrandLogo } from '@/lib/branding';
+import { paletteOf } from '@/app/theme';
 
 // --- Componentes Estilizados ---
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -21,7 +22,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
   position: 'relative',
   overflow: 'visible',
   '&:focus-visible': {
-    outline: `3px solid ${theme.palette.primary.main}`,
+    outline: `3px solid ${paletteOf(theme).primary.main}`,
     outlineOffset: 2,
   },
   // El efecto "levantar" solo donde existe hover real (no en pantallas táctiles).
@@ -29,7 +30,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
     '&:hover': {
       transform: 'translateY(-4px)',
       boxShadow: theme.shadows[6],
-      borderColor: theme.palette.primary.main,
+      borderColor: paletteOf(theme).primary.main,
     },
   },
 }));

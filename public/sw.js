@@ -1,7 +1,7 @@
 // Service worker mínimo: la app es una sola página sin API propia, así que
 // basta con cachear el HTML y los assets estáticos para que funcione offline.
-const CACHE = "recomendador-filtros-v1";
-const PRECACHE = ["/", "/icons/icon-192.png", "/icons/icon-512.png"];
+const CACHE = "recomendador-filtros-v2";
+const PRECACHE = ["/", "/privacidad", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -35,11 +35,13 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put("/", copy));
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE).then((cache) => cache.put(request, copy));
+          }
           return response;
         })
-        .catch(() => caches.match("/"))
+        .catch(() => caches.match(request).then((cached) => cached || caches.match("/")))
     );
     return;
   }

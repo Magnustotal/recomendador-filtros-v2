@@ -11,6 +11,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { paletteOf } from "../theme";
 
 // --- TIPOS ---
 interface GlobalErrorProps {
@@ -24,7 +25,7 @@ const ErrorContainer = styled(Container)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  backgroundColor: theme.palette.background.default,
+  backgroundColor: paletteOf(theme).background.default,
 }));
 
 const ErrorPaper = styled(Paper)(({ theme }) => ({

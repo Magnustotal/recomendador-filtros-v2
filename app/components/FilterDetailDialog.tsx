@@ -4,7 +4,7 @@ import React, { useMemo, FC, ReactNode } from "react";
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Typography, Button, Box, Link, Tooltip, Alert, Stack, Divider, Chip, IconButton, Paper
 } from "@mui/material";
-import { styled, alpha } from "@mui/material/styles";
+import { paletteOf, withAlpha } from "@/app/theme";
 import {
   Water as WaterIcon, Science as ScienceIcon, Layers as LayersIcon, Category as CategoryIcon, Power as PowerIcon, Info as InfoIcon,
   Shop as ShopIcon, Public as PublicIcon, OpenInNew as OpenInNewIcon, Close as CloseIcon, ErrorOutline as ErrorOutlineIcon
@@ -140,7 +140,7 @@ export default function FilterDetailDialog({ open, filtro, onClose }: FilterDeta
         </Stack>
         
         {/* Otras características y enlaces */}
-        <Paper variant="outlined" sx={{ p: 2, mt: 2, bgcolor: (theme) => alpha(theme.palette.action.hover, 0.5) }}>
+        <Paper variant="outlined" sx={{ p: 2, mt: 2, bgcolor: (theme) => withAlpha(paletteOf(theme).action.hover, 50) }}>
             <Stack spacing={1.5}>
                 {otras_caracteristicas && <Typography variant="body2" color="text.secondary"><InfoIcon fontSize="inherit" sx={{verticalAlign: 'bottom', mr:1}}/>{otras_caracteristicas}</Typography>}
                 

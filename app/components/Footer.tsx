@@ -5,10 +5,11 @@ import React from "react";
 import {
   Box, Typography, Link, Container, Stack, Divider, Fab, Tooltip, Chip, IconButton, Fade
 } from "@mui/material";
-import { styled, alpha } from "@mui/material/styles";
+import { styled } from "@mui/material/styles";
+import { paletteOf, withAlpha } from "../theme";
 import {
   GitHub as GitHubIcon, InfoOutlined as InfoOutlinedIcon, Favorite as FavoriteIcon,
-  KeyboardArrowUp as KeyboardArrowUpIcon, X as TwitterIcon, Email as EmailIcon
+  KeyboardArrowUp as KeyboardArrowUpIcon, FeedbackOutlined as FeedbackOutlinedIcon
 } from "@mui/icons-material";
 import { motion } from "framer-motion";
 
@@ -17,28 +18,23 @@ const APP_VERSION = "v2.1"; // Versión semántica
 const LAST_UPDATE = "junio 2025";
 const socialLinks = [
   {
-    href: "mailto:contacto@tu-dominio.com?subject=Recomendador Filtros",
-    icon: <EmailIcon />,
-    title: "Contacta por Email",
+    href: "https://github.com/Magnustotal/recomendador-filtros-v2/issues",
+    icon: <FeedbackOutlinedIcon />,
+    title: "Sugerencias o correcciones",
   },
   {
     href: "https://github.com/Magnustotal/Recomendador-Filtros",
     icon: <GitHubIcon />,
     title: "Código en GitHub",
   },
-  {
-    href: "https://twitter.com/tu_usuario",
-    icon: <TwitterIcon />,
-    title: "Síguenos en X",
-  },
 ];
 
 // --- Componentes Estilizados y Sub-componentes ---
 const FooterWrapper = styled('footer')(({ theme }) => ({
-  backgroundColor: alpha(theme.palette.background.paper, 0.7),
+  backgroundColor: withAlpha(paletteOf(theme).background.paper, 70),
   backdropFilter: "blur(8px)",
   padding: theme.spacing(4, 0),
-  borderTop: `1px solid ${theme.palette.divider}`,
+  borderTop: `1px solid ${paletteOf(theme).divider}`,
   marginTop: theme.spacing(8),
   width: "100%",
 }));
