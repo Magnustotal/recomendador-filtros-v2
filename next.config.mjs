@@ -12,6 +12,10 @@ const buildDate = new Date().toLocaleDateString("es-ES", {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Sitio 100 % estático: `npm run build` genera la carpeta `out/` lista para
+  // subir tal cual a Netlify (o a cualquier hosting estático).
+  output: "export",
+  images: { unoptimized: true },
   env: {
     NEXT_PUBLIC_APP_VERSION: version,
     NEXT_PUBLIC_BUILD_DATE: buildDate,

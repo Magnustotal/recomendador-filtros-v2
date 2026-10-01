@@ -53,8 +53,12 @@ npm run dev
 
 ## 🚢 Despliegue
 
-- Puedes desplegar fácilmente en [Vercel](https://vercel.com/) (recomendado), Netlify o cualquier proveedor compatible con Next.js.
-- Haz push a tu rama principal y conecta el repo en Vercel, ¡sin configuración adicional!
+El proyecto es 100 % estático (`output: "export"`).
+
+- `npm run build` genera la carpeta `out/` con el sitio completo.
+- **Netlify:** arrastra la carpeta `out/` (o un zip con su contenido en la raíz) a Netlify Drop.
+- `npm start` sirve `out/` en local para probar el resultado.
+- La versión del pie sale de `package.json` y la fecha, del momento del build.
 
 ---
 
