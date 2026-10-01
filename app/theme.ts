@@ -1,4 +1,15 @@
-import { createTheme, PaletteMode, alpha } from "@mui/material";
+import { createTheme, responsiveFontSizes, type Theme } from "@mui/material/styles";
+
+/**
+ * Con variables CSS (colorSchemes) los valores de `theme.palette` son solo los
+ * del esquema por defecto; `theme.vars.palette` apunta a `var(--mui-...)` y sí
+ * cambia con el esquema activo. Usar siempre esto dentro de estilos.
+ */
+export const paletteOf = (theme: Theme) => (theme.vars ?? theme).palette;
+
+/** Transparencia sobre un color que puede ser un `var(--...)` (alpha() de MUI no lo admite). */
+export const withAlpha = (color: string, percent: number) =>
+  `color-mix(in srgb, ${color} ${percent}%, transparent)`;
 
 // Opciones base del tema que son comunes a ambos modos (claro y oscuro)
 const baseThemeOptions = {
@@ -15,13 +26,12 @@ const baseThemeOptions = {
     h6: { fontWeight: 600 },
     subtitle1: { fontWeight: 600 },
     subtitle2: { fontWeight: 600 },
-    button: { fontWeight: 700, textTransform: "none", letterSpacing: "0.2px" },
+    button: { fontWeight: 700, textTransform: "none" as const, letterSpacing: "0.2px" },
   },
 };
 
 // Paleta de colores para el MODO CLARO
 const lightPalette = {
-  mode: "light" as PaletteMode,
   primary: {
     main: "#2A81F7",
     dark: "#195B9B",
@@ -51,7 +61,6 @@ const lightPalette = {
 
 // Paleta de colores para el MODO OSCURO
 const darkPalette = {
-  mode: "dark" as PaletteMode,
   primary: {
     main: "#4BA2FF", // Azul más brillante para contraste en oscuro
     dark: "#2A81F7",
@@ -73,32 +82,29 @@ const darkPalette = {
     secondary: "#9DA8BE",
     disabled: "#535E74",
   },
-  divider: alpha("#FFFFFF", 0.12),
+  divider: "rgba(255, 255, 255, 0.12)",
   success: { main: "#41B883" },
   warning: { main: "#FFCB05" },
   info: { main: "#29b6f6" }, // Un azul info más claro para modo oscuro
 };
 
-/**
- * Función fábrica para crear el tema de la aplicación.
- * @param mode - El modo de la paleta ('light' o 'dark')
- * @returns Un tema de Material-UI completo y configurado.
- */
-export const getTheme = (mode: PaletteMode) => {
-  const palette = mode === "light" ? lightPalette : darkPalette;
-
-  return createTheme({
+export const theme = responsiveFontSizes(
+  createTheme({
     ...baseThemeOptions,
-    palette: palette,
+    cssVariables: { colorSchemeSelector: "data" },
+    defaultColorScheme: "light",
+    colorSchemes: {
+      light: { palette: lightPalette },
+      dark: { palette: darkPalette },
+    },
     components: {
-      // --- Overrides de Componentes ---
       MuiPaper: {
         styleOverrides: {
           root: ({ theme }) => ({
-            // En modo oscuro, la elevación se simula con gradientes y bordes en lugar de sombras
-            ...(theme.palette.mode === "dark" && {
+            // En modo oscuro, la elevación se simula con bordes en lugar de sombras
+            ...theme.applyStyles("dark", {
               backgroundImage: "none",
-              border: `1px solid ${theme.palette.divider}`,
+              border: `1px solid ${paletteOf(theme).divider}`,
             }),
           }),
         },
@@ -108,12 +114,11 @@ export const getTheme = (mode: PaletteMode) => {
           root: ({ theme }) => ({
             borderRadius: baseThemeOptions.shape.borderRadius,
             padding: theme.spacing(1),
-            ...(theme.palette.mode === 'light'
-              ? { boxShadow: `0 4px 24px 0 ${alpha(theme.palette.text.primary, 0.05)}` }
-              : {
-                  border: `1px solid ${theme.palette.divider}`,
-                  boxShadow: 'none',
-              }),
+            boxShadow: `0 4px 24px 0 ${withAlpha(paletteOf(theme).text.primary, 5)}`,
+            ...theme.applyStyles("dark", {
+              border: `1px solid ${paletteOf(theme).divider}`,
+              boxShadow: "none",
+            }),
           }),
         },
       },
@@ -129,7 +134,7 @@ export const getTheme = (mode: PaletteMode) => {
           indicator: ({ theme }) => ({
             height: 4,
             borderRadius: theme.shape.borderRadius,
-            backgroundColor: theme.palette.primary.main,
+            backgroundColor: paletteOf(theme).primary.main,
           }),
         },
       },
@@ -145,15 +150,15 @@ export const getTheme = (mode: PaletteMode) => {
         styleOverrides: {
           tooltip: ({ theme }) => ({
             backdropFilter: "blur(5px)",
-            backgroundColor: alpha(theme.palette.background.default, 0.8),
-            color: theme.palette.text.primary,
-            border: `1px solid ${theme.palette.divider}`,
+            backgroundColor: withAlpha(paletteOf(theme).background.default, 80),
+            color: paletteOf(theme).text.primary,
+            border: `1px solid ${paletteOf(theme).divider}`,
           }),
           arrow: ({ theme }) => ({
-            color: theme.palette.divider,
+            color: paletteOf(theme).divider,
           }),
         },
       },
     },
-  });
-};
+  })
+);

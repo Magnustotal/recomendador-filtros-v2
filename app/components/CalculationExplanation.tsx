@@ -1,8 +1,9 @@
 "use client";
 
 import React from "react";
-import { Paper, Typography, Divider, Box, Stack, Chip, Tooltip, Link } from "@mui/material";
-import { styled, useTheme, alpha } from "@mui/material/styles";
+import { Typography, Divider, Box, Stack, Chip, useMediaQuery } from "@mui/material";
+import { styled, useTheme } from "@mui/material/styles";
+import { paletteOf, withAlpha } from "../theme";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import WaterIcon from "@mui/icons-material/Water";
 import ScienceIcon from "@mui/icons-material/Science";
@@ -23,7 +24,8 @@ interface ExplanationItemData {
 
 // Diagrama animado de la filtración
 function FiltrationDiagram() {
-  const theme = useTheme();
+  const p = paletteOf(useTheme());
+  const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   return (
     <Box sx={{ my: 2, display: 'flex', justifyContent: 'center' }}>
       <svg width="120" height="180" viewBox="0 0 120 180">
@@ -39,23 +41,24 @@ function FiltrationDiagram() {
           </style>
         </defs>
         {/* Canister */}
-        <rect x="10" y="10" width="100" height="160" rx="10" fill={alpha(theme.palette.action.hover, 0.5)} stroke={theme.palette.divider} strokeWidth="2" />
+        <rect x="10" y="10" width="100" height="160" rx="10" style={{ fill: withAlpha(p.action.hover, 50), stroke: p.divider }} strokeWidth="2" />
         
         {/* Capas de Esponjas (Filtración Mecánica) */}
-        <rect x="20" y="115" width="80" height="20" fill={alpha(theme.palette.secondary.light, 0.6)} />
-        <rect x="20" y="90" width="80" height="20" fill={alpha(theme.palette.secondary.light, 0.8)} />
-        <rect x="20" y="65" width="80" height="20" fill={alpha(theme.palette.secondary.main, 0.8)} />
-        <text x="60" y="102" textAnchor="middle" fontSize="9" fill={theme.palette.text.secondary}>Mecánico</text>
+        <rect x="20" y="115" width="80" height="20" style={{ fill: withAlpha(p.secondary.light, 60) }} />
+        <rect x="20" y="90" width="80" height="20" style={{ fill: withAlpha(p.secondary.light, 80) }} />
+        <rect x="20" y="65" width="80" height="20" style={{ fill: withAlpha(p.secondary.main, 80) }} />
+        <text x="60" y="102" textAnchor="middle" fontSize="9" style={{ fill: p.text.secondary }}>Mecánico</text>
 
         {/* Material Biológico */}
-        <rect x="20" y="25" width="80" height="35" fill={alpha(theme.palette.success.light, 0.7)} />
-        <text x="60" y="47" textAnchor="middle" fontSize="9" fill={theme.palette.text.secondary}>Biológico</text>
+        <rect x="20" y="25" width="80" height="35" style={{ fill: withAlpha(p.success.light, 70) }} />
+        <text x="60" y="47" textAnchor="middle" fontSize="9" style={{ fill: p.text.secondary }}>Biológico</text>
 
-        {/* Flujo de Agua Animado */}
-        <circle r="3" fill={theme.palette.info.main} style={{ animation: 'flow 4s linear infinite', animationDelay: '0s' }}><animateMotion dur="4s" repeatCount="indefinite" path="M 60 170 V 20" /></circle>
-        <circle r="3" fill={theme.palette.info.main} style={{ animation: 'flow 4s linear infinite', animationDelay: '1s' }}><animateMotion dur="4s" repeatCount="indefinite" path="M 60 170 V 20" /></circle>
-        <circle r="3" fill={theme.palette.info.main} style={{ animation: 'flow 4s linear infinite', animationDelay: '2s' }}><animateMotion dur="4s" repeatCount="indefinite" path="M 60 170 V 20" /></circle>
-        <circle r="3" fill={theme.palette.info.main} style={{ animation: 'flow 4s linear infinite', animationDelay: '3s' }}><animateMotion dur="4s" repeatCount="indefinite" path="M 60 170 V 20" /></circle>
+        {/* Flujo de Agua Animado (se omite con "reducir movimiento") */}
+        {!reduceMotion && [0, 1, 2, 3].map((delay) => (
+          <circle key={delay} r="3" style={{ fill: p.info.main, animation: 'flow 4s linear infinite', animationDelay: `${delay}s` }}>
+            <animateMotion dur="4s" repeatCount="indefinite" path="M 60 170 V 20" />
+          </circle>
+        ))}
       </svg>
     </Box>
   );
@@ -74,8 +77,7 @@ const CardWrapper = styled(motion.div)(({ theme }) => ({
 
 const ExplanationCard: React.FC<ExplanationItemData & { index: number }> = React.memo(
   ({ icon, title, text, customContent, borderColorKey, index }) => {
-    const theme = useTheme();
-    const borderColor = theme.palette[borderColorKey]?.main || theme.palette.primary.main;
+    const borderColor = paletteOf(useTheme())[borderColorKey].main;
 
     return (
       <CardWrapper
@@ -106,8 +108,8 @@ const ExampleBox: React.FC<{ calculatedLiters?: number | null }> = ({ calculated
     return (
       <Box
         sx={(theme) => ({
-          mt: 3, p: 2, borderRadius: theme.shape.borderRadius, bgcolor: alpha(theme.palette.info.main, 0.1),
-          borderLeft: `4px solid ${theme.palette.info.main}`, display: "flex", alignItems: "center",
+          mt: 3, p: 2, borderRadius: theme.shape.borderRadius, bgcolor: withAlpha(paletteOf(theme).info.main, 10),
+          borderLeft: `4px solid ${paletteOf(theme).info.main}`, display: "flex", alignItems: "center",
           gap: 2, maxWidth: 500, mx: "auto",
         })}
       >
@@ -175,11 +177,6 @@ export default function CalculationExplanation({ calculatedLiters }: { calculate
 
       <ExampleBox calculatedLiters={calculatedLiters} />
 
-      <Box textAlign="center" mt={3}>
-          <Link href="#" onClick={(e) => e.preventDefault()} /* Reemplazar con lógica de modal */ underline="hover" fontWeight={500}>
-            Saber más sobre la importancia de la filtración
-          </Link>
-      </Box>
     </Box>
   );
 }

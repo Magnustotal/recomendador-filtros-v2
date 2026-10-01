@@ -18,8 +18,8 @@ interface ResultsListProps {
 }
 
 const ResultsList: React.FC<ResultsListProps> = ({ filters, liters }) => {
-  const [mainTab, setMainTab] = useState<0 | 1>(0);
-  const [subTab, setSubTab] = useState<0 | 1>(0);
+  const [mainTab, setMainTab] = useState(0);
+  const [subTab, setSubTab] = useState(0);
   const [showMore, setShowMore] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<ExtendedFiltro | null>(null);
   const [sortBy, setSortBy] = useState<string>("caudal");
@@ -75,7 +75,7 @@ const ResultsList: React.FC<ResultsListProps> = ({ filters, liters }) => {
 
             {activeList.length > MAX_RESULTS_VISIBLE && (
               <Box textAlign="center" mt={3}>
-                <Button onClick={() => setShowMore(s => !s)} variant="text">
+                <Button onClick={() => setShowMore(s => !s)} variant="text" sx={{ minHeight: 48 }}>
                   {showMore ? "Mostrar menos" : `Mostrar ${activeList.length - MAX_RESULTS_VISIBLE} más`}
                 </Button>
               </Box>

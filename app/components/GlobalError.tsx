@@ -11,6 +11,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { paletteOf } from "../theme";
 
 // --- TIPOS ---
 interface GlobalErrorProps {
@@ -20,11 +21,11 @@ interface GlobalErrorProps {
 
 // --- COMPONENTES ESTILIZADOS ---
 const ErrorContainer = styled(Container)(({ theme }) => ({
-  minHeight: "100vh",
+  minHeight: "60dvh",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  backgroundColor: theme.palette.background.default,
+  backgroundColor: paletteOf(theme).background.default,
 }));
 
 const ErrorPaper = styled(Paper)(({ theme }) => ({
@@ -55,7 +56,7 @@ const GlobalError: React.FC<GlobalErrorProps> = ({ error, reset }) => {
     : "Ha ocurrido un error inesperado. Nuestro equipo ha sido notificado.";
 
   return (
-    <ErrorContainer component="main" maxWidth={false}>
+    <ErrorContainer maxWidth={false}>
       <Fade in appear timeout={500}>
         <motion.div
             initial={{ opacity: 0, scale: 0.95 }}

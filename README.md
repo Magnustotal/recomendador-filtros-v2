@@ -36,19 +36,16 @@ Calcula de manera rápida y visual qué filtro externo necesitas para tu acuario
 
 ## ⚡ Instalación y desarrollo local
 
-# 1. Clona el repositorio desde GitHub (reemplaza la URL si tu repo es otro)
-git clone https://github.com/Magnustotal/recomendador-filtros-v2.git
-
-# 2. Entra en la carpeta del proyecto
+# 1. Entra en la carpeta del proyecto
 cd recomendador-filtros-v2
 
-# 3. Instala las dependencias del proyecto
+# 2. Instala las dependencias del proyecto
 npm install
 
-# 4. Inicia el entorno de desarrollo local
+# 3. Inicia el entorno de desarrollo local
 npm run dev
 
-# 5. Abre la aplicación en tu navegador en la siguiente URL:
+# 4. Abre la aplicación en tu navegador en la siguiente URL:
 # http://localhost:3000
 
 # ¡Listo! Ahora puedes empezar a probar y modificar la aplicación en local.
@@ -56,8 +53,12 @@ npm run dev
 
 ## 🚢 Despliegue
 
-- Puedes desplegar fácilmente en [Vercel](https://vercel.com/) (recomendado), Netlify o cualquier proveedor compatible con Next.js.
-- Haz push a tu rama principal y conecta el repo en Vercel, ¡sin configuración adicional!
+El proyecto es 100 % estático (`output: "export"`).
+
+- `npm run build` genera la carpeta `out/` con el sitio completo.
+- **Netlify:** arrastra la carpeta `out/` (o un zip con su contenido en la raíz) a Netlify Drop.
+- `npm start` sirve `out/` en local para probar el resultado.
+- La versión del pie sale de `package.json` y la fecha, del momento del build.
 
 ---
 
@@ -105,7 +106,7 @@ package.json
 
 ## 📃 Licencia
 
-MIT © 2024 [Magnustotal](https://github.com/Magnustotal)  
+MIT © 2024 Magnustotal  
 Sin ánimo de lucro — para uso personal y de la comunidad.
 
 ---
@@ -117,5 +118,3 @@ Gracias a quienes comparten conocimiento y ayudan a mejorar el hobby.
 
 ---
 
-> ¿Dudas, sugerencias o quieres añadir tu modelo de filtro?  
-> ¡Abre un issue o contacta en GitHub!

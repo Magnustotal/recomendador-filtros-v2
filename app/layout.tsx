@@ -1,18 +1,32 @@
 import React from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Box } from "@mui/material";
+import InitColorSchemeScript from "@mui/material/InitColorSchemeScript";
 import ThemeRegistry from './ThemeRegistry';
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import RegisterServiceWorker from "./components/RegisterServiceWorker";
 
-// La metadata no cambia
 export const metadata: Metadata = {
   title: "Recomendador de Filtros para Acuarios",
   description: "Calcula el mejor filtro para tu acuario. Herramienta 100% gratuita, moderna y sin necesidad de registro.",
-  themeColor: "#2A81F7",
   icons: {
     icon: "/favicon.svg",
+    apple: "/icons/apple-touch-icon.png",
   },
+  appleWebApp: {
+    capable: true,
+    title: "Filtros",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#2A81F7" },
+    { media: "(prefers-color-scheme: dark)", color: "#121826" },
+  ],
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({
@@ -21,15 +35,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body>
+        <InitColorSchemeScript attribute="data" defaultMode="system" />
         <ThemeRegistry>
-          {/* Ya no necesitamos el <GlobalStyles/> aquí, ThemeRegistry lo gestiona */}
           <Box
             sx={{
               display: "flex",
               flexDirection: "column",
-              minHeight: "100vh",
+              minHeight: "100dvh",
             }}
           >
             <Header />
@@ -49,6 +63,7 @@ export default function RootLayout({
             <Footer />
           </Box>
         </ThemeRegistry>
+        <RegisterServiceWorker />
       </body>
     </html>
   );

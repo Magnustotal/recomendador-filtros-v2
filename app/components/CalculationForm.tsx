@@ -15,7 +15,7 @@ import { motion } from "framer-motion";
 const ACUARIO_TIPICOS = [20, 30, 60, 90, 120, 200, 240, 300, 450];
 const numberOnly = (v: string) => v.replace(/[^0-9.]/g, "").replace(/(\..*?)\..*/g, "$1");
 
-function validateField(name: keyof FormState['medidas'] | 'litros', value: string): string {
+function validateField(name: keyof FormState['values'], value: string): string {
     const numValue = parseFloat(value);
     if (!value) return "Este campo es requerido.";
     if (isNaN(numValue) || numValue <= 0) return "Debe ser un número positivo.";
@@ -132,7 +132,7 @@ const LitrosPanel: FC<PanelProps> = ({ state, dispatch, onSubmit }) => {
             inputProps={{ min: 1, step: "any", pattern: "\\d*", inputMode: "decimal" }}
             required
           />
-          <Button type="submit" variant="contained" size="large" startIcon={<CalculateIcon />} sx={{ fontWeight: 700, width: { xs: "100%", sm: "auto" } }}>
+          <Button type="submit" variant="contained" size="large" startIcon={<CalculateIcon />} sx={{ fontWeight: 700, minHeight: 48, width: { xs: "100%", sm: "auto" } }}>
             Calcular
           </Button>
         </Stack>
@@ -182,7 +182,7 @@ const MedidasPanel: FC<PanelProps> = ({ state, dispatch, onSubmit }) => {
         <Typography variant="subtitle1" color="text.secondary" fontWeight={500} mb={2}>
           Introduce las <b>medidas interiores</b> del acuario (en cm).
         </Typography>
-        <Stack direction="row" spacing={1.5} alignItems="flex-start">
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ xs: "stretch", sm: "flex-start" }}>
             {(['largo', 'ancho', 'alto'] as const).map((key) => (
                 <TextField fullWidth key={key}
                     label={key.charAt(0).toUpperCase() + key.slice(1)}
@@ -197,17 +197,17 @@ const MedidasPanel: FC<PanelProps> = ({ state, dispatch, onSubmit }) => {
                 />
             ))}
             <Tooltip title="Pegar medidas (ej: 100x40x50)" arrow>
-                <IconButton size="large" color="primary" onClick={handlePaste} aria-label="Pegar medidas">
-                    <ContentPasteIcon />
-                </IconButton>
+                <Button variant="outlined" onClick={handlePaste} startIcon={<ContentPasteIcon />} sx={{ minHeight: 56, flexShrink: 0 }}>
+                    Pegar
+                </Button>
             </Tooltip>
         </Stack>
         {state.pasteError && <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }} role="alert">{state.pasteError}</Typography>}
         
         <Zoom in={state.resultadoMedidas !== null}>
-            <Stack direction="row" spacing={2} alignItems="center" mt={2} p={1.5} bgcolor="action.hover" borderRadius={2}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "stretch", sm: "center" }} mt={2} p={1.5} bgcolor="action.hover" borderRadius={2}>
                 <Typography fontWeight="bold" flexGrow={1}>Volumen: {state.resultadoMedidas} litros</Typography>
-                <Button variant="contained" onClick={() => onSubmit(state.resultadoMedidas!)} disabled={state.resultadoMedidas === null}>
+                <Button variant="contained" sx={{ minHeight: 48 }} onClick={() => onSubmit(state.resultadoMedidas!)} disabled={state.resultadoMedidas === null}>
                     Usar este volumen
                 </Button>
             </Stack>
@@ -223,20 +223,20 @@ const CalculationForm: FC<{ onLitrosSubmit: (litros: number) => void }> = ({ onL
   const [state, dispatch] = useReducer(formReducer, initialState);
 
   return (
-    <Box maxWidth={500} mx="auto" my={4} px={{ xs: 1, sm: 2 }}>
+    <Box maxWidth={500} mx="auto" my={{ xs: 2, sm: 4 }}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
         <FormWrapper variant="outlined">
-          <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
+          <Stack direction="row" flexWrap="wrap" justifyContent="space-between" alignItems="center" columnGap={1} mb={1.5}>
             <StyledTabs value={state.mode} onChange={(_, value) => dispatch({ type: "SET_MODE", payload: value })} aria-label="Modo de cálculo">
               <Tab label={<Stack direction="row" alignItems="center" spacing={1}><OpacityIcon />Litros</Stack>} value="litros" id="litros-tab" />
               <Tab label={<Stack direction="row" alignItems="center"spacing={1}><StraightenIcon />Medidas</Stack>} value="medidas" id="medidas-tab" />
             </StyledTabs>
-            <Stack direction="row" gap={0.5}>
+            <Stack direction="row" gap={0.5} ml="auto">
               <Tooltip title="Mide el interior del acuario (cm): largo × ancho × alto / 1000 = litros." arrow>
-                <IconButton color="info" aria-label="Ayuda sobre medidas"><HelpOutlineIcon /></IconButton>
+                <IconButton size="large" color="info" aria-label="Ayuda sobre medidas"><HelpOutlineIcon /></IconButton>
               </Tooltip>
               <Tooltip title="Limpiar formulario" arrow>
-                <IconButton color="secondary" onClick={() => dispatch({ type: "RESET" })} aria-label="Limpiar formulario"><RestartAltIcon /></IconButton>
+                <IconButton size="large" color="secondary" onClick={() => dispatch({ type: "RESET" })} aria-label="Limpiar formulario"><RestartAltIcon /></IconButton>
               </Tooltip>
             </Stack>
           </Stack>

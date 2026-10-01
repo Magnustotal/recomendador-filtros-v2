@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { Container, Box, Stack, CircularProgress, Alert, Typography, Paper } from "@mui/material";
+import { Box, Stack, CircularProgress, Alert, Typography } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
 import InfoIcon from '@mui/icons-material/Info';
 import CalculationForm from "./components/CalculationForm";
@@ -58,27 +58,25 @@ export default function HomePage() {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
+    <Box>
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        <Stack alignItems="center" spacing={8}>
+        <Stack alignItems="center" spacing={{ xs: 5, md: 8 }}>
 
           {/* --- Título Principal y Formulario --- */}
           <motion.div variants={itemVariants} style={{ width: '100%', maxWidth: '780px' }}>
             <Box textAlign="center" mb={4}>
-              <Typography variant="h2" component="h1" fontWeight={800}>
+              <Typography variant="h2" component="h1" fontWeight={800} sx={{ fontSize: 'clamp(2rem, 9vw, 3.75rem)', overflowWrap: 'anywhere' }}>
                 Encuentra el Filtro Perfecto
               </Typography>
               <Typography variant="h5" color="text.secondary" fontWeight={500} mt={1}>
                 Para un acuario sano y cristalino
               </Typography>
             </Box>
-            <Paper variant="outlined" sx={{p: {xs: 2, sm: 3, md: 4}}}>
-              <CalculationForm onLitrosSubmit={handleLitrosSubmit} />
-            </Paper>
+            <CalculationForm onLitrosSubmit={handleLitrosSubmit} />
           </motion.div>
           
           {/* --- Zona de Mensajes y Resultados --- */}
@@ -106,7 +104,7 @@ export default function HomePage() {
 
           {/* --- Sección de Explicación y Consejos --- */}
           <motion.div variants={itemVariants} style={{ width: '100%', maxWidth: '780px' }}>
-            <Stack spacing={8}>
+            <Stack spacing={{ xs: 5, md: 8 }}>
               <CalculationExplanation calculatedLiters={litros} />
               <TipsCarousel />
             </Stack>
@@ -114,6 +112,6 @@ export default function HomePage() {
 
         </Stack>
       </motion.div>
-    </Container>
+    </Box>
   );
 }

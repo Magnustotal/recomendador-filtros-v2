@@ -7,7 +7,7 @@ export interface Filtro {
   volumen_prefiltro?: number | null;
   volumen_vaso_real?: number | null;
   cestas?: number | null;
-  consumo: number;
+  consumo: number | null;
   otras_caracteristicas?: string;
   enlace_amazon?: string;
 }
