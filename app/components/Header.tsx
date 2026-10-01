@@ -6,7 +6,7 @@ import { styled, useColorScheme } from "@mui/material/styles";
 import Image from "next/image";
 import NextLink from "next/link";
 import {
-  InfoOutlined as InfoOutlinedIcon, FeedbackOutlined as FeedbackOutlinedIcon, GitHub as GitHubIcon,
+  InfoOutlined as InfoOutlinedIcon,
   Brightness4 as Brightness4Icon, Brightness7 as Brightness7Icon,
 } from "@mui/icons-material";
 import { motion } from "framer-motion";
@@ -78,12 +78,6 @@ const ActionButtons: FC = React.memo(() => {
 
   return (
     <Stack direction="row" alignItems="center" spacing={0.5}>
-      <Tooltip title="Sugerencias o correcciones (GitHub)">
-        <IconButton size="large" component="a" href="https://github.com/Magnustotal/recomendador-filtros-v2/issues" target="_blank" rel="noopener noreferrer" aria-label="Sugerencias o correcciones" sx={{ display: { xs: 'none', sm: 'inline-flex' } }}><FeedbackOutlinedIcon /></IconButton>
-      </Tooltip>
-      <Tooltip title="Código fuente en GitHub">
-        <IconButton size="large" component="a" href="https://github.com/Magnustotal/Recomendador-Filtros" target="_blank" rel="noopener" aria-label="Código fuente en GitHub" sx={{ display: { xs: 'none', sm: 'inline-flex' } }}><GitHubIcon /></IconButton>
-      </Tooltip>
       <Tooltip title="Cambiar entre modo claro y oscuro">
         <IconButton size="large" onClick={() => setMode(resolvedMode === 'dark' ? 'light' : 'dark')} aria-label="Cambiar entre modo claro y oscuro">
           {/* Ambos iconos van en el HTML y el CSS elige el visible: así el servidor y el cliente coinciden. */}

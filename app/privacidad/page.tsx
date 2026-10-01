@@ -7,8 +7,6 @@ export const metadata: Metadata = {
   description: "Qué datos trata (y cuáles no) el Recomendador de Filtros para Acuarios.",
 };
 
-const ISSUES_URL = "https://github.com/Magnustotal/recomendador-filtros-v2/issues";
-
 export default function PrivacidadPage() {
   return (
     <Box component="article" sx={{ maxWidth: 720, mx: "auto" }}>
@@ -16,7 +14,7 @@ export default function PrivacidadPage() {
         <Typography variant="h3" component="h1">
           Privacidad
         </Typography>
-        <Typography color="text.secondary">Última actualización: septiembre de 2026.</Typography>
+        <Typography color="text.secondary">Última actualización: octubre de 2026.</Typography>
 
         <Section title="Resumen">
           El Recomendador de Filtros no pide registro, no tiene cuentas de usuario y no recoge datos
@@ -47,21 +45,13 @@ export default function PrivacidadPage() {
         </Section>
 
         <Section title="Enlaces externos">
-          Los enlaces a webs de fabricantes, tiendas (por ejemplo Amazon) o GitHub llevan a sitios de
+          Los enlaces a webs de fabricantes, tiendas (por ejemplo Amazon) llevan a sitios de
           terceros con sus propias políticas de privacidad.
         </Section>
 
         <Section title="Alojamiento">
           Como ocurre en cualquier sitio web, el proveedor de alojamiento puede registrar datos técnicos de
           la conexión (como la dirección IP) por motivos de seguridad y funcionamiento.
-        </Section>
-
-        <Section title="Contacto">
-          Para dudas o sugerencias, abre una incidencia en{" "}
-          <Link href={ISSUES_URL} target="_blank" rel="noopener noreferrer">
-            GitHub
-          </Link>
-          .
         </Section>
 
         <Link component={NextLink} href="/" underline="hover">
