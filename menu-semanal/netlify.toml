@@ -1,3 +1,7 @@
-# Sitio 100 % estático: no hay comando de build. Solo se publica la carpeta `public`.
+# Sitio estático (public/) + una función (netlify/functions/gemini.mjs) que guarda la clave de Gemini.
+# Sin comando de build. En Netlify: Base directory = menu-semanal.
 [build]
   publish = "public"
+
+[functions]
+  directory = "netlify/functions"

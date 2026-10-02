@@ -32,6 +32,7 @@ const page = await ctx.newPage();
 const errors = [];
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 page.on('pageerror', (e) => errors.push(e.message));
+await page.route('**/api/gemini', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ configured: true, accessCode: false }) }));
 
 const day = (i) => page.locator('.day').nth(i);
 const addDish = async (i, meal, name) => {
@@ -228,16 +229,14 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
 // Cabecera centrada y decoración de lado a lado; asistente de cenas con Gemini simulado
 {
   const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
-  const KEY = 'AIza' + 'x'.repeat(35);
   const mk = (id, name, meals = []) => ({ id, name, emoji: '', meals, createdAt: '2026-01-01' });
   const seed = { version: 1, dishes: { a: mk('a', 'Macarrones') }, plan: { '2026-09-28': { lunch: ['a'] } } };
-  const gemini = { requests: [], mode: 'ok' };
+  const gemini = { requests: [], mode: 'ok', accessCode: false };
   const reply = (text) => ({ id: 'v1_t', status: 'completed', steps: [{ type: 'model_output', content: [{ type: 'text', text }] }] });
   const SUGGESTIONS = { days: [
     { date: '2026-09-29', daycare: 'Lentejas con arroz', dinner: 'Pescado blanco a la plancha con verduras', reason: 'Tras legumbres, proteína ligera y verdura.' },
     { date: '2026-09-30', daycare: 'Pollo con patatas', dinner: 'Carne de cerdo con puré de patata', reason: 'Cambia de proteína respecto al pollo.' },
   ] };
-  const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type,x-goog-api-key', 'access-control-allow-methods': 'POST,OPTIONS' };
   const aiErrors = [];
   const c = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'es-ES', acceptDownloads: true });
   const p = await c.newPage();
@@ -245,13 +244,14 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
   p.on('pageerror', (e) => aiErrors.push(e.message));
   await p.clock.setFixedTime(new Date('2026-09-29T10:00:00'));
   await p.addInitScript((st) => { if (!localStorage.getItem('menu-semanal:v1')) localStorage.setItem('menu-semanal:v1', JSON.stringify(st)); }, seed);
-  await p.route('https://generativelanguage.googleapis.com/**', async (route) => {
+  await p.route('**/api/gemini', async (route) => {
     const req = route.request();
-    if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    if (req.method() === 'GET') return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ configured: true, accessCode: gemini.accessCode }) });
     gemini.requests.push({ url: req.url(), headers: req.headers(), body: req.postDataJSON() });
-    if (gemini.mode === '403') return route.fulfill({ status: 403, headers: cors, contentType: 'application/json', body: JSON.stringify({ error: { message: 'API key not valid', status: 'PERMISSION_DENIED' } }) });
+    if (gemini.mode === '403') return route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ error: { code: 'upstream', message: 'API key not valid' } }) });
+    if (gemini.accessCode && req.headers()['x-access-code'] !== 'familia') return route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: { code: gemini.accessCode && !req.headers()['x-access-code'] ? 'code_required' : 'bad_code', message: 'x' } }) });
     const isTest = JSON.stringify(req.postDataJSON().input).includes('Responde solo con la palabra OK');
-    return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify(reply(isTest ? 'OK' : JSON.stringify(SUGGESTIONS))) });
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(reply(isTest ? 'OK' : JSON.stringify(SUGGESTIONS))) });
   });
   await p.goto(base);
   await p.waitForSelector('.day');
@@ -283,16 +283,10 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
     await d.close();
   }
 
-  // sin clave: pide conectarla
+  // sin clave en la app: se abre directamente el formulario (la clave vive en Netlify)
   await p.locator('[data-fk=balance]').click();
-  check((await p.locator('#dlg').innerText()).includes('Conecta Gemini'), 'sin clave, el asistente pide conectar Gemini');
-  await p.fill('#dlg input[name=gemini-key]', 'corta');
-  await p.locator('#dlg button', { hasText: 'Guardar clave' }).click();
-  check((await p.locator('#snack').innerText()).includes('incompleta'), 'rechaza una clave claramente incompleta');
-  await p.fill('#dlg input[name=gemini-key]', KEY);
-  await p.locator('#dlg button', { hasText: 'Guardar clave' }).click();
   await p.waitForSelector('#dlg textarea[name=menu-guarderia]');
-  check(true, 'con la clave guardada se abre el formulario del menú');
+  check(!(await p.locator('#dlg').innerText()).includes('Conecta Gemini') && await p.locator('#dlg input[type=password]').count() === 0, 'sin pedir ninguna clave: el asistente abre el formulario del menú');
 
   // vacío → aviso; con menú + foto → petición correcta
   await p.locator('#dlg button', { hasText: 'Sugerir cenas' }).click();
@@ -304,7 +298,7 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
   await p.locator('#dlg button', { hasText: 'Sugerir cenas' }).click();
   await p.waitForSelector('#dlg .ai-card');
   const req = gemini.requests.at(-1);
-  check(req.url === 'https://generativelanguage.googleapis.com/v1beta/interactions' && req.headers['x-goog-api-key'] === KEY, 'petición a Interactions con la clave en cabecera (no en la URL)');
+  check(new URL(req.url).pathname === '/api/gemini' && !req.headers['x-goog-api-key'] && !JSON.stringify(req.body).includes('AIza') && !req.headers['x-access-code'], 'petición al servidor propio /api/gemini, sin clave en el navegador');
   check(req.body.input[0].text.includes('lunes: lentejas con arroz') && req.body.input[0].text.includes('sin frutos secos') && req.body.input[0].text.includes('martes 29 sep'), 'el prompt lleva menú, notas y fechas de la semana');
   check(req.body.input[1]?.type === 'image' && req.body.input[1].mime_type === 'image/jpeg' && req.body.input[1].data.length > 20, 'la foto viaja como imagen JPEG base64');
   check(req.body.response_format?.mime_type === 'application/json', 'pide salida JSON estructurada');
@@ -326,23 +320,37 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
   await p.fill('#dlg textarea[name=menu-guarderia]', 'lunes: lentejas');
   await p.locator('#dlg button', { hasText: 'Sugerir cenas' }).click();
   await p.waitForFunction(() => document.querySelector('#dlg .ai-status.error'));
-  check((await p.locator('#dlg .ai-status').innerText()).includes('clave'), 'error 403 explicado en español');
+  check((await p.locator('#dlg .ai-status').innerText()).includes('GEMINI_API_KEY'), 'error 403 explicado en español (apunta a la variable de Netlify)');
   await p.keyboard.press('Escape');
   gemini.mode = 'ok';
 
-  // Ajustes: probar conexión, copia sin clave, quitar clave
+  // código de acceso: el servidor lo pide → diálogo, se guarda en el móvil y se reintenta
+  gemini.accessCode = true;
+  await p.locator('[data-fk=balance]').click();
+  await p.fill('#dlg textarea[name=menu-guarderia]', 'lunes: lentejas');
+  await p.locator('#dlg button', { hasText: 'Sugerir cenas' }).click();
+  await p.waitForSelector('#dlg input[name=codigo-acceso]');
+  check(true, 'si el servidor pide código de acceso, la app lo solicita');
+  await p.fill('#dlg input[name=codigo-acceso]', 'familia');
+  await p.locator('#dlg button', { hasText: 'Guardar código' }).click();
+  await p.waitForSelector('#dlg textarea[name=menu-guarderia]');
+  await p.fill('#dlg textarea[name=menu-guarderia]', 'lunes: lentejas');
+  await p.locator('#dlg button', { hasText: 'Sugerir cenas' }).click();
+  await p.waitForSelector('#dlg .ai-card');
+  check(gemini.requests.at(-1).headers['x-access-code'] === 'familia', 'con el código guardado la petición lo envía en la cabecera');
+  await p.keyboard.press('Escape');
+
+  // Ajustes: estado del servidor, probar conexión, copia sin secretos, sin clave
   await p.locator('.nav-item[data-view=settings]').click();
   await p.waitForSelector('.ai-key');
-  check((await p.locator('main').innerText()).includes('Clave guardada en este móvil'), 'Ajustes indica que hay clave guardada');
+  check((await p.locator('main').innerText()).includes('Servidor listo') && await p.locator('main input[name=gemini-key]').count() === 0, 'Ajustes muestra el estado del servidor y ya no pide clave');
   await p.locator('button', { hasText: 'Probar conexión' }).click();
-  await p.waitForFunction(() => document.querySelector('.ai-status')?.textContent.includes('Conexión correcta'));
+  await p.waitForFunction(() => [...document.querySelectorAll('.ai-status')].some((e) => e.textContent.includes('Conexión correcta')));
   check(true, '«Probar conexión» confirma que funciona');
   const [dl] = await Promise.all([p.waitForEvent('download'), p.locator('button', { hasText: 'Exportar copia' }).click()]);
   const exported = (await import('node:fs')).readFileSync(await dl.path(), 'utf8');
-  check(!exported.includes('AIza') && !exported.includes('gemini'), 'la copia de seguridad no incluye la clave');
-  await p.locator('button', { hasText: 'Quitar clave' }).click();
-  check(!((await p.evaluate(() => localStorage.getItem('menu-semanal:ai') ?? '')).includes('AIza')), 'quitar clave la borra del móvil');
-  const unexpected = aiErrors.filter((e) => !e.includes('status of 403')); // el 403 es el error simulado a propósito
+  check(!exported.includes('AIza') && !exported.includes('gemini') && !exported.includes('familia'), 'la copia de seguridad no incluye claves ni códigos');
+  const unexpected = aiErrors.filter((e) => !e.includes('status of 403') && !e.includes('status of 401')); // 403 y 401: errores simulados a propósito
   check(unexpected.length === 0, `asistente sin errores de consola ni bloqueos de CSP${unexpected.length ? ': ' + unexpected.join(' | ') : ''}`);
   await c.close();
 }
@@ -359,7 +367,6 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
   const pdf = async (html) => { const pg = await browser.newPage(); await pg.setContent(html); const buf = await pg.pdf({ format: 'A4', landscape: true }); await pg.close(); return buf; };
   const [calendarPdf, cartaPdf, blankPdf] = [await pdf(calendarHtml), await pdf(cartaHtml), await pdf('<div style="width:80px;height:80px;background:red"></div>')];
 
-  const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type,x-goog-api-key', 'access-control-allow-methods': 'POST,OPTIONS' };
   const calls = [];
   const errs = [];
   const c = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'es-ES' });
@@ -367,10 +374,9 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
   p.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
   p.on('pageerror', (e) => errs.push(e.message));
   await p.clock.setFixedTime(new Date('2026-09-29T10:00:00'));
-  await p.addInitScript(() => localStorage.setItem('menu-semanal:ai', JSON.stringify({ key: 'AIza' + 'y'.repeat(35) })));
-  await p.route('https://generativelanguage.googleapis.com/**', async (route) => {
+  await p.route('**/api/gemini', async (route) => {
     const req = route.request();
-    if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    if (req.method() === 'GET') return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ configured: true, accessCode: false }) });
     const body = req.postDataJSON();
     calls.push(body);
     const isCarta = Boolean(body.response_format?.schema?.properties?.combos);
@@ -382,7 +388,7 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
         { date: '2026-10-13', daycare: 'Lentejas', dinner: 'Merluza al horno con verduras', reason: 'Pescado tras legumbres.' },
         { date: '2026-11-30', daycare: 'inventado', dinner: 'No debe aparecer', reason: 'fuera del menú' },
       ] };
-    return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ steps: [{ type: 'model_output', content: [{ type: 'text', text: JSON.stringify(payload) }] }] }) });
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ steps: [{ type: 'model_output', content: [{ type: 'text', text: JSON.stringify(payload) }] }] }) });
   });
   await p.goto(base);
   await p.waitForSelector('.day');
@@ -442,7 +448,6 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
   const pdf = async (html) => { const pg = await browser.newPage(); await pg.setContent(html); const buf = await pg.pdf({ format: 'A4', landscape: true }); await pg.close(); return buf; };
   const lunchPdf = await pdf(grid([['PATATAS GUISADAS CON CHOCOS', 'POTAJE DE GARBANZOS', 'ESPIRALES A LA BOLOÑESA'], ['LOMO ADOBADO AL HORNO', 'JAMONCITOS DE POLLO EN SALSA', 'TORTILLA FRANCESA']]));
   const dinnerPdf = await pdf(grid([['CREMA DE PUERRO', 'VERDURITAS REHOGADAS', 'SOPA DE VERDURAS'], ['MERO AL HORNO', 'MERLUZA A LA PLANCHA', 'PAVO AL HORNO']]));
-  const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type,x-goog-api-key', 'access-control-allow-methods': 'POST,OPTIONS' };
   const seed = { version: 1, dishes: { m: { id: 'm', name: 'Merluza a la plancha', emoji: '', meals: ['dinner'], createdAt: '2026-01-01' }, t: { id: 't', name: 'Tortilla de patatas', emoji: '', meals: ['lunch'], createdAt: '2026-01-01' } }, plan: {} };
   const calls = [];
   const errs = [];
@@ -451,16 +456,16 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
   p.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
   p.on('pageerror', (e) => errs.push(e.message));
   await p.clock.setFixedTime(new Date('2026-09-29T10:00:00'));
-  await p.addInitScript(([st]) => { localStorage.setItem('menu-semanal:ai', JSON.stringify({ key: 'AIza' + 'z'.repeat(35) })); if (!localStorage.getItem('menu-semanal:v1')) localStorage.setItem('menu-semanal:v1', JSON.stringify(st)); }, [seed]);
-  await p.route('https://generativelanguage.googleapis.com/**', async (route) => {
+  await p.addInitScript(([st]) => { if (!localStorage.getItem('menu-semanal:v1')) localStorage.setItem('menu-semanal:v1', JSON.stringify(st)); }, [seed]);
+  await p.route('**/api/gemini', async (route) => {
     const req = route.request();
-    if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    if (req.method() === 'GET') return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ configured: true, accessCode: false }) });
     calls.push(req.postDataJSON());
     const payload = { days: [
       { date: '2026-10-05', daycare: 'Patatas con chocos y lomo', dinner: 'Pescado blanco a la plancha con verduras', reason: 'Tras guiso y cerdo, pescado ligero.', catering: 'Crema de puerro + Mero al horno', catering_fit: 'bien', saved_dish: 'merluza a la PLANCHA' },
       { date: '2026-10-06', daycare: 'Potaje y pollo', dinner: 'Tortilla con ensalada', reason: 'Huevo tras legumbres.', catering: 'Verduritas rehogadas + Merluza a la plancha', catering_fit: 'mejorable', saved_dish: 'Plato que no existe' },
     ] };
-    return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ steps: [{ type: 'model_output', content: [{ type: 'text', text: JSON.stringify(payload) }] }] }) });
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ steps: [{ type: 'model_output', content: [{ type: 'text', text: JSON.stringify(payload) }] }] }) });
   });
   await p.goto(base);
   await p.waitForSelector('.day');
@@ -505,6 +510,22 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
   const st = await p.evaluate(() => JSON.parse(localStorage.getItem('menu-semanal:v1')));
   check(Object.values(st.dishes).filter((d) => d.name === 'Merluza a la plancha').length === 1, 'el plato guardado se reutiliza: no se duplica en la base de datos');
   check(errs.length === 0, `dos PDF sin errores de consola${errs.length ? ': ' + errs.join(' | ') : ''}`);
+  await c.close();
+}
+
+// Clave heredada de versiones anteriores: se borra del móvil; función ausente: mensaje claro
+{
+  const c = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'es-ES' });
+  const p = await c.newPage();
+  await p.addInitScript(() => { if (!localStorage.getItem('menu-semanal:ai')) localStorage.setItem('menu-semanal:ai', JSON.stringify({ key: 'AIza' + 'q'.repeat(35), model: 'gemini-3.1-flash-lite' })); });
+  await p.route('**/api/gemini', (route) => route.fulfill({ status: 404, contentType: 'text/html', body: '<h1>Not found</h1>' }));
+  await p.goto(base);
+  await p.waitForSelector('.day');
+  await p.locator('.nav-item[data-view=settings]').click();
+  await p.waitForFunction(() => document.querySelector('main')?.textContent.includes('No encuentro el servidor de IA'));
+  const stored = await p.evaluate(() => localStorage.getItem('menu-semanal:ai') ?? '');
+  check(!stored.includes('AIza') && stored.includes('gemini-3.1-flash-lite'), 'la clave guardada por versiones anteriores se elimina del móvil y se conservan las preferencias');
+  check(true, 'sin función desplegada, Ajustes lo explica');
   await c.close();
 }
 

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { CARTA_SCHEMA, FALLBACK_MODELS, GEMINI_ENDPOINT, GeminiError, askGemini, buildCartaPrompt, buildPrompt, buildRequest, extractText, parseCombos, parseSuggestions } from '../public/ai.js';
+import { CARTA_SCHEMA, FALLBACK_MODELS, GEMINI_ENDPOINT, GeminiError, askGemini, serverStatus, buildCartaPrompt, buildPrompt, buildRequest, extractText, parseCombos, parseSuggestions } from '../public/ai.js';
 
 const dates = [{ date: '2026-09-28', name: 'lunes', label: '28 sep' }, { date: '2026-09-29', name: 'martes', label: '29 sep' }];
 const okBody = (text) => ({ id: 'v1_x', status: 'completed', steps: [{ type: 'model_output', content: [{ type: 'text', text }] }] });
@@ -11,7 +11,7 @@ const fakeFetch = (...responses) => {
     calls.push({ url, init, body: JSON.parse(init.body) });
     const r = responses.shift();
     if (r instanceof Error) throw r;
-    return { ok: r.status === undefined, status: r.status ?? 200, json: async () => r.json };
+    return { ok: r.status === undefined, status: r.status ?? 200, json: async () => { if (r.noJson) throw new Error('sin json'); return r.json; } };
   };
   fn.calls = calls;
   return fn;
@@ -124,15 +124,16 @@ test('el texto del modelo no puede inyectar HTML ni salirse de los límites (se 
   assert.ok(out[0].dinner.length <= 80);
 });
 
-test('askGemini: endpoint, cabecera de clave y cuerpo', async () => {
-  const f = fakeFetch({ json: okBody('{"days":[]}') });
-  const text = await askGemini({ key: 'K123', model: 'gemini-x', prompt: 'p', fetchImpl: f });
-  assert.equal(text, '{"days":[]}');
-  assert.equal(f.calls[0].url, GEMINI_ENDPOINT);
-  assert.equal(f.calls[0].init.headers['x-goog-api-key'], 'K123');
+test('askGemini: llama al proxy propio, sin clave en ningún sitio, y envía el código de acceso solo si existe', async () => {
+  const f = fakeFetch({ json: okBody('{"days":[]}') }, { json: okBody('{"days":[]}') });
+  assert.equal(await askGemini({ model: 'gemini-x', prompt: 'p', fetchImpl: f }), '{"days":[]}');
+  assert.equal(f.calls[0].url, '/api/gemini');
+  assert.equal(GEMINI_ENDPOINT, '/api/gemini');
   assert.equal(f.calls[0].body.model, 'gemini-x');
-  assert.ok(!f.calls[0].url.includes('K123'), 'la clave no va en la URL');
-  assert.equal(f.calls[0].init.referrerPolicy, 'strict-origin');
+  assert.deepEqual(Object.keys(f.calls[0].init.headers), ['content-type'], 'sin código de acceso no hay cabeceras extra');
+  await askGemini({ accessCode: 'familia', prompt: 'p', fetchImpl: f });
+  assert.equal(f.calls[1].init.headers['x-access-code'], 'familia');
+  for (const c of f.calls) assert.ok(!/x-goog-api-key|key/i.test(JSON.stringify(c.init.headers)) && !c.url.includes('?'), 'ninguna clave viaja desde el navegador');
 });
 
 test('askGemini: usa el esquema de carta cuando se pide', async () => {
@@ -141,15 +142,37 @@ test('askGemini: usa el esquema de carta cuando se pide', async () => {
   assert.deepEqual(f.calls[0].body.response_format.schema, CARTA_SCHEMA);
 });
 
-test('askGemini: errores traducidos y sin reintento en 403', async () => {
-  const cases = [[403, 'auth'], [401, 'auth'], [404, 'model'], [429, 'quota']];
-  for (const [status, kind] of cases) {
-    const f = fakeFetch({ status, json: { error: { message: 'detalle' } } });
-    await assert.rejects(askGemini({ key: 'k', prompt: 'p', fetchImpl: f }), (e) => e.kind === kind && e.status === status);
-    assert.equal(f.calls.length, 1);
+test('askGemini: errores del proxy y de Gemini traducidos a mensajes accionables', async () => {
+  const cases = [
+    [{ status: 401, json: { error: { code: 'code_required' } } }, 'code'],
+    [{ status: 401, json: { error: { code: 'bad_code' } } }, 'code'],
+    [{ status: 503, json: { error: { code: 'not_configured', message: 'Falta' } } }, 'config'],
+    [{ status: 403, json: { error: { code: 'forbidden_origin' } } }, 'forbidden'],
+    [{ status: 413, json: { error: { code: 'too_large' } } }, 'too_large'],
+    [{ status: 404, noJson: true }, 'no_function'],
+    [{ status: 403, json: { error: { code: 'upstream', message: 'API key not valid' } } }, 'auth'],
+    [{ status: 404, json: { error: { code: 'upstream', message: 'model not found' } } }, 'model'],
+    [{ status: 429, noJson: true }, 'quota'],
+    [{ status: 429, json: { error: { code: 'upstream' } } }, 'quota'],
+  ];
+  for (const [resp, kind] of cases) {
+    const f = fakeFetch(resp);
+    await assert.rejects(askGemini({ prompt: 'p', fetchImpl: f }), (e) => e.kind === kind && e.status === resp.status && e.message.length > 10, kind);
+    assert.equal(f.calls.length, 1, `${kind}: sin reintentos`);
   }
-  await assert.rejects(askGemini({ key: 'k', prompt: 'p', fetchImpl: fakeFetch(new TypeError('failed')) }), (e) => e.kind === 'network');
-  await assert.rejects(askGemini({ key: '', prompt: 'p', fetchImpl: fakeFetch() }), (e) => e.kind === 'auth');
+  await assert.rejects(askGemini({ prompt: 'p', fetchImpl: fakeFetch(new TypeError('failed')) }), (e) => e.kind === 'network');
+  const msgs = [];
+  for (const [resp] of cases.slice(0, 6)) await askGemini({ prompt: 'p', fetchImpl: fakeFetch(resp) }).catch((e) => msgs.push(e.message));
+  assert.match(msgs[0], /ACCESS_CODE/);
+  assert.match(msgs[2], /GEMINI_API_KEY/);
+  assert.match(msgs[5], /Git/);
+});
+
+test('serverStatus: lee el estado del proxy y devuelve null si la función no está desplegada', async () => {
+  const ok = async () => ({ ok: true, json: async () => ({ configured: true, accessCode: false }) });
+  assert.deepEqual(await serverStatus(ok), { configured: true, accessCode: false });
+  assert.equal(await serverStatus(async () => ({ ok: false })), null);
+  assert.equal(await serverStatus(async () => { throw new TypeError('x'); }), null);
 });
 
 test('askGemini: ante 503 reintenta con espera creciente y acaba funcionando', async () => {
@@ -214,8 +237,15 @@ test('todo módulo que importa app.js está en el precaché del service worker',
   for (const m of mods) assert.ok(sw.includes(`'${m}'`), `${m} falta en CORE de sw.js`);
 });
 
-test('CSP permite solo el host de Gemini para conectar', () => {
+test('la CSP solo permite conectar con el propio sitio: el navegador ya no habla con Google', () => {
   const html = readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
   const headers = readFileSync(new URL('../public/_headers', import.meta.url), 'utf8');
-  for (const s of [html, headers]) assert.match(s, /connect-src 'self' https:\/\/generativelanguage\.googleapis\.com[;"]/);
+  for (const s of [html, headers]) {
+    assert.match(s, /connect-src 'self'[;"]/);
+    assert.ok(!s.includes('googleapis'), 'sin dominios de Google en la CSP');
+  }
+});
+
+test('el service worker no cachea /api/', () => {
+  assert.match(readFileSync(new URL('../public/sw.js', import.meta.url), 'utf8'), /startsWith\('\/api\/'\)/);
 });

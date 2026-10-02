@@ -1,9 +1,10 @@
 // Asistente de cenas con Gemini: prompt, petición, lectura y validación de la respuesta.
 // Sin DOM ni localStorage, para poder probarlo con `node --test`.
-// API verificada contra https://ai.google.dev/gemini-api/docs (Interactions API, `x-goog-api-key`).
+// API de Gemini verificada contra https://ai.google.dev/gemini-api/docs (Interactions API); la llamada la hace el servidor.
 import { normalizeName } from './lib.js';
 
-export const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/interactions';
+// Proxy propio (Netlify Function): la clave de Gemini vive en una variable de entorno del servidor, no aquí.
+export const GEMINI_ENDPOINT = '/api/gemini';
 export const DEFAULT_MODEL = 'gemini-3.8-flash'; // editable en Ajustes: los modelos cambian
 export const FALLBACK_MODELS = ['gemini-3.1-flash-lite']; // si el modelo principal sigue saturado (5xx)
 export const MAX_IMAGES = 3;
@@ -174,32 +175,48 @@ export class GeminiError extends Error {
 }
 
 const MESSAGES = {
-  auth: 'La clave de Gemini no es válida o no tiene permiso. Revísala en Ajustes.',
+  auth: 'Google rechazó la clave configurada en Netlify (no es válida o no tiene permiso). Revisa la variable GEMINI_API_KEY.',
   model: 'Modelo no encontrado. Cambia el modelo en Ajustes (modelo avanzado).',
-  quota: 'Se alcanzó el límite de uso de tu clave. Espera un rato o revisa tu cuota en Google AI Studio.',
+  quota: 'Se alcanzó el límite de uso (o hay demasiadas peticiones seguidas). Espera un minuto e inténtalo de nuevo.',
   server: 'Gemini no está disponible ahora mismo. Inténtalo en unos minutos.',
+  code: 'Hace falta el código de acceso de tu sitio (variable ACCESS_CODE en Netlify), o no es correcto.',
+  config: 'Falta configurar la clave de Gemini en Netlify: crea la variable GEMINI_API_KEY (con alcance «Functions») y vuelve a desplegar.',
+  no_function: 'No encuentro la función /api/gemini. Despliega el sitio desde Git (o con la CLI de Netlify), no con el zip de Netlify Drop, y revisa que exista el directorio de funciones.',
+  forbidden: 'El servidor rechazó la petición por su origen.',
+  too_large: 'La petición es demasiado grande: usa menos fotos o un PDF más corto.',
 };
 
-async function post({ key, body, signal, fetchImpl }) {
+async function post({ accessCode, body, signal, fetchImpl }) {
   let res;
   try {
     res = await fetchImpl(GEMINI_ENDPOINT, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+      headers: { 'content-type': 'application/json', ...(accessCode ? { 'x-access-code': accessCode } : {}) },
       body: JSON.stringify(body),
       signal,
-      referrerPolicy: 'strict-origin', // solo el origen: permite claves restringidas por dirección web
     });
   } catch (err) {
     if (err?.name === 'AbortError') throw new GeminiError('abort', 'Cancelado.');
-    throw new GeminiError('network', 'No se pudo conectar con Gemini. Comprueba tu conexión.');
+    throw new GeminiError('network', 'No se pudo conectar. Comprueba tu conexión.');
   }
   if (res.ok) return res.json();
-  let detail = '';
-  try { detail = (await res.json())?.error?.message ?? ''; } catch { /* sin cuerpo */ }
+  let data = null;
+  try { data = await res.json(); } catch { /* sin cuerpo JSON (p. ej. 404 de Netlify o 429 del límite de peticiones) */ }
+  const code = data?.error?.code;
   const s = res.status;
-  const kind = s === 401 || s === 403 ? 'auth' : s === 404 ? 'model' : s === 429 ? 'quota' : s >= 500 ? 'server' : 'bad_request';
-  throw new GeminiError(kind, MESSAGES[kind] ?? `Gemini rechazó la petición (${s}). ${clip(detail, 160)}`.trim(), s);
+  const byCode = { code_required: 'code', bad_code: 'code', not_configured: 'config', forbidden_origin: 'forbidden', too_large: 'too_large' }[code];
+  const kind = byCode
+    ?? (!data && s === 404 ? 'no_function'
+      : s === 401 || s === 403 ? 'auth' : s === 404 ? 'model' : s === 413 ? 'too_large' : s === 429 ? 'quota' : s >= 500 ? 'server' : 'bad_request');
+  throw new GeminiError(kind, MESSAGES[kind] ?? `Gemini rechazó la petición (${s}). ${clip(data?.error?.message, 160)}`.trim(), s);
+}
+
+/** Estado del servidor, sin secretos: { configured, accessCode }. null si la función no está desplegada. */
+export async function serverStatus(fetchImpl = globalThis.fetch.bind(globalThis)) {
+  try {
+    const res = await fetchImpl(GEMINI_ENDPOINT);
+    return res.ok ? await res.json() : null;
+  } catch { return null; }
 }
 
 /**
@@ -209,17 +226,16 @@ async function post({ key, body, signal, fetchImpl }) {
  *   saturado, prueba con cada modelo de `fallbackModels`.
  */
 export async function askGemini({
-  key, model = DEFAULT_MODEL, prompt, images = [], structured = true, schema = DAYS_SCHEMA, signal,
+  accessCode = '', model = DEFAULT_MODEL, prompt, images = [], structured = true, schema = DAYS_SCHEMA, signal,
   fetchImpl = globalThis.fetch.bind(globalThis), retries = 1, fallbackModels = FALLBACK_MODELS, onRetry, onFallback,
   sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 }) {
-  if (!key) throw new GeminiError('auth', MESSAGES.auth);
   const once = async (m) => {
     try {
-      return extractText(await post({ key, body: buildRequest({ model: m, prompt, images, structured, schema }), signal, fetchImpl }));
+      return extractText(await post({ accessCode, body: buildRequest({ model: m, prompt, images, structured, schema }), signal, fetchImpl }));
     } catch (err) {
       if (!structured || err.kind !== 'bad_request') throw err;
-      return extractText(await post({ key, body: buildRequest({ model: m, prompt, images, structured: false, schema }), signal, fetchImpl }));
+      return extractText(await post({ accessCode, body: buildRequest({ model: m, prompt, images, structured: false, schema }), signal, fetchImpl }));
     }
   };
   const withRetries = async (m) => {

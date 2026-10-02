@@ -6,7 +6,7 @@ import {
   weekDays, weekRangeLabel, weekStart,
 } from './lib.js';
 import { VERSION } from './version.js';
-import { CARTA_SCHEMA, DEFAULT_MODEL, MAX_IMAGES, askGemini, buildCartaPrompt, buildPrompt, parseCombos, parseSuggestions } from './ai.js';
+import { CARTA_SCHEMA, DEFAULT_MODEL, MAX_IMAGES, askGemini, buildCartaPrompt, buildPrompt, parseCombos, parseSuggestions, serverStatus } from './ai.js';
 import { PdfError, detectMenuDates, extractPdfText, hasWeekdayNames } from './menu-pdf.js';
 
 /* ---------- Utilidades DOM ---------- */
@@ -430,41 +430,52 @@ function openShare() {
 
 /* ---------- Asistente de cenas (Gemini) ---------- */
 
-const AI_STORE = 'menu-semanal:ai'; // clave y preferencias: fuera de las copias de seguridad
+const AI_STORE = 'menu-semanal:ai'; // código de acceso y preferencias: fuera de las copias de seguridad
 
 function loadAi() {
   let o = {};
   try { o = JSON.parse(readStorage(AI_STORE) ?? '{}') ?? {}; } catch { /* vacío */ }
-  return {
-    key: typeof o.key === 'string' ? o.key : '',
+  const clean = {
+    accessCode: typeof o.accessCode === 'string' ? o.accessCode : '',
     model: typeof o.model === 'string' && o.model.trim() ? o.model.trim() : DEFAULT_MODEL,
     notes: typeof o.notes === 'string' ? o.notes : '',
   };
+  // Versiones anteriores guardaban aquí la clave de Google: ya no debe quedarse en el móvil.
+  if ('key' in o) writeStorage(AI_STORE, JSON.stringify(clean));
+  return clean;
 }
 const saveAi = (patch) => writeStorage(AI_STORE, JSON.stringify({ ...loadAi(), ...patch }));
 
 function aiHelp() {
   return h('div', { class: 'ai-help' },
-    h('p', {}, 'Consigue una clave gratuita en ',
-      h('a', { href: 'https://aistudio.google.com/apikey', target: '_blank', rel: 'noopener noreferrer' }, 'Google AI Studio'),
-      '. Créala solo para esta app y restríngela a tu dirección web (Google recomienda restringir las claves).'),
-    h('p', {}, 'La clave se guarda solo en este móvil y no entra en las copias de seguridad. Al pedir sugerencias se envían a Google el menú o la foto, las sugerencias de cena que subas, tus notas, los nombres de las cenas ya planeadas y de tus platos guardados; en el nivel gratuito, según sus términos actuales, Google puede usarlos para mejorar sus productos. No incluyas nombres de niños.'),
+    h('p', {}, 'Las peticiones pasan por el servidor de la app, que guarda la clave de Gemini; en este móvil no se guarda ninguna clave.'),
+    h('p', {}, 'Al pedir sugerencias se envían a Google el menú o la foto, las sugerencias de cena que subas, tus notas, los nombres de las cenas ya planeadas y de tus platos guardados; en el nivel gratuito, según sus términos actuales, Google puede usarlos para mejorar sus productos. No incluyas nombres de niños.'),
   );
 }
 
-function keyForm({ onSaved }) {
-  const input = h('input', { class: 'field', type: 'password', name: 'gemini-key', autocomplete: 'off', spellcheck: 'false', 'aria-label': 'Clave de Gemini', placeholder: 'Pega tu clave de Gemini…' });
+function codeForm({ onSaved }) {
+  const input = h('input', { class: 'field', type: 'password', name: 'codigo-acceso', autocomplete: 'off', spellcheck: 'false', 'aria-label': 'Código de acceso', placeholder: 'Código de acceso…' });
   return h('form', {
     class: 'ai-key',
     onsubmit: (e) => {
       e.preventDefault();
-      const key = input.value.trim();
-      if (!/^\S{20,}$/.test(key)) return toast('La clave parece incompleta. Cópiala entera desde Google AI Studio.', { error: true });
-      if (!saveAi({ key })) return toast('No se pudo guardar la clave en este dispositivo.', { error: true });
+      const accessCode = input.value.trim();
+      if (!accessCode) return toast('Escribe el código de acceso.', { error: true });
+      if (!saveAi({ accessCode })) return toast('No se pudo guardar el código en este dispositivo.', { error: true });
       input.value = '';
       onSaved();
     },
-  }, input, h('button', { class: 'btn tonal', type: 'submit' }, 'Guardar clave'));
+  }, input, h('button', { class: 'btn tonal', type: 'submit' }, 'Guardar código'));
+}
+
+function promptCode(message) {
+  openDialog(
+    h('div', { class: 'dlg' },
+      dialogHead('Código de acceso', message),
+      codeForm({ onSaved: openBalance }),
+    ),
+    { sheet: true },
+  );
 }
 
 /** Foto → JPEG de hasta 1600 px en base64 (menos peso, formato que Gemini acepta). */
@@ -487,17 +498,6 @@ async function fileToJpeg(file) {
 }
 
 function openBalance() {
-  if (!loadAi().key) {
-    return openDialog(
-      h('div', { class: 'dlg' },
-        dialogHead('Conecta Gemini', 'Hace falta una clave gratuita de Google para generar las sugerencias.'),
-        aiHelp(),
-        keyForm({ onSaved: openBalance }),
-      ),
-      { sheet: true },
-    );
-  }
-
   const dateInfo = (date) => ({ date, name: dayName(date).toLowerCase(), label: shortDate(date) });
   const menu = h('textarea', { class: 'field compact', name: 'menu-guarderia', rows: '6', 'aria-label': 'Menú del mediodía de la guardería o carta', placeholder: 'Pega aquí el menú (lunes: lentejas y pollo…) o la carta de un restaurante…' });
   const dinnerBox = h('textarea', { class: 'field compact short', name: 'sugerencias-cena', rows: '3', 'aria-label': 'Sugerencias de cena del catering (opcional)', placeholder: 'Opcional: sugerencias de cena del catering (pega el texto o sube su PDF) para contrastarlas…' });
@@ -655,7 +655,7 @@ function openBalance() {
     results.replaceChildren();
     try {
       const text = await askGemini({
-        key: ai.key, model: ai.model, images, signal: controller.signal,
+        accessCode: ai.accessCode, model: ai.model, images, signal: controller.signal,
         schema: carta ? CARTA_SCHEMA : undefined,
         onRetry: (n, max) => { status.textContent = `Gemini va saturado; reintentando (${n}/${max})…`; },
         onFallback: (m) => { status.textContent = `Gemini sigue saturado; probando con un modelo más ligero (${m})…`; },
@@ -667,7 +667,8 @@ function openBalance() {
       else renderResults(parseSuggestions(text, dates.map((d) => d.date), savedDishes.slice(0, 80)));
       status.textContent = '';
     } catch (err) {
-      if (err.kind !== 'abort') fail(err.message || 'Algo salió mal.');
+      if (err.kind === 'code') promptCode(err.message);
+      else if (err.kind !== 'abort') fail(err.message || 'Algo salió mal.');
     } finally {
       go.disabled = false;
     }
@@ -712,7 +713,7 @@ function aiCard() {
     let used = current.model;
     try {
       const text = await askGemini({
-        key: current.key, model: current.model, prompt: 'Responde solo con la palabra OK.', structured: false,
+        accessCode: current.accessCode, model: current.model, prompt: 'Responde solo con la palabra OK.', structured: false,
         onRetry: (n, max) => { status.textContent = `Gemini va saturado; reintentando (${n}/${max})…`; },
         onFallback: (m) => { used = m; status.textContent = `Gemini sigue saturado; probando con ${m}…`; },
       });
@@ -722,18 +723,24 @@ function aiCard() {
       status.textContent = err.message;
     }
   };
-  const removeKey = () => { saveAi({ key: '' }); render(); toast('Clave eliminada de este móvil'); };
+  const server = h('p', { class: 'ai-status', role: 'status' }, 'Comprobando el servidor…');
+  const codeSlot = h('div', {});
+  serverStatus().then((st) => {
+    if (!st) { server.className = 'ai-status error'; server.textContent = 'No encuentro el servidor de IA (/api/gemini). Despliega el sitio desde Git, no con el zip de Netlify Drop.'; return; }
+    if (!st.configured) { server.className = 'ai-status error'; server.textContent = 'Falta la variable GEMINI_API_KEY en Netlify (con alcance «Functions»), y volver a desplegar.'; return; }
+    server.textContent = `✅ Servidor listo${st.accessCode ? '. Pide código de acceso.' : '.'}`;
+    if (st.accessCode) codeSlot.replaceChildren(ai.accessCode ? h('p', {}, 'Código guardado en este móvil. Escribe otro para cambiarlo.') : h('span', {}), codeForm({ onSaved: () => { render(); toast('Código guardado'); } }));
+  });
 
   return h('section', { class: 'card' },
     h('h2', {}, '🥗 Asistente de cenas (Gemini)'),
     h('p', {}, 'Pásale el menú de la guardería (texto o foto) y te propone qué cenar para equilibrar la semana.'),
     aiHelp(),
-    ai.key && h('p', {}, '✅ Clave guardada en este móvil. Pega otra para cambiarla.'),
-    keyForm({ onSaved: () => { render(); toast('Clave guardada'); } }),
+    server,
+    codeSlot,
     h('details', { class: 'ai-adv' }, h('summary', {}, 'Modelo avanzado'), model),
-    ai.key && h('div', { class: 'actions' },
+    h('div', { class: 'actions' },
       h('button', { class: 'btn tonal', type: 'button', onclick: test }, 'Probar conexión'),
-      h('button', { class: 'btn outline', type: 'button', onclick: removeKey }, 'Quitar clave'),
     ),
     status,
   );
