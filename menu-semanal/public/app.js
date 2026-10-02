@@ -6,7 +6,8 @@ import {
   weekDays, weekRangeLabel, weekStart,
 } from './lib.js';
 import { VERSION } from './version.js';
-import { DEFAULT_MODEL, MAX_IMAGES, askGemini, buildPrompt, dayKey, parseSuggestions } from './ai.js';
+import { CARTA_SCHEMA, DEFAULT_MODEL, MAX_IMAGES, askGemini, buildCartaPrompt, buildPrompt, parseCombos, parseSuggestions } from './ai.js';
+import { PdfError, detectMenuDates, extractPdfText, hasWeekdayNames } from './menu-pdf.js';
 
 /* ---------- Utilidades DOM ---------- */
 
@@ -497,8 +498,8 @@ function openBalance() {
     );
   }
 
-  const promptDays = weekDays(ui.weekStart).map((date) => ({ date, name: dayName(date).toLowerCase(), label: shortDate(date) }));
-  const menu = h('textarea', { class: 'field compact', name: 'menu-guarderia', rows: '6', 'aria-label': 'Menú de la guardería', placeholder: 'Pega aquí el menú de la guardería (lunes: lentejas y pollo…)…' });
+  const dateInfo = (date) => ({ date, name: dayName(date).toLowerCase(), label: shortDate(date) });
+  const menu = h('textarea', { class: 'field compact', name: 'menu-guarderia', rows: '6', 'aria-label': 'Menú de la guardería o carta', placeholder: 'Pega aquí el menú (lunes: lentejas y pollo…) o la carta de un restaurante…' });
   const notes = h('input', { class: 'field', type: 'text', name: 'notas', maxlength: '300', autocomplete: 'off', 'aria-label': 'Notas (opcional)', placeholder: 'Notas: alergias, edades…', value: loadAi().notes });
   const chips = h('div', { class: 'items' });
   const status = h('p', { class: 'ai-status', role: 'status' });
@@ -525,12 +526,32 @@ function openBalance() {
   });
 
   const fail = (message) => { status.className = 'ai-status error'; status.textContent = message; };
+  const info = (message) => { status.className = 'ai-status'; status.textContent = message; };
+
+  const pdfPicker = h('input', {
+    type: 'file', accept: 'application/pdf,.pdf', hidden: true,
+    onchange: async (e) => {
+      const file = e.target.files[0];
+      e.target.value = '';
+      if (!file) return;
+      info('Leyendo PDF…');
+      try {
+        const { text, pages } = await extractPdfText(file);
+        menu.value = menu.value.trim() ? `${menu.value.trim()}\n\n${text}` : text;
+        const found = detectMenuDates(menu.value, todayISO());
+        info(found.length
+          ? `PDF leído (${plural(pages, 'página', 'páginas')}): ${plural(found.length, 'día', 'días')}, del ${shortDate(found[0])} al ${shortDate(found.at(-1))}. Revisa el texto y pulsa «Sugerir cenas».`
+          : hasWeekdayNames(menu.value)
+            ? `PDF leído. Se usará la semana visible (${weekRangeLabel(ui.weekStart)}). Revisa el texto y pulsa «Sugerir cenas».`
+            : 'PDF leído. Parece una carta de restaurante: te propondré cenas equilibradas con sus platos.');
+      } catch (err) {
+        fail(err instanceof PdfError ? err.message : 'No se pudo leer el PDF. Si estás sin conexión, ábrelo antes una vez con internet.');
+      }
+    },
+  });
 
   function renderResults(list) {
-    const entries = list
-      .map((s) => ({ s, date: promptDays.find((d) => dayKey(d.name) === s.day)?.date ?? null, id: null, pre: false }))
-      .filter((x) => x.date);
-    if (!entries.length) return fail('Las sugerencias no coinciden con los días de esta semana.');
+    const entries = list.map((s) => ({ s, date: s.date, id: null, pre: false }));
     const paint = (x) => {
       x.btn.textContent = x.pre ? 'Ya estaba en la cena' : x.id ? '✓ Añadida (quitar)' : 'Añadir a la cena';
       x.btn.disabled = x.pre;
@@ -553,6 +574,10 @@ function openBalance() {
       entries.forEach(paint);
     };
     results.replaceChildren(
+      h('div', { class: 'ai-summary' },
+        h('p', {}, `${plural(entries.length, 'cena sugerida', 'cenas sugeridas')} · del ${shortDate(entries[0].date)} al ${shortDate(entries.at(-1).date)}`),
+        h('button', { class: 'btn', type: 'button', onclick: addAll }, 'Añadir todas'),
+      ),
       ...entries.map((x) => {
         x.btn = h('button', { class: 'btn tonal small', type: 'button', onclick: () => toggle(x) });
         paint(x);
@@ -564,8 +589,33 @@ function openBalance() {
           x.btn,
         );
       }),
-      h('div', { class: 'buttons' }, h('button', { class: 'btn', type: 'button', onclick: addAll }, 'Añadir todas')),
       h('p', { class: 'ai-help' }, 'Sugerencias orientativas generadas por IA; ante dudas de alimentación infantil consulta con tu pediatra.'),
+    );
+  }
+
+  function renderCombos(list) {
+    const week = weekDays(ui.weekStart);
+    const firstFree = week.find((d) => !slotIds(state, d, 'dinner').length) ?? week[0];
+    results.replaceChildren(
+      ...list.map((c) => {
+        const select = h('select', { class: 'field select', 'aria-label': `Día para «${c.title}»` },
+          week.map((d) => h('option', { value: d, selected: d === firstFree }, `${dayName(d)} ${shortDate(d)}`)));
+        const name = c.items.join(' + ');
+        const btn = h('button', { class: 'btn tonal small', type: 'button' }, 'Añadir a la cena');
+        btn.addEventListener('click', () => {
+          const r = upsertDishByName(state, name);
+          commit(addToSlot(r.state, select.value, 'dinner', r.id));
+          btn.textContent = `✓ Añadida al ${dayName(select.value).toLowerCase()}`;
+        });
+        return h('article', { class: 'ai-card' },
+          h('h3', {}, c.title),
+          h('ul', { class: 'ai-items' }, c.items.map((i) => h('li', {}, `${guessEmoji(i)} ${i}`))),
+          c.reason && h('p', { class: 'why' }, c.reason),
+          select,
+          btn,
+        );
+      }),
+      h('p', { class: 'ai-help' }, 'Sugerencias orientativas generadas por IA a partir de la carta; ante dudas de alimentación consulta con un profesional.'),
     );
   }
 
@@ -575,7 +625,11 @@ function openBalance() {
     if (!menuText && !images.length) return fail('Pega el menú o añade una foto.');
     const ai = loadAi();
     saveAi({ notes: notes.value });
-    const planned = Object.fromEntries(promptDays.map((d) => [d.name, slotIds(state, d.date, 'dinner').map((id) => state.dishes[id]?.name).filter(Boolean)]));
+    // Modo calendario si el texto trae «Lunes 5»...; carta si no hay días ni foto; si no, la semana visible.
+    const found = detectMenuDates(menuText, todayISO());
+    const carta = !found.length && !images.length && !hasWeekdayNames(menuText);
+    const dates = (found.length ? found : weekDays(ui.weekStart)).map(dateInfo);
+    const planned = Object.fromEntries(dates.map((d) => [d.date, slotIds(state, d.date, 'dinner').map((id) => state.dishes[id]?.name).filter(Boolean)]));
     controller = new AbortController();
     go.disabled = true;
     status.className = 'ai-status';
@@ -584,11 +638,16 @@ function openBalance() {
     try {
       const text = await askGemini({
         key: ai.key, model: ai.model, images, signal: controller.signal,
-        prompt: buildPrompt({ days: promptDays, menuText, hasImages: images.length > 0, notes: notes.value, planned }),
+        schema: carta ? CARTA_SCHEMA : undefined,
+        onRetry: (n, max) => { status.textContent = `Gemini va saturado; reintentando (${n}/${max})…`; },
+        onFallback: (m) => { status.textContent = `Gemini sigue saturado; probando con un modelo más ligero (${m})…`; },
+        prompt: carta
+          ? buildCartaPrompt({ menuText, notes: notes.value })
+          : buildPrompt({ dates, menuText, hasImages: images.length > 0, notes: notes.value, planned }),
       });
-      const list = parseSuggestions(text);
+      if (carta) renderCombos(parseCombos(text));
+      else renderResults(parseSuggestions(text, dates.map((d) => d.date)));
       status.textContent = '';
-      renderResults(list);
     } catch (err) {
       if (err.kind !== 'abort') fail(err.message || 'Algo salió mal.');
     } finally {
@@ -599,9 +658,12 @@ function openBalance() {
   dlg.addEventListener('close', () => controller?.abort(), { once: true });
   openDialog(
     h('form', { class: 'dlg', onsubmit: submit },
-      dialogHead('Cenas según la guardería', `Semana del ${weekRangeLabel(ui.weekStart)}. Pega el menú o súbelo en foto y Gemini propone qué cenar para equilibrar.`),
+      dialogHead('Cenas según el menú', 'Pega el menú de la guardería, súbelo en foto o en PDF (también vale la carta de un restaurante) y Gemini propone qué cenar para equilibrar.'),
       menu,
-      h('div', { class: 'buttons start' }, h('button', { class: 'btn outline small', type: 'button', onclick: () => picker.click() }, '📷 Añadir foto del menú'), picker),
+      h('div', { class: 'buttons start' },
+        h('button', { class: 'btn outline small', type: 'button', onclick: () => pdfPicker.click() }, '📄 Añadir menú en PDF'),
+        h('button', { class: 'btn outline small', type: 'button', onclick: () => picker.click() }, '📷 Añadir foto'),
+        pdfPicker, picker),
       chips,
       notes,
       h('div', { class: 'buttons' }, go),
@@ -623,9 +685,14 @@ function aiCard() {
     const current = loadAi();
     status.className = 'ai-status';
     status.textContent = 'Probando…';
+    let used = current.model;
     try {
-      const text = await askGemini({ key: current.key, model: current.model, prompt: 'Responde solo con la palabra OK.', structured: false });
-      status.textContent = text ? `✅ Conexión correcta con ${current.model}.` : 'La respuesta llegó vacía.';
+      const text = await askGemini({
+        key: current.key, model: current.model, prompt: 'Responde solo con la palabra OK.', structured: false,
+        onRetry: (n, max) => { status.textContent = `Gemini va saturado; reintentando (${n}/${max})…`; },
+        onFallback: (m) => { used = m; status.textContent = `Gemini sigue saturado; probando con ${m}…`; },
+      });
+      status.textContent = text ? `✅ Conexión correcta con ${used}${used === current.model ? '' : ' (el modelo elegido está saturado ahora mismo)'}.` : 'La respuesta llegó vacía.';
     } catch (err) {
       status.className = 'ai-status error';
       status.textContent = err.message;

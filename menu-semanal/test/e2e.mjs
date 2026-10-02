@@ -8,7 +8,7 @@ import { chromium } from 'playwright';
 import { VERSION } from '../public/version.js';
 
 const ROOT = fileURLToPath(new URL('../public/', import.meta.url));
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
 
 const server = createServer(async (req, res) => {
   let path = normalize(new URL(req.url, 'http://x').pathname).replace(/^(\.\.[/\\])+/, '');
@@ -234,8 +234,8 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
   const gemini = { requests: [], mode: 'ok' };
   const reply = (text) => ({ id: 'v1_t', status: 'completed', steps: [{ type: 'model_output', content: [{ type: 'text', text }] }] });
   const SUGGESTIONS = { days: [
-    { day: 'martes', daycare: 'Lentejas con arroz', dinner: 'Pescado blanco a la plancha con verduras', reason: 'Tras legumbres, proteína ligera y verdura.' },
-    { day: 'miércoles', daycare: 'Pollo con patatas', dinner: 'Carne de cerdo con puré de patata', reason: 'Cambia de proteína respecto al pollo.' },
+    { date: '2026-09-29', daycare: 'Lentejas con arroz', dinner: 'Pescado blanco a la plancha con verduras', reason: 'Tras legumbres, proteína ligera y verdura.' },
+    { date: '2026-09-30', daycare: 'Pollo con patatas', dinner: 'Carne de cerdo con puré de patata', reason: 'Cambia de proteína respecto al pollo.' },
   ] };
   const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type,x-goog-api-key', 'access-control-allow-methods': 'POST,OPTIONS' };
   const aiErrors = [];
@@ -299,7 +299,7 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
   check((await p.locator('#dlg .ai-status').innerText()).includes('Pega el menú'), 'pide menú o foto si está vacío');
   await p.fill('#dlg textarea[name=menu-guarderia]', 'lunes: lentejas con arroz\nmartes: pollo con patatas');
   await p.fill('#dlg input[name=notas]', 'sin frutos secos');
-  await p.setInputFiles('#dlg input[type=file]', { name: 'menu.png', mimeType: 'image/png', buffer: PNG });
+  await p.setInputFiles('#dlg input[accept="image/*"]', { name: 'menu.png', mimeType: 'image/png', buffer: PNG });
   await p.waitForSelector('#dlg .item');
   await p.locator('#dlg button', { hasText: 'Sugerir cenas' }).click();
   await p.waitForSelector('#dlg .ai-card');
@@ -344,6 +344,95 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
   check(!((await p.evaluate(() => localStorage.getItem('menu-semanal:ai') ?? '')).includes('AIza')), 'quitar clave la borra del móvil');
   const unexpected = aiErrors.filter((e) => !e.includes('status of 403')); // el 403 es el error simulado a propósito
   check(unexpected.length === 0, `asistente sin errores de consola ni bloqueos de CSP${unexpected.length ? ': ' + unexpected.join(' | ') : ''}`);
+  await c.close();
+}
+
+// PDF de texto vectorial: calendario mensual (varias semanas) y carta de restaurante
+{
+  const cells = (label, arr) => `<tr><td>${label}</td>${arr.map((x) => `<td>${x}</td>`).join('')}</tr>`;
+  const week = (n, days, first, second) => `<tr><td>${n}º SEMANA</td>${days.map((d) => `<th>${d}</th>`).join('')}</tr>${cells('1ºPLATO', first)}${cells('2ºPLATO', second)}`;
+  const calendarHtml = `<html><body style="font-family:sans-serif;font-size:8px"><style>td,th{white-space:nowrap}</style><h1>MENÚ DE OCTUBRE</h1><table border="1" cellpadding="4" style="border-collapse:collapse;width:100%;text-align:center">`
+    + week(2, ['LUNES 5', 'MARTES 6', 'MIÉRCOLES 7', 'JUEVES 8', 'VIERNES 9'], ['PATATAS GUISADAS CON CHOCOS', 'POTAJE DE GARBANZOS', 'ESPIRALES A LA BOLOÑESA', 'ALUBIAS ESTOFADAS CON VERDURAS', 'CREMA DE CALABAZA'], ['LOMO ADOBADO AL HORNO', 'JAMONCITOS DE POLLO EN SALSA', 'TORTILLA FRANCESA', 'MERLUZA EN SALSA', 'HAMBURGUESA DE POLLO'])
+    + week(3, ['LUNES 12', 'MARTES 13', 'MIÉRCOLES 14', 'JUEVES 15', 'VIERNES 16'], ['FESTIVO', 'LENTEJAS ESTOFADAS', 'MACARRONES CON TOMATE', 'PUCHERO CON ARROZ', 'CREMA DE CALABACÍN'], ['', 'TORTILLA DE PATATAS', 'JAMONCITOS DE POLLO AL HORNO', 'BACALAO AL HORNO', 'ALBÓNDIGAS DE MERLUZA EN SALSA'])
+    + `</table><p>Razón social: Catering Pérez. Tlf: 664700725 e-mail: contacto@catering.example</p></body></html>`;
+  const cartaHtml = '<html><body style="font-family:sans-serif"><h1>Carta del restaurante</h1><h2>Entrantes</h2><p>Ensalada mixta 7 €</p><p>Croquetas caseras 9 €</p><h2>Principales</h2><p>Lubina a la plancha 18 €</p><p>Entrecot de ternera 21 €</p><h2>Postres</h2><p>Fruta de temporada 5 €</p></body></html>';
+  const pdf = async (html) => { const pg = await browser.newPage(); await pg.setContent(html); const buf = await pg.pdf({ format: 'A4', landscape: true }); await pg.close(); return buf; };
+  const [calendarPdf, cartaPdf, blankPdf] = [await pdf(calendarHtml), await pdf(cartaHtml), await pdf('<div style="width:80px;height:80px;background:red"></div>')];
+
+  const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type,x-goog-api-key', 'access-control-allow-methods': 'POST,OPTIONS' };
+  const calls = [];
+  const errs = [];
+  const c = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'es-ES' });
+  const p = await c.newPage();
+  p.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
+  p.on('pageerror', (e) => errs.push(e.message));
+  await p.clock.setFixedTime(new Date('2026-09-29T10:00:00'));
+  await p.addInitScript(() => localStorage.setItem('menu-semanal:ai', JSON.stringify({ key: 'AIza' + 'y'.repeat(35) })));
+  await p.route('https://generativelanguage.googleapis.com/**', async (route) => {
+    const req = route.request();
+    if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    const body = req.postDataJSON();
+    calls.push(body);
+    const isCarta = Boolean(body.response_format?.schema?.properties?.combos);
+    const payload = isCarta
+      ? { combos: [{ title: 'Ligera de pescado', items: ['Lubina a la plancha', 'Ensalada mixta'], reason: 'Proteína magra y verdura.' }, { title: 'Sin invención', items: ['Fruta de temporada'], reason: 'Postre ligero.' }] }
+      : { days: [
+        { date: '2026-10-05', daycare: 'Patatas con chocos', dinner: 'Pescado blanco a la plancha con verduras', reason: 'Compensa lomo y guiso.' },
+        { date: '2026-10-06', daycare: 'Potaje', dinner: 'Tortilla con ensalada', reason: 'Huevo tras legumbres.' },
+        { date: '2026-10-13', daycare: 'Lentejas', dinner: 'Merluza al horno con verduras', reason: 'Pescado tras legumbres.' },
+        { date: '2026-11-30', daycare: 'inventado', dinner: 'No debe aparecer', reason: 'fuera del menú' },
+      ] };
+    return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ steps: [{ type: 'model_output', content: [{ type: 'text', text: JSON.stringify(payload) }] }] }) });
+  });
+  await p.goto(base);
+  await p.waitForSelector('.day');
+  const upload = (name, buffer) => p.setInputFiles('#dlg input[accept*="pdf"]', { name, mimeType: 'application/pdf', buffer });
+  const dinnerText = (date) => p.locator(`.day[data-date="${date}"] .slot.dinner`).innerText();
+
+  // calendario mensual
+  await p.locator('[data-fk=balance]').click();
+  await upload('menu-octubre.pdf', calendarPdf);
+  await p.waitForFunction(() => document.querySelector('#dlg textarea').value.includes('Lunes 5:'), null, { timeout: 15000 });
+  const text = await p.locator('#dlg textarea').inputValue();
+  check(text.includes('Lunes 5: Patatas guisadas con chocos / Lomo adobado al horno') && text.includes('Lunes 12: Festivo') && text.includes('Viernes 16: Crema de calabacín'), 'PDF: calendario leído por columnas y en minúsculas legibles');
+  check(!text.includes('contacto@') && !text.includes('664700725') && !/PLATO|SEMANA/i.test(text), 'PDF: sin datos de contacto ni etiquetas de fila');
+  const st = await p.locator('#dlg .ai-status').innerText();
+  check(st.includes('PDF leído') && st.includes('5 oct') && st.includes('16 oct') && st.includes('10 días'), `PDF: detecta el rango de fechas (${st.slice(0, 70)}…)`);
+  await p.locator('#dlg button', { hasText: 'Sugerir cenas' }).click();
+  await p.waitForSelector('#dlg .ai-card');
+  const req = calls.at(-1);
+  check(req.input[0].text.includes('(2026-10-16)') && req.input[0].text.includes('(2026-10-05)') && !req.input[0].text.includes('(2026-09-28)'), 'PDF: el prompt usa las fechas del menú, no solo la semana visible');
+  check(req.input[0].text.includes('Lunes 5: Patatas guisadas con chocos') && !req.input[0].text.includes('contacto@'), 'PDF: el texto enviado es el extraído y limpio');
+  check(await p.locator('#dlg .ai-card').count() === 3 && !(await p.locator('#dlg').innerText()).includes('No debe aparecer'), 'PDF: descarta fechas que no pidió');
+  await p.locator('#dlg button', { hasText: 'Añadir todas' }).click();
+  await p.keyboard.press('Escape');
+  await p.locator('[data-fk=next]').click();
+  await p.waitForFunction(() => document.querySelector('.day')?.dataset.date === '2026-10-05');
+  check((await dinnerText('2026-10-05')).includes('Pescado blanco a la plancha con verduras') && (await dinnerText('2026-10-06')).includes('Tortilla con ensalada'), 'PDF: «Añadir todas» rellena las cenas de octubre');
+  await p.locator('[data-fk=next]').click();
+  await p.waitForFunction(() => document.querySelector('.day')?.dataset.date === '2026-10-12');
+  check((await dinnerText('2026-10-13')).includes('Merluza al horno con verduras'), 'PDF: también la segunda semana');
+
+  // carta de restaurante (sin fechas ni días)
+  await p.locator('[data-fk=balance]').click();
+  await upload('carta.pdf', cartaPdf);
+  await p.waitForFunction(() => document.querySelector('#dlg textarea').value.includes('Lubina'), null, { timeout: 15000 });
+  check((await p.locator('#dlg .ai-status').innerText()).includes('carta'), 'carta: se reconoce como carta de restaurante');
+  await p.locator('#dlg button', { hasText: 'Sugerir cenas' }).click();
+  await p.waitForSelector('#dlg select');
+  check(Boolean(calls.at(-1).response_format.schema.properties.combos) && calls.at(-1).input[0].text.includes('Entrecot de ternera'), 'carta: usa el prompt y el esquema de carta con el texto del PDF');
+  await p.locator('#dlg select').first().selectOption('2026-10-14');
+  await p.locator('#dlg .ai-card').first().locator('button').click();
+  await p.keyboard.press('Escape');
+  check((await dinnerText('2026-10-14')).includes('Lubina a la plancha + Ensalada mixta'), 'carta: añade la combinación al día elegido');
+
+  // PDF sin texto → mensaje claro
+  await p.locator('[data-fk=balance]').click();
+  await upload('escaneado.pdf', blankPdf);
+  await p.waitForFunction(() => document.querySelector('#dlg .ai-status.error'), null, { timeout: 15000 });
+  check((await p.locator('#dlg .ai-status').innerText()).includes('no tiene texto'), 'PDF sin texto: explica que debe subirlo como foto');
+  await p.keyboard.press('Escape');
+  check(errs.length === 0, `PDF sin errores de consola ni bloqueos de CSP${errs.length ? ': ' + errs.join(' | ') : ''}`);
   await c.close();
 }
 
