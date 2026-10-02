@@ -225,6 +225,128 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
   await page.locator('.nav-item[data-view=week]').click();
 }
 
+// Cabecera centrada y decoración de lado a lado; asistente de cenas con Gemini simulado
+{
+  const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+  const KEY = 'AIza' + 'x'.repeat(35);
+  const mk = (id, name, meals = []) => ({ id, name, emoji: '', meals, createdAt: '2026-01-01' });
+  const seed = { version: 1, dishes: { a: mk('a', 'Macarrones') }, plan: { '2026-09-28': { lunch: ['a'] } } };
+  const gemini = { requests: [], mode: 'ok' };
+  const reply = (text) => ({ id: 'v1_t', status: 'completed', steps: [{ type: 'model_output', content: [{ type: 'text', text }] }] });
+  const SUGGESTIONS = { days: [
+    { day: 'martes', daycare: 'Lentejas con arroz', dinner: 'Pescado blanco a la plancha con verduras', reason: 'Tras legumbres, proteína ligera y verdura.' },
+    { day: 'miércoles', daycare: 'Pollo con patatas', dinner: 'Carne de cerdo con puré de patata', reason: 'Cambia de proteína respecto al pollo.' },
+  ] };
+  const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type,x-goog-api-key', 'access-control-allow-methods': 'POST,OPTIONS' };
+  const aiErrors = [];
+  const c = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'es-ES', acceptDownloads: true });
+  const p = await c.newPage();
+  p.on('console', (m) => m.type() === 'error' && aiErrors.push(m.text()));
+  p.on('pageerror', (e) => aiErrors.push(e.message));
+  await p.clock.setFixedTime(new Date('2026-09-29T10:00:00'));
+  await p.addInitScript((st) => { if (!localStorage.getItem('menu-semanal:v1')) localStorage.setItem('menu-semanal:v1', JSON.stringify(st)); }, seed);
+  await p.route('https://generativelanguage.googleapis.com/**', async (route) => {
+    const req = route.request();
+    if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    gemini.requests.push({ url: req.url(), headers: req.headers(), body: req.postDataJSON() });
+    if (gemini.mode === '403') return route.fulfill({ status: 403, headers: cors, contentType: 'application/json', body: JSON.stringify({ error: { message: 'API key not valid', status: 'PERMISSION_DENIED' } }) });
+    const isTest = JSON.stringify(req.postDataJSON().input).includes('Responde solo con la palabra OK');
+    return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify(reply(isTest ? 'OK' : JSON.stringify(SUGGESTIONS))) });
+  });
+  await p.goto(base);
+  await p.waitForSelector('.day');
+
+  // cabecera
+  const head = await p.evaluate(() => {
+    const h1 = document.querySelector('#title'); const range = document.createRange(); range.selectNodeContents(h1);
+    const t = range.getBoundingClientRect();
+    const spans = [...document.querySelectorAll('.garnish span')];
+    const line = document.querySelector('.garnish').getBoundingClientRect();
+    const vis = spans.filter((el) => { const r = el.getBoundingClientRect(); return r.top >= line.top - 1 && r.bottom <= line.bottom + 1; });
+    return { center: (t.left + t.right) / 2, vw: document.documentElement.clientWidth, align: getComputedStyle(h1).textAlign, total: spans.length, visible: vis.length, distinct: new Set(vis.map((e) => e.textContent)).size, first: vis[0].getBoundingClientRect().left, last: vis.at(-1).getBoundingClientRect().right };
+  });
+  check(Math.abs(head.center - head.vw / 2) <= 2 && head.align === 'center', `título centrado en pantalla (${Math.round(head.center)} de ${head.vw / 2})`);
+  check(head.total >= 20 && head.distinct === head.visible && head.visible >= 9, `decoración variada: ${head.visible} ingredientes distintos visibles de ${head.total}`);
+  check(head.first <= 22 && head.last >= head.vw - 22, `decoración de lado a lado (${Math.round(head.first)}→${Math.round(head.last)} de ${head.vw})`);
+
+  {
+    const d = await browser.newContext({ viewport: { width: 1280, height: 800 }, locale: 'es-ES' });
+    const dp = await d.newPage();
+    await dp.goto(base);
+    await dp.waitForSelector('.day');
+    const wide = await dp.evaluate(() => {
+      const line = document.querySelector('.garnish').getBoundingClientRect();
+      const vis = [...document.querySelectorAll('.garnish span')].filter((el) => { const r = el.getBoundingClientRect(); return r.top >= line.top - 1 && r.bottom <= line.bottom + 1; });
+      return { box: [line.left, line.right], first: vis[0].getBoundingClientRect().left, last: vis.at(-1).getBoundingClientRect().right, n: vis.length };
+    });
+    check(wide.n === 24 && wide.first - wide.box[0] < 2 && wide.box[1] - wide.last < 2, `escritorio: los 24 ingredientes ocupan todo el ancho (${wide.n})`);
+    await d.close();
+  }
+
+  // sin clave: pide conectarla
+  await p.locator('[data-fk=balance]').click();
+  check((await p.locator('#dlg').innerText()).includes('Conecta Gemini'), 'sin clave, el asistente pide conectar Gemini');
+  await p.fill('#dlg input[name=gemini-key]', 'corta');
+  await p.locator('#dlg button', { hasText: 'Guardar clave' }).click();
+  check((await p.locator('#snack').innerText()).includes('incompleta'), 'rechaza una clave claramente incompleta');
+  await p.fill('#dlg input[name=gemini-key]', KEY);
+  await p.locator('#dlg button', { hasText: 'Guardar clave' }).click();
+  await p.waitForSelector('#dlg textarea[name=menu-guarderia]');
+  check(true, 'con la clave guardada se abre el formulario del menú');
+
+  // vacío → aviso; con menú + foto → petición correcta
+  await p.locator('#dlg button', { hasText: 'Sugerir cenas' }).click();
+  check((await p.locator('#dlg .ai-status').innerText()).includes('Pega el menú'), 'pide menú o foto si está vacío');
+  await p.fill('#dlg textarea[name=menu-guarderia]', 'lunes: lentejas con arroz\nmartes: pollo con patatas');
+  await p.fill('#dlg input[name=notas]', 'sin frutos secos');
+  await p.setInputFiles('#dlg input[type=file]', { name: 'menu.png', mimeType: 'image/png', buffer: PNG });
+  await p.waitForSelector('#dlg .item');
+  await p.locator('#dlg button', { hasText: 'Sugerir cenas' }).click();
+  await p.waitForSelector('#dlg .ai-card');
+  const req = gemini.requests.at(-1);
+  check(req.url === 'https://generativelanguage.googleapis.com/v1beta/interactions' && req.headers['x-goog-api-key'] === KEY, 'petición a Interactions con la clave en cabecera (no en la URL)');
+  check(req.body.input[0].text.includes('lunes: lentejas con arroz') && req.body.input[0].text.includes('sin frutos secos') && req.body.input[0].text.includes('martes 29 sep'), 'el prompt lleva menú, notas y fechas de la semana');
+  check(req.body.input[1]?.type === 'image' && req.body.input[1].mime_type === 'image/jpeg' && req.body.input[1].data.length > 20, 'la foto viaja como imagen JPEG base64');
+  check(req.body.response_format?.mime_type === 'application/json', 'pide salida JSON estructurada');
+  check(await p.locator('#dlg .ai-card').count() === 2, 'muestra una tarjeta por día sugerido');
+
+  // añadir / quitar / añadir todas
+  const dinner = (date) => p.locator(`.day[data-date="${date}"] .slot.dinner`).innerText();
+  await p.locator('#dlg .ai-card').first().locator('button').click();
+  check((await dinner('2026-09-29')).includes('Pescado blanco a la plancha con verduras'), 'añadir sugerencia a la cena del día correcto');
+  await p.locator('#dlg .ai-card').first().locator('button').click();
+  check(!(await dinner('2026-09-29')).includes('Pescado blanco'), 'volver a pulsar la quita');
+  await p.locator('#dlg button', { hasText: 'Añadir todas' }).click();
+  check((await dinner('2026-09-29')).includes('Pescado blanco') && (await dinner('2026-09-30')).includes('Carne de cerdo con puré de patata'), '«Añadir todas» rellena las cenas');
+  await p.keyboard.press('Escape');
+
+  // errores: 403 → mensaje claro
+  gemini.mode = '403';
+  await p.locator('[data-fk=balance]').click();
+  await p.fill('#dlg textarea[name=menu-guarderia]', 'lunes: lentejas');
+  await p.locator('#dlg button', { hasText: 'Sugerir cenas' }).click();
+  await p.waitForFunction(() => document.querySelector('#dlg .ai-status.error'));
+  check((await p.locator('#dlg .ai-status').innerText()).includes('clave'), 'error 403 explicado en español');
+  await p.keyboard.press('Escape');
+  gemini.mode = 'ok';
+
+  // Ajustes: probar conexión, copia sin clave, quitar clave
+  await p.locator('.nav-item[data-view=settings]').click();
+  await p.waitForSelector('.ai-key');
+  check((await p.locator('main').innerText()).includes('Clave guardada en este móvil'), 'Ajustes indica que hay clave guardada');
+  await p.locator('button', { hasText: 'Probar conexión' }).click();
+  await p.waitForFunction(() => document.querySelector('.ai-status')?.textContent.includes('Conexión correcta'));
+  check(true, '«Probar conexión» confirma que funciona');
+  const [dl] = await Promise.all([p.waitForEvent('download'), p.locator('button', { hasText: 'Exportar copia' }).click()]);
+  const exported = (await import('node:fs')).readFileSync(await dl.path(), 'utf8');
+  check(!exported.includes('AIza') && !exported.includes('gemini'), 'la copia de seguridad no incluye la clave');
+  await p.locator('button', { hasText: 'Quitar clave' }).click();
+  check(!((await p.evaluate(() => localStorage.getItem('menu-semanal:ai') ?? '')).includes('AIza')), 'quitar clave la borra del móvil');
+  const unexpected = aiErrors.filter((e) => !e.includes('status of 403')); // el 403 es el error simulado a propósito
+  check(unexpected.length === 0, `asistente sin errores de consola ni bloqueos de CSP${unexpected.length ? ': ' + unexpected.join(' | ') : ''}`);
+  await c.close();
+}
+
 check(errors.length === 0, `sin errores de consola${errors.length ? `: ${errors.join(' | ')}` : ''}`);
 
 await browser.close();

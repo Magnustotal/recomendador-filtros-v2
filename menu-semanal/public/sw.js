@@ -3,7 +3,7 @@
 // Así los cambios publicados llegan solos y no hay que subir versiones a mano.
 
 const CACHE = 'menu-semanal-v1';
-const CORE = ['./', 'index.html', 'styles.css', 'app.js', 'lib.js', 'version.js', 'manifest.webmanifest', 'icons/icon.svg'];
+const CORE = ['./', 'index.html', 'styles.css', 'app.js', 'lib.js', 'ai.js', 'version.js', 'manifest.webmanifest', 'icons/icon.svg'];
 const OPTIONAL = ['icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (event) => {

@@ -70,8 +70,13 @@ h1, h2 { text-wrap: balance; }
 .noscript { padding: 24px; }
 
 /* ---------- Cabecera ---------- */
-.topbar { padding: calc(28px + env(safe-area-inset-top, 0px)) 4px 12px; }
-.garnish { margin-top: 6px; font-size: 1.25rem; letter-spacing: 0.35em; }
+.topbar { text-align: center; padding: calc(28px + env(safe-area-inset-top, 0px)) 4px 12px; }
+/* Una sola fila de ingredientes repartida de lado a lado; los que no caben pasan a una 2.ª línea que se recorta */
+.garnish {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-content: flex-start;
+  height: 2.25rem; overflow: hidden; margin-top: 8px; font-size: 1.4rem; line-height: 2.25rem;
+}
+.garnish span { display: block; }
 .eyebrow { font-size: 0.875rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--primary); }
 .topbar h1 { font-family: var(--font-display); font-size: clamp(2.25rem, 9vw, 3.5rem); line-height: 1.05; font-weight: 800; letter-spacing: 0; }
 
@@ -187,6 +192,7 @@ main { outline: none; }
 }
 .field::placeholder { color: var(--on-surface-variant); }
 textarea.field { border-radius: 24px; padding: 16px 20px; min-height: 260px; resize: vertical; line-height: 1.5; }
+textarea.field.compact { min-height: 150px; }
 
 .seg { display: flex; width: 100%; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--outline); overflow: hidden; }
 .seg label { position: relative; flex: 1; }
@@ -318,3 +324,20 @@ dialog.sheet { width: 100%; max-width: 640px; margin: auto auto 0; border-radius
   .nav-item { flex: none; display: grid; width: 100%; }
   .fab, .snack { bottom: 24px; }
 }
+
+/* ---------- Asistente de cenas (IA) ---------- */
+.ai-help { display: grid; gap: 8px; }
+.ai-help p, p.ai-help { font-size: 0.875rem; color: var(--on-surface-variant); }
+.ai-help a { color: var(--primary); font-weight: 600; }
+.ai-key { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.ai-adv summary { min-height: 48px; display: flex; align-items: center; cursor: pointer; font-weight: 600; color: var(--primary); }
+.ai-status { font-size: 0.9375rem; min-height: 1.5em; }
+.ai-status.error { color: var(--error); font-weight: 600; }
+.ai-results { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.ai-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; justify-items: start; padding: 16px; border-radius: 20px; background: var(--sage); color: var(--on-sage); }
+.ai-card h3 { font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.ai-card .meta { font-size: 0.875rem; }
+.ai-card .dish { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+.ai-card .why { font-size: 0.9375rem; margin-bottom: 8px; }
+.ai-card .btn { background: var(--on-sage); color: var(--sage); }
+.dlg .buttons.start { justify-content: flex-start; }

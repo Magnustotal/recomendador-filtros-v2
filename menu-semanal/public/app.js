@@ -6,6 +6,7 @@ import {
   weekDays, weekRangeLabel, weekStart,
 } from './lib.js';
 import { VERSION } from './version.js';
+import { DEFAULT_MODEL, MAX_IMAGES, askGemini, buildPrompt, dayKey, parseSuggestions } from './ai.js';
 
 /* ---------- Utilidades DOM ---------- */
 
@@ -189,9 +190,10 @@ function renderWeek() {
     h('button', { class: 'icon-btn', type: 'button', 'data-fk': 'prev', 'aria-label': 'Semana anterior', onclick: () => goWeek(-7) }, icon('chevL')),
     h('div', { class: 'range', 'aria-live': 'polite' }, h('strong', {}, weekRangeLabel(ui.weekStart)), h('span', {}, relative || ' ')),
     h('button', { class: 'icon-btn', type: 'button', 'data-fk': 'next', 'aria-label': 'Semana siguiente', onclick: () => goWeek(7) }, icon('chevR')),
-    (offset !== 0 || canCopy) && h('div', { class: 'extra' },
+    h('div', { class: 'extra' },
       offset !== 0 && h('button', { class: 'btn text small', type: 'button', 'data-fk': 'today', onclick: () => goWeek(0) }, 'Ir a hoy'),
       canCopy && h('button', { class: 'btn tonal small', type: 'button', onclick: repeatPreviousWeek }, 'Repetir semana anterior'),
+      h('button', { class: 'btn tonal small', type: 'button', 'data-fk': 'balance', onclick: openBalance }, '🥗 Cenas según la guardería'),
     ),
   );
 
@@ -425,6 +427,227 @@ function openShare() {
   );
 }
 
+/* ---------- Asistente de cenas (Gemini) ---------- */
+
+const AI_STORE = 'menu-semanal:ai'; // clave y preferencias: fuera de las copias de seguridad
+
+function loadAi() {
+  let o = {};
+  try { o = JSON.parse(readStorage(AI_STORE) ?? '{}') ?? {}; } catch { /* vacío */ }
+  return {
+    key: typeof o.key === 'string' ? o.key : '',
+    model: typeof o.model === 'string' && o.model.trim() ? o.model.trim() : DEFAULT_MODEL,
+    notes: typeof o.notes === 'string' ? o.notes : '',
+  };
+}
+const saveAi = (patch) => writeStorage(AI_STORE, JSON.stringify({ ...loadAi(), ...patch }));
+
+function aiHelp() {
+  return h('div', { class: 'ai-help' },
+    h('p', {}, 'Consigue una clave gratuita en ',
+      h('a', { href: 'https://aistudio.google.com/apikey', target: '_blank', rel: 'noopener noreferrer' }, 'Google AI Studio'),
+      '. Créala solo para esta app y restríngela a tu dirección web (Google recomienda restringir las claves).'),
+    h('p', {}, 'La clave se guarda solo en este móvil y no entra en las copias de seguridad. Al pedir sugerencias se envían a Google el menú o la foto, tus notas y los nombres de las cenas ya planeadas; en el nivel gratuito, según sus términos actuales, Google puede usarlos para mejorar sus productos. No incluyas nombres de niños.'),
+  );
+}
+
+function keyForm({ onSaved }) {
+  const input = h('input', { class: 'field', type: 'password', name: 'gemini-key', autocomplete: 'off', spellcheck: 'false', 'aria-label': 'Clave de Gemini', placeholder: 'Pega tu clave de Gemini…' });
+  return h('form', {
+    class: 'ai-key',
+    onsubmit: (e) => {
+      e.preventDefault();
+      const key = input.value.trim();
+      if (!/^\S{20,}$/.test(key)) return toast('La clave parece incompleta. Cópiala entera desde Google AI Studio.', { error: true });
+      if (!saveAi({ key })) return toast('No se pudo guardar la clave en este dispositivo.', { error: true });
+      input.value = '';
+      onSaved();
+    },
+  }, input, h('button', { class: 'btn tonal', type: 'submit' }, 'Guardar clave'));
+}
+
+/** Foto → JPEG de hasta 1600 px en base64 (menos peso, formato que Gemini acepta). */
+async function fileToJpeg(file) {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close?.();
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+  const data = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+  return { name: file.name, mime: 'image/jpeg', data };
+}
+
+function openBalance() {
+  if (!loadAi().key) {
+    return openDialog(
+      h('div', { class: 'dlg' },
+        dialogHead('Conecta Gemini', 'Hace falta una clave gratuita de Google para generar las sugerencias.'),
+        aiHelp(),
+        keyForm({ onSaved: openBalance }),
+      ),
+      { sheet: true },
+    );
+  }
+
+  const promptDays = weekDays(ui.weekStart).map((date) => ({ date, name: dayName(date).toLowerCase(), label: shortDate(date) }));
+  const menu = h('textarea', { class: 'field compact', name: 'menu-guarderia', rows: '6', 'aria-label': 'Menú de la guardería', placeholder: 'Pega aquí el menú de la guardería (lunes: lentejas y pollo…)…' });
+  const notes = h('input', { class: 'field', type: 'text', name: 'notas', maxlength: '300', autocomplete: 'off', 'aria-label': 'Notas (opcional)', placeholder: 'Notas: alergias, edades…', value: loadAi().notes });
+  const chips = h('div', { class: 'items' });
+  const status = h('p', { class: 'ai-status', role: 'status' });
+  const results = h('div', { class: 'ai-results' });
+  const go = h('button', { class: 'btn', type: 'submit' }, '✨ Sugerir cenas');
+  const images = [];
+  let controller;
+
+  const renderChips = () => chips.replaceChildren(...images.map((im, i) => h('span', { class: 'item' },
+    `🖼️ ${im.name}`,
+    h('button', { class: 'x', type: 'button', 'aria-label': `Quitar ${im.name}`, onclick: () => { images.splice(i, 1); renderChips(); } }, icon('close')),
+  )));
+  const picker = h('input', {
+    type: 'file', accept: 'image/*', multiple: true, hidden: true,
+    onchange: async (e) => {
+      const files = [...e.target.files];
+      e.target.value = '';
+      for (const file of files) {
+        if (images.length >= MAX_IMAGES) { toast(`Máximo ${MAX_IMAGES} fotos`); break; }
+        try { images.push(await fileToJpeg(file)); } catch { toast(`No pude leer ${file.name}. Usa una foto JPG o PNG.`, { error: true }); }
+      }
+      renderChips();
+    },
+  });
+
+  const fail = (message) => { status.className = 'ai-status error'; status.textContent = message; };
+
+  function renderResults(list) {
+    const entries = list
+      .map((s) => ({ s, date: promptDays.find((d) => dayKey(d.name) === s.day)?.date ?? null, id: null, pre: false }))
+      .filter((x) => x.date);
+    if (!entries.length) return fail('Las sugerencias no coinciden con los días de esta semana.');
+    const paint = (x) => {
+      x.btn.textContent = x.pre ? 'Ya estaba en la cena' : x.id ? '✓ Añadida (quitar)' : 'Añadir a la cena';
+      x.btn.disabled = x.pre;
+      x.btn.setAttribute('aria-pressed', String(Boolean(x.id)));
+    };
+    const add = (x, base) => {
+      const r = upsertDishByName(base, x.s.dinner);
+      if (slotIds(r.state, x.date, 'dinner').includes(r.id)) { x.pre = true; return r.state; }
+      x.id = r.id;
+      return addToSlot(r.state, x.date, 'dinner', r.id);
+    };
+    const toggle = (x) => {
+      if (x.id) { commit(removeFromSlot(state, x.date, 'dinner', x.id)); x.id = null; } else commit(add(x, state));
+      paint(x);
+    };
+    const addAll = () => {
+      let next = state;
+      for (const x of entries) if (!x.id && !x.pre) next = add(x, next);
+      commit(next);
+      entries.forEach(paint);
+    };
+    results.replaceChildren(
+      ...entries.map((x) => {
+        x.btn = h('button', { class: 'btn tonal small', type: 'button', onclick: () => toggle(x) });
+        paint(x);
+        return h('article', { class: 'ai-card' },
+          h('h3', {}, `${dayName(x.date)} ${shortDate(x.date)}`),
+          x.s.daycare && h('p', { class: 'meta' }, `Guardería: ${x.s.daycare}`),
+          h('p', { class: 'dish' }, `${guessEmoji(x.s.dinner)} ${x.s.dinner}`),
+          x.s.reason && h('p', { class: 'why' }, x.s.reason),
+          x.btn,
+        );
+      }),
+      h('div', { class: 'buttons' }, h('button', { class: 'btn', type: 'button', onclick: addAll }, 'Añadir todas')),
+      h('p', { class: 'ai-help' }, 'Sugerencias orientativas generadas por IA; ante dudas de alimentación infantil consulta con tu pediatra.'),
+    );
+  }
+
+  async function submit(e) {
+    e.preventDefault();
+    const menuText = menu.value.trim();
+    if (!menuText && !images.length) return fail('Pega el menú o añade una foto.');
+    const ai = loadAi();
+    saveAi({ notes: notes.value });
+    const planned = Object.fromEntries(promptDays.map((d) => [d.name, slotIds(state, d.date, 'dinner').map((id) => state.dishes[id]?.name).filter(Boolean)]));
+    controller = new AbortController();
+    go.disabled = true;
+    status.className = 'ai-status';
+    status.textContent = 'Pensando…';
+    results.replaceChildren();
+    try {
+      const text = await askGemini({
+        key: ai.key, model: ai.model, images, signal: controller.signal,
+        prompt: buildPrompt({ days: promptDays, menuText, hasImages: images.length > 0, notes: notes.value, planned }),
+      });
+      const list = parseSuggestions(text);
+      status.textContent = '';
+      renderResults(list);
+    } catch (err) {
+      if (err.kind !== 'abort') fail(err.message || 'Algo salió mal.');
+    } finally {
+      go.disabled = false;
+    }
+  }
+
+  dlg.addEventListener('close', () => controller?.abort(), { once: true });
+  openDialog(
+    h('form', { class: 'dlg', onsubmit: submit },
+      dialogHead('Cenas según la guardería', `Semana del ${weekRangeLabel(ui.weekStart)}. Pega el menú o súbelo en foto y Gemini propone qué cenar para equilibrar.`),
+      menu,
+      h('div', { class: 'buttons start' }, h('button', { class: 'btn outline small', type: 'button', onclick: () => picker.click() }, '📷 Añadir foto del menú'), picker),
+      chips,
+      notes,
+      h('div', { class: 'buttons' }, go),
+      status,
+      results,
+    ),
+    { sheet: true },
+  );
+}
+
+function aiCard() {
+  const ai = loadAi();
+  const status = h('p', { class: 'ai-status', role: 'status' });
+  const model = h('input', {
+    class: 'field', type: 'text', name: 'modelo', autocomplete: 'off', spellcheck: 'false', value: ai.model, 'aria-label': 'Modelo de Gemini',
+    onchange: () => { saveAi({ model: model.value.trim() || DEFAULT_MODEL }); toast('Modelo guardado'); },
+  });
+  const test = async () => {
+    const current = loadAi();
+    status.className = 'ai-status';
+    status.textContent = 'Probando…';
+    try {
+      const text = await askGemini({ key: current.key, model: current.model, prompt: 'Responde solo con la palabra OK.', structured: false });
+      status.textContent = text ? `✅ Conexión correcta con ${current.model}.` : 'La respuesta llegó vacía.';
+    } catch (err) {
+      status.className = 'ai-status error';
+      status.textContent = err.message;
+    }
+  };
+  const removeKey = () => { saveAi({ key: '' }); render(); toast('Clave eliminada de este móvil'); };
+
+  return h('section', { class: 'card' },
+    h('h2', {}, '🥗 Asistente de cenas (Gemini)'),
+    h('p', {}, 'Pásale el menú de la guardería (texto o foto) y te propone qué cenar para equilibrar la semana.'),
+    aiHelp(),
+    ai.key && h('p', {}, '✅ Clave guardada en este móvil. Pega otra para cambiarla.'),
+    keyForm({ onSaved: () => { render(); toast('Clave guardada'); } }),
+    h('details', { class: 'ai-adv' }, h('summary', {}, 'Modelo avanzado'), model),
+    ai.key && h('div', { class: 'actions' },
+      h('button', { class: 'btn tonal', type: 'button', onclick: test }, 'Probar conexión'),
+      h('button', { class: 'btn outline', type: 'button', onclick: removeKey }, 'Quitar clave'),
+    ),
+    status,
+  );
+}
+
 /* ---------- Platos ---------- */
 
 function renderDishes() {
@@ -536,7 +759,7 @@ function renderSettings() {
   return h('div', { class: 'view-enter' },
     h('section', { class: 'card' },
       h('h2', {}, 'Tus datos'),
-      h('p', {}, `Todo se guarda solo en este móvil: ${plural(dishCount, 'plato', 'platos')} y ${plural(dayCount, 'día planificado', 'días planificados')}. Nada se envía a ningún servidor.`),
+      h('p', {}, `Todo se guarda solo en este móvil: ${plural(dishCount, 'plato', 'platos')} y ${plural(dayCount, 'día planificado', 'días planificados')}. Nada se envía a ningún servidor, salvo cuando usas el asistente de cenas (más abajo).`),
       h('p', {}, 'Si borras los datos del navegador o desinstalas la app, se pierden. Haz una copia de vez en cuando.'),
       h('div', { class: 'actions' },
         h('button', { class: 'btn tonal', type: 'button', onclick: exportData }, 'Exportar copia'),
@@ -544,6 +767,7 @@ function renderSettings() {
         fileInput,
       ),
     ),
+    aiCard(),
     !isStandalone() && h('section', { class: 'card' },
       h('h2', {}, 'Instalar en el móvil'),
       h('p', {}, 'Instálala para abrirla como una app y usarla sin conexión. En iPhone o iPad: botón Compartir → «Añadir a pantalla de inicio».'),
@@ -603,14 +827,16 @@ async function importFile(e) {
 async function resetAll() {
   const ok = await confirmDialog({
     title: '¿Borrar todo?',
-    body: 'Se eliminarán todos tus platos y menús de este móvil. Considera exportar una copia antes.',
+    body: 'Se eliminarán todos tus platos y menús de este móvil, y la clave de Gemini si la guardaste. Considera exportar una copia antes.',
     confirmLabel: 'Borrar todo',
     danger: true,
   });
   if (!ok) return;
   const prev = state;
+  const prevAi = readStorage(AI_STORE);
+  try { localStorage.removeItem(AI_STORE); } catch { /* sin almacenamiento */ }
   commit(emptyState());
-  toast('Datos borrados', { label: 'Deshacer', onClick: () => commit(prev) });
+  toast('Datos borrados', { label: 'Deshacer', onClick: () => { if (prevAi) writeStorage(AI_STORE, prevAi); commit(prev); } });
 }
 
 /* ---------- Render principal ---------- */

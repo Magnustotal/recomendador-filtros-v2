@@ -15,6 +15,7 @@ PWA sencilla para planificar el menú de la semana: almuerzo y cena por día, pl
 | **Memoria de platos** | Todo lo que escribes queda guardado y se ofrece al añadir de nuevo (con búsqueda). Pestaña **Platos** para editar, borrar y ordenar por «hace tiempo», A–Z o más usados. |
 | **Sugerencias** | Tarjeta verde: el plato que más tiempo lleva sin aparecer (≥ 14 días, o guardado y nunca planificado) para el primer hueco libre desde hoy. La hoja de «Añadir plato» también propone «Hace tiempo que no los comes». No sugiere lo ya planificado en los próximos 7 días. |
 | **WhatsApp** | Botón «Enviar por WhatsApp»: mensaje con emojis, un bloque por día, almuerzo y cena diferenciados. Editable antes de enviar; abre `wa.me`, copia o usa el menú «Compartir» del sistema. |
+| **Cenas según la guardería** | Botón «🥗 Cenas según la guardería» en la semana: pegas el menú (o subes hasta 3 fotos) y **Gemini** propone una cena **genérica** por día para equilibrar (p. ej. «Pescado blanco a la plancha con verduras»). Cada una se añade a la cena de su día con un toque. Ver «Asistente de IA» más abajo. |
 | **Ajustes** | Exportar/importar copia en JSON, instalar, borrar todo. |
 
 Ejemplo de mensaje:
@@ -73,12 +74,22 @@ node scripts/make-splash.mjs  # regenerar las pantallas de arranque de iOS
 npm run zip                   # regenerar dist/menu-semanal-v<versión>.zip
 ```
 
+## Asistente de IA (Gemini)
+
+- Usa **tu propia clave** de Google AI Studio (https://aistudio.google.com/apikey), que se guarda solo en el móvil (`localStorage`) y **no** entra en las copias de seguridad. La app sigue siendo estática: no hay servidor propio.
+- La llamada va directa del móvil a `generativelanguage.googleapis.com` (`POST /v1beta/interactions`, cabecera `x-goog-api-key`); la CSP solo permite ese dominio.
+- **Lo que se envía a Google:** el menú o la foto, tus notas y los nombres de las cenas ya planeadas de esa semana. Según los términos de Google a fecha de hoy, en el nivel gratuito pueden usarlo para mejorar sus productos y revisores humanos podrían leerlo; en el de pago no. No incluyas nombres de niños.
+- Google desaconseja claves en el navegador porque cualquiera con acceso al navegador podría extraerla. Para un uso personal: crea una clave solo para esta app, **restríngela a la dirección web de tu sitio** y pon alertas de facturación. (No he podido comprobar de extremo a extremo la restricción por dirección: la petición envía el origen como referente para permitirla.)
+- El modelo por defecto (`gemini-3.8-flash`) sale de la documentación de Google y es editable en **Ajustes → Modelo avanzado**; **Probar conexión** valida clave y modelo.
+- Las respuestas se tratan como texto no confiable: se validan, se recortan y solo se muestran como texto.
+
 ## Versiones
 
 La versión vive en `public/version.js` (se muestra en **Ajustes**) y en `package.json`; `npm test` falla si difieren. Para publicar una nueva: súbela en ambos sitios (`1.1.0` → `1.1.1` para arreglos, `1.2.0` para novedades), ejecuta `npm test` y `npm run zip`. El zip resultante se llama `menu-semanal-v<versión>.zip` y sustituye al anterior en `dist/`.
 
 | Versión | Cambios |
 |---|---|
+| 1.3.0 | Título centrado y más ingredientes de lado a lado; asistente de cenas con Gemini (menú de la guardería en texto o foto) |
 | 1.2.1 | El resaltado de «hoy» se ve sobre la tira de paño; README aclara que el zip se genera, no se versiona |
 | 1.2.0 | Solo modo claro (sin tema oscuro) y estilo de cocina |
 | 1.1.0 | Auditoría responsive/PWA: palabras largas sin desbordes, alto contraste, landscape, safe areas, texto grande, barra lateral en escritorio, pantallas de arranque iOS, rutas por hash |
