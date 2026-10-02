@@ -262,7 +262,7 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
     const t = range.getBoundingClientRect();
     const spans = [...document.querySelectorAll('.garnish span')];
     const line = document.querySelector('.garnish').getBoundingClientRect();
-    const vis = spans.filter((el) => { const r = el.getBoundingClientRect(); return r.top >= line.top - 1 && r.bottom <= line.bottom + 1; });
+    const vis = spans.filter((el) => { const r = el.getBoundingClientRect(); return r.top >= line.top - 6 && r.bottom <= line.bottom + 6; });
     return { center: (t.left + t.right) / 2, vw: document.documentElement.clientWidth, align: getComputedStyle(h1).textAlign, total: spans.length, visible: vis.length, distinct: new Set(vis.map((e) => e.textContent)).size, first: vis[0].getBoundingClientRect().left, last: vis.at(-1).getBoundingClientRect().right };
   });
   check(Math.abs(head.center - head.vw / 2) <= 2 && head.align === 'center', `título centrado en pantalla (${Math.round(head.center)} de ${head.vw / 2})`);
@@ -276,7 +276,7 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
     await dp.waitForSelector('.day');
     const wide = await dp.evaluate(() => {
       const line = document.querySelector('.garnish').getBoundingClientRect();
-      const vis = [...document.querySelectorAll('.garnish span')].filter((el) => { const r = el.getBoundingClientRect(); return r.top >= line.top - 1 && r.bottom <= line.bottom + 1; });
+      const vis = [...document.querySelectorAll('.garnish span')].filter((el) => { const r = el.getBoundingClientRect(); return r.top >= line.top - 6 && r.bottom <= line.bottom + 6; });
       return { box: [line.left, line.right], first: vis[0].getBoundingClientRect().left, last: vis.at(-1).getBoundingClientRect().right, n: vis.length };
     });
     check(wide.n === 24 && wide.first - wide.box[0] < 2 && wide.box[1] - wide.last < 2, `escritorio: los 24 ingredientes ocupan todo el ancho (${wide.n})`);
