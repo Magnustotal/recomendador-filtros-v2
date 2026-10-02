@@ -104,6 +104,7 @@ La versión vive en `public/version.js` (se muestra en **Ajustes**) y en `packag
 
 | Versión | Cambios |
 |---|---|
+| 1.7.0 | Acabado visual: luz cálida y viñeta, título con degradado, tarjetas con relieve y entrada escalonada, ingredientes con movimiento sutil, navegación de cristal esmerilado (todo respeta reduced-motion y alto contraste) |
 | 1.6.0 | La clave de Gemini ya no se introduce en la app: vive como variable de entorno en Netlify y las peticiones pasan por una Netlify Function (`/api/gemini`) con código de acceso opcional; CSP sin dominios externos |
 | 1.5.0 | Dos documentos: menú del mediodía + sugerencias de cena del catering; la IA los **contrasta** día a día (¿equilibra el mediodía?) y propone platos de **tu base de datos** de platos guardados (solo con nombre exacto) |
 | 1.4.0 | Lee **PDF de texto** (calendario mensual de la guardería o carta de restaurante) en el navegador con pdf.js y propone cenas por fechas; reintentos y cambio automático de modelo si Gemini está saturado; regla anti-atragantamiento en el prompt |
