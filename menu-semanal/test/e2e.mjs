@@ -386,14 +386,14 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
   });
   await p.goto(base);
   await p.waitForSelector('.day');
-  const upload = (name, buffer) => p.setInputFiles('#dlg input[accept*="pdf"]', { name, mimeType: 'application/pdf', buffer });
+  const upload = (name, buffer) => p.setInputFiles('#dlg input[data-role=lunch]', { name, mimeType: 'application/pdf', buffer });
   const dinnerText = (date) => p.locator(`.day[data-date="${date}"] .slot.dinner`).innerText();
 
   // calendario mensual
   await p.locator('[data-fk=balance]').click();
   await upload('menu-octubre.pdf', calendarPdf);
-  await p.waitForFunction(() => document.querySelector('#dlg textarea').value.includes('Lunes 5:'), null, { timeout: 15000 });
-  const text = await p.locator('#dlg textarea').inputValue();
+  await p.waitForFunction(() => document.querySelector('#dlg textarea[name=menu-guarderia]').value.includes('Lunes 5:'), null, { timeout: 15000 });
+  const text = await p.locator('#dlg textarea[name=menu-guarderia]').inputValue();
   check(text.includes('Lunes 5: Patatas guisadas con chocos / Lomo adobado al horno') && text.includes('Lunes 12: Festivo') && text.includes('Viernes 16: Crema de calabacín'), 'PDF: calendario leído por columnas y en minúsculas legibles');
   check(!text.includes('contacto@') && !text.includes('664700725') && !/PLATO|SEMANA/i.test(text), 'PDF: sin datos de contacto ni etiquetas de fila');
   const st = await p.locator('#dlg .ai-status').innerText();
@@ -416,7 +416,7 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
   // carta de restaurante (sin fechas ni días)
   await p.locator('[data-fk=balance]').click();
   await upload('carta.pdf', cartaPdf);
-  await p.waitForFunction(() => document.querySelector('#dlg textarea').value.includes('Lubina'), null, { timeout: 15000 });
+  await p.waitForFunction(() => document.querySelector('#dlg textarea[name=menu-guarderia]').value.includes('Lubina'), null, { timeout: 15000 });
   check((await p.locator('#dlg .ai-status').innerText()).includes('carta'), 'carta: se reconoce como carta de restaurante');
   await p.locator('#dlg button', { hasText: 'Sugerir cenas' }).click();
   await p.waitForSelector('#dlg select');
@@ -433,6 +433,78 @@ check(await page.locator('.item').count() >= 3, 'funciona sin conexión');
   check((await p.locator('#dlg .ai-status').innerText()).includes('no tiene texto'), 'PDF sin texto: explica que debe subirlo como foto');
   await p.keyboard.press('Escape');
   check(errs.length === 0, `PDF sin errores de consola ni bloqueos de CSP${errs.length ? ': ' + errs.join(' | ') : ''}`);
+  await c.close();
+}
+
+// Dos documentos: menú del mediodía + sugerencias de cena del catering, contrastados con los platos guardados
+{
+  const grid = (rows) => `<html><body style="font-family:sans-serif;font-size:8px"><style>td,th{white-space:nowrap}</style><table border="1" cellpadding="4" style="border-collapse:collapse;width:100%;text-align:center"><tr><td>2º SEMANA</td>${['LUNES 5', 'MARTES 6', 'MIÉRCOLES 7'].map((d) => `<th>${d}</th>`).join('')}</tr>${rows.map((r, i) => `<tr><td>${i + 1}ºPLATO</td>${r.map((x) => `<td>${x}</td>`).join('')}</tr>`).join('')}</table></body></html>`;
+  const pdf = async (html) => { const pg = await browser.newPage(); await pg.setContent(html); const buf = await pg.pdf({ format: 'A4', landscape: true }); await pg.close(); return buf; };
+  const lunchPdf = await pdf(grid([['PATATAS GUISADAS CON CHOCOS', 'POTAJE DE GARBANZOS', 'ESPIRALES A LA BOLOÑESA'], ['LOMO ADOBADO AL HORNO', 'JAMONCITOS DE POLLO EN SALSA', 'TORTILLA FRANCESA']]));
+  const dinnerPdf = await pdf(grid([['CREMA DE PUERRO', 'VERDURITAS REHOGADAS', 'SOPA DE VERDURAS'], ['MERO AL HORNO', 'MERLUZA A LA PLANCHA', 'PAVO AL HORNO']]));
+  const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type,x-goog-api-key', 'access-control-allow-methods': 'POST,OPTIONS' };
+  const seed = { version: 1, dishes: { m: { id: 'm', name: 'Merluza a la plancha', emoji: '', meals: ['dinner'], createdAt: '2026-01-01' }, t: { id: 't', name: 'Tortilla de patatas', emoji: '', meals: ['lunch'], createdAt: '2026-01-01' } }, plan: {} };
+  const calls = [];
+  const errs = [];
+  const c = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'es-ES' });
+  const p = await c.newPage();
+  p.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
+  p.on('pageerror', (e) => errs.push(e.message));
+  await p.clock.setFixedTime(new Date('2026-09-29T10:00:00'));
+  await p.addInitScript(([st]) => { localStorage.setItem('menu-semanal:ai', JSON.stringify({ key: 'AIza' + 'z'.repeat(35) })); if (!localStorage.getItem('menu-semanal:v1')) localStorage.setItem('menu-semanal:v1', JSON.stringify(st)); }, [seed]);
+  await p.route('https://generativelanguage.googleapis.com/**', async (route) => {
+    const req = route.request();
+    if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    calls.push(req.postDataJSON());
+    const payload = { days: [
+      { date: '2026-10-05', daycare: 'Patatas con chocos y lomo', dinner: 'Pescado blanco a la plancha con verduras', reason: 'Tras guiso y cerdo, pescado ligero.', catering: 'Crema de puerro + Mero al horno', catering_fit: 'bien', saved_dish: 'merluza a la PLANCHA' },
+      { date: '2026-10-06', daycare: 'Potaje y pollo', dinner: 'Tortilla con ensalada', reason: 'Huevo tras legumbres.', catering: 'Verduritas rehogadas + Merluza a la plancha', catering_fit: 'mejorable', saved_dish: 'Plato que no existe' },
+    ] };
+    return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ steps: [{ type: 'model_output', content: [{ type: 'text', text: JSON.stringify(payload) }] }] }) });
+  });
+  await p.goto(base);
+  await p.waitForSelector('.day');
+  await p.locator('[data-fk=balance]').click();
+
+  // solo sugerencias, sin menú del mediodía → pide el menú
+  await p.setInputFiles('#dlg input[data-role=dinner]', { name: 'doc.pdf', mimeType: 'application/pdf', buffer: dinnerPdf });
+  await p.waitForFunction(() => document.querySelector('#dlg textarea[name=sugerencias-cena]').value.includes('Lunes 5:'), null, { timeout: 15000 });
+  await p.locator('#dlg button', { hasText: 'Sugerir cenas' }).click();
+  check((await p.locator('#dlg .ai-status').innerText()).includes('menú del mediodía'), 'dos PDF: sin menú del mediodía no se puede contrastar, y lo explica');
+
+  // el PDF «sugerencias_de_cena» subido por el botón del mediodía va solo al campo de cena
+  await p.fill('#dlg textarea[name=sugerencias-cena]', '');
+  await p.setInputFiles('#dlg input[data-role=lunch]', { name: 'menu-octubre.pdf', mimeType: 'application/pdf', buffer: lunchPdf });
+  await p.waitForFunction(() => document.querySelector('#dlg textarea[name=menu-guarderia]').value.includes('Lunes 5:'), null, { timeout: 15000 });
+  await p.setInputFiles('#dlg input[data-role=lunch]', { name: 'sugerencias_de_cena_octubre.pdf', mimeType: 'application/pdf', buffer: dinnerPdf });
+  await p.waitForFunction(() => document.querySelector('#dlg textarea[name=sugerencias-cena]').value.includes('Lunes 5:'), null, { timeout: 15000 });
+  const lunchTxt = await p.locator('#dlg textarea[name=menu-guarderia]').inputValue();
+  const dinnerTxt = await p.locator('#dlg textarea[name=sugerencias-cena]').inputValue();
+  check(lunchTxt.includes('Patatas guisadas con chocos') && !lunchTxt.includes('Crema de puerro'), 'dos PDF: el menú del mediodía queda en su campo');
+  check(dinnerTxt.includes('Lunes 5: Crema de puerro / Mero al horno') && (await p.locator('#dlg .ai-status').innerText()).includes('sugerencias de cena'), 'dos PDF: «sugerencias_de_cena…» se enruta solo a su campo y lo indica');
+
+  await p.locator('#dlg button', { hasText: 'Sugerir cenas' }).click();
+  await p.waitForSelector('#dlg .ai-card');
+  const prompt = calls.at(-1).input[0].text;
+  check(prompt.includes('Menú de la guardería (mediodía):') && prompt.includes('Sugerencias de cena del catering:') && prompt.includes('Crema de puerro / Mero al horno'), 'dos PDF: el prompt lleva ambos documentos etiquetados');
+  check(prompt.includes('Platos guardados por la familia') && prompt.includes('Merluza a la plancha') && prompt.includes('Tortilla de patatas'), 'dos PDF: el prompt incluye los platos guardados de la base de datos');
+  const card = p.locator('#dlg .ai-card').first();
+  const cardTxt = await card.innerText();
+  check(cardTxt.includes('Catering propone: Crema de puerro + Mero al horno') && cardTxt.includes('Equilibra el mediodía'), 'contraste: muestra lo que propone el catering y si equilibra');
+  check((await p.locator('#dlg .ai-card').nth(1).innerText()).includes('Mejorable'), 'contraste: marca como mejorable cuando no equilibra');
+  check(await card.locator('button', { hasText: 'Usar «Merluza a la plancha»' }).count() === 1 && await p.locator('#dlg .ai-card').nth(1).locator('button', { hasText: 'Usar «' }).count() === 0, 'plato guardado: solo se ofrece si existe de verdad en tu lista (con el nombre exacto)');
+
+  // usar el plato guardado no lo duplica; usar el del catering añade su nombre
+  await card.locator('button', { hasText: 'Usar «Merluza a la plancha»' }).click();
+  await card.locator('button', { hasText: 'Usar la del catering' }).click();
+  await p.keyboard.press('Escape');
+  await p.locator('[data-fk=next]').click();
+  await p.waitForFunction(() => document.querySelector('.day')?.dataset.date === '2026-10-05');
+  const dinner = await p.locator('.day[data-date="2026-10-05"] .slot.dinner').innerText();
+  check(dinner.includes('Merluza a la plancha') && dinner.includes('Crema de puerro + Mero al horno'), 'se añaden a la cena tanto el plato guardado como la propuesta del catering');
+  const st = await p.evaluate(() => JSON.parse(localStorage.getItem('menu-semanal:v1')));
+  check(Object.values(st.dishes).filter((d) => d.name === 'Merluza a la plancha').length === 1, 'el plato guardado se reutiliza: no se duplica en la base de datos');
+  check(errs.length === 0, `dos PDF sin errores de consola${errs.length ? ': ' + errs.join(' | ') : ''}`);
   await c.close();
 }
 

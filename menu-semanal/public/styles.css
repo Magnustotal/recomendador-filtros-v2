@@ -347,3 +347,9 @@ dialog.sheet { width: 100%; max-width: 640px; margin: auto auto 0; border-radius
 .ai-items { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
 .ai-items li { font-weight: 600; overflow-wrap: anywhere; }
 select.field { appearance: auto; padding: 0 16px; }
+
+.field-label { font-size: 0.875rem; font-weight: 700; color: var(--on-surface-variant); margin-bottom: -6px; }
+textarea.field.compact.short { min-height: 96px; }
+.ai-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.ai-card .fit { display: inline-block; margin-left: 8px; padding: 1px 10px; border-radius: 999px; font-size: 0.8125rem; font-weight: 700; background: var(--on-sage); color: var(--sage); }
+.ai-card .fit.mejorable { background: var(--lunch); color: var(--on-lunch); }

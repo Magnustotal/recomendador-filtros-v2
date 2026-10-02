@@ -82,6 +82,7 @@ En «🥗 Cenas según la guardería» → **📄 Añadir menú en PDF**. Todo e
 - **Calendarios en cuadrícula** (semanas en filas, días en columnas, cabeceras «LUNES 5»): se interpretan por columnas y salen como `Lunes 5: primer plato / segundo plato / postre`, sin etiquetas de fila ni pie con datos de contacto. Si el PDF funde celdas y no se puede asignar el texto a un día, se usa el orden de lectura para no perder datos.
 - **Fechas:** se deducen del día de la semana + número («Lunes 5», «Martes 6»...), así que un menú de octubre se reparte entre sus semanas aunque estés viendo otra.
 - **Carta de restaurante** (sin días ni fechas): propone 3 a 5 combinaciones equilibradas usando platos de la propia carta, y eliges el día al añadirlas.
+- **Dos documentos:** el diálogo tiene dos campos, «Menú del mediodía» y «Sugerencias de cena del catering (opcional)», cada uno con su botón de PDF. Un PDF cuyo nombre contenga «cena» o «sugerencia» se enruta solo al segundo campo. Con ambos, cada tarjeta muestra lo que propone el catering con su veredicto (✓ equilibra / ⚠ mejorable), la cena que recomienda la IA y, si encaja, un plato de tu lista de platos guardados (la app solo lo acepta si existe con ese nombre exacto; al usarlo se reutiliza, no se duplica). Tres botones independientes: añadir la recomendación, usar la del catering o usar tu plato.
 - El texto extraído se puede **revisar y editar** antes de enviarlo. Se eliminan correos, teléfonos y webs.
 - **¿Netlify Function?** No hace falta: no hay backend ni variables de entorno, y `netlify.toml` no cambia. La única configuración son dos cabeceras en `_headers` (tipo MIME `text/javascript` para los `.mjs` de pdf.js; la CSP ya permitía `worker-src 'self'`). Para actualizar pdf.js, copia `legacy/build/pdf.min.mjs` y `pdf.worker.min.mjs` de `pdfjs-dist` a `public/vendor/` y sube la versión.
 
@@ -89,7 +90,7 @@ En «🥗 Cenas según la guardería» → **📄 Añadir menú en PDF**. Todo e
 
 - Usa **tu propia clave** de Google AI Studio (https://aistudio.google.com/apikey), que se guarda solo en el móvil (`localStorage`) y **no** entra en las copias de seguridad. La app sigue siendo estática: no hay servidor propio.
 - La llamada va directa del móvil a `generativelanguage.googleapis.com` (`POST /v1beta/interactions`, cabecera `x-goog-api-key`); la CSP solo permite ese dominio.
-- **Lo que se envía a Google:** el menú o la foto, tus notas y los nombres de las cenas ya planeadas de esa semana. Según los términos de Google a fecha de hoy, en el nivel gratuito pueden usarlo para mejorar sus productos y revisores humanos podrían leerlo; en el de pago no. No incluyas nombres de niños.
+- **Lo que se envía a Google:** el menú o la foto, las sugerencias de cena que subas, tus notas, los nombres de las cenas ya planeadas y de tus platos guardados (hasta 80). Según los términos de Google a fecha de hoy, en el nivel gratuito pueden usarlo para mejorar sus productos y revisores humanos podrían leerlo; en el de pago no. No incluyas nombres de niños.
 - Google desaconseja claves en el navegador porque cualquiera con acceso al navegador podría extraerla. Para un uso personal: crea una clave solo para esta app, **restríngela a la dirección web de tu sitio** y pon alertas de facturación. (No he podido comprobar de extremo a extremo la restricción por dirección: la petición envía el origen como referente para permitirla.)
 - El modelo por defecto (`gemini-3.8-flash`) sale de la documentación de Google y es editable en **Ajustes → Modelo avanzado**; **Probar conexión** valida clave y modelo. Si el modelo está saturado (503), la app reintenta y cambia sola a `gemini-3.1-flash-lite`. Verificado en vivo con una clave real (texto, foto y PDF mensual).
 - Las respuestas se tratan como texto no confiable: se validan, se recortan y solo se muestran como texto.
@@ -100,6 +101,7 @@ La versión vive en `public/version.js` (se muestra en **Ajustes**) y en `packag
 
 | Versión | Cambios |
 |---|---|
+| 1.5.0 | Dos documentos: menú del mediodía + sugerencias de cena del catering; la IA los **contrasta** día a día (¿equilibra el mediodía?) y propone platos de **tu base de datos** de platos guardados (solo con nombre exacto) |
 | 1.4.0 | Lee **PDF de texto** (calendario mensual de la guardería o carta de restaurante) en el navegador con pdf.js y propone cenas por fechas; reintentos y cambio automático de modelo si Gemini está saturado; regla anti-atragantamiento en el prompt |
 | 1.3.0 | Título centrado y más ingredientes de lado a lado; asistente de cenas con Gemini (menú de la guardería en texto o foto) |
 | 1.2.1 | El resaltado de «hoy» se ve sobre la tira de paño; README aclara que el zip se genera, no se versiona |
