@@ -449,3 +449,78 @@ dialog.sheet::before { content: ''; display: block; width: 40px; height: 4px; ma
   .topbar h1, .weekbar .range strong { -webkit-text-fill-color: CanvasText; background: none; }
   .eyebrow { border: 1px solid CanvasText; }
 }
+
+/* ---------- Funciones v2: día, plato, mes, equilibrio, estadísticas ---------- */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.btn.wide { width: 100%; justify-content: flex-start; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.menu-list { display: grid; gap: 8px; }
+
+/* Plato dentro de un hueco: el nombre es un botón que abre su menú */
+.item { padding: 0 4px 0 0; }
+.item-name { min-width: 0; min-height: 48px; padding: 4px 4px 4px 14px; border: 0; border-radius: 14px; background: transparent; color: inherit; font-weight: 500; text-align: left; overflow-wrap: anywhere; cursor: grab; }
+.item-name:hover { background: rgb(0 0 0 / 0.05); }
+.item .x { margin: 0 0 0 2px; }
+.item.dragging { opacity: 0.45; }
+.slot.drop-target { outline: 3px dashed var(--primary); outline-offset: 2px; }
+.diners { font-weight: 600; font-size: 0.875rem; }
+
+.day-head .day-more { margin: -8px -8px -8px 0; width: 48px; height: 48px; }
+.day-head .badge + .day-more, .day-head .date + .day-more { margin-left: auto; }
+.day-head .badge { margin-left: auto; }
+.day-head .badge + .day-more { margin-left: 0; }
+.day-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 0 4px; font-size: 0.9375rem; color: var(--on-surface-variant); overflow-wrap: anywhere; }
+.tag-off { font-weight: 700; color: var(--on-surface); }
+.day.off .slot { opacity: 0.8; }
+
+/* Avisos y equilibrio */
+.notice { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 12px; padding: 12px 16px; border-radius: 20px; background: #fff3d6; color: #3b2a00; box-shadow: var(--shadow-1), inset 0 0 0 1px rgb(232 163 61 / 0.4); }
+.notice p { flex: 1; min-width: 12rem; }
+.notice .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.balance { margin-bottom: 12px; padding: 12px 16px; border-radius: 20px; background: rgb(255 255 255 / 0.75); box-shadow: var(--shadow-1), inset 0 0 0 1px rgb(154 69 33 / 0.12); }
+.balance .kicker { font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--primary); margin-bottom: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.chip { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 0.875rem; font-weight: 600; background: var(--surface-3); color: var(--on-surface); }
+.chip.ok { background: var(--sage); color: var(--on-sage); }
+.chip.low { background: var(--lunch); color: var(--on-lunch); }
+.chip.high { background: var(--error-container); color: var(--on-error-container); }
+.chips.inline { margin-top: 4px; gap: 4px; }
+.chips.inline .chip { font-size: 0.75rem; padding: 2px 8px; }
+.row .meta.link { color: var(--primary); font-weight: 600; width: fit-content; }
+.welcome .why { font-size: 1rem; }
+
+/* Formularios */
+.check { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 12px 0 8px; border-radius: 999px; background: var(--surface-3); font-weight: 500; }
+.check input, .switch input { width: 24px; height: 24px; accent-color: var(--primary); }
+.checks { display: flex; flex-wrap: wrap; gap: 8px; }
+fieldset.groups { margin: 0; padding: 0; border: 0; display: grid; gap: 8px; }
+.rule-form { display: grid; gap: 8px; }
+ul.plain { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+ul.rules li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.toolbar select.field, select.field { appearance: auto; background-color: var(--surface-3); color: var(--on-surface); }
+
+/* Mes */
+.month-nav { display: flex; align-items: center; gap: 4px; }
+.month-nav h2 { min-width: 9.5em; text-align: center; font-size: 1.25rem; }
+table.month { width: 100%; border-collapse: separate; border-spacing: 4px; table-layout: fixed; }
+table.month th { font-size: 0.8125rem; color: var(--on-surface-variant); padding: 4px 0; }
+table.month td { padding: 0; }
+table.month td.out .mday { opacity: 0.5; }
+.mday { display: grid; justify-items: center; align-content: center; gap: 0; width: 100%; min-height: 56px; border: 0; border-radius: 14px; background: var(--surface-2); color: var(--on-surface); font-weight: 600; }
+.mday:hover { background: var(--surface-3); }
+.mday .dots { font-size: 0.75rem; line-height: 1.2; min-height: 1.2em; }
+.mday.today { outline: 3px solid var(--primary); outline-offset: -3px; background: #fff3e0; }
+
+/* Estadísticas */
+ol.bars, ul.bars { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.bars li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: baseline; }
+.bar-label { overflow-wrap: anywhere; font-weight: 600; color: var(--on-surface); }
+.bar-n { font-size: 0.875rem; color: var(--on-surface-variant); }
+.bars meter { grid-column: 1 / -1; width: 100%; height: 12px; }
+.bars meter::-webkit-meter-bar { background: var(--surface-3); border: 0; border-radius: 999px; }
+.bars meter::-webkit-meter-optimum-value { background: var(--primary); border-radius: 999px; }
+.bars meter::-moz-meter-bar { background: var(--primary); border-radius: 999px; }
+
+.navbar { gap: 4px; }
+@media (forced-colors: active) { .chip, .check, .mday, .notice, .balance { border: 1px solid CanvasText; } }
+.view-enter > .seg { margin-bottom: 12px; }

@@ -1,16 +1,17 @@
 {
   "name": "menu-semanal",
-  "version": "1.7.1",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "description": "PWA para planificar el menú semanal. Sin dependencias ni build.",
   "scripts": {
     "test": "node --test \"test/*.test.mjs\"",
     "serve": "npx --yes serve public",
-    "e2e": "node test/e2e.mjs",
+    "e2e": "node test/e2e.mjs && node test/e2e-features.mjs",
     "zip": "python3 scripts/make-zip.py"
   },
   "devDependencies": {
+    "axe-core": "^4.14.0",
     "playwright": "^1.56.1"
   }
 }

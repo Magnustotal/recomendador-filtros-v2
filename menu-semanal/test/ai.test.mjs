@@ -249,3 +249,10 @@ test('la CSP solo permite conectar con el propio sitio: el navegador ya no habla
 test('el service worker no cachea /api/', () => {
   assert.match(readFileSync(new URL('../public/sw.js', import.meta.url), 'utf8'), /startsWith\('\/api\/'\)/);
 });
+
+test('buildPrompt: las reglas de frecuencia de la familia viajan en el prompt (y no aparecen si no hay)', () => {
+  const base = { dates: [{ date: '2026-10-05', name: 'lunes', label: '5 oct' }], menuText: 'lunes: lentejas' };
+  const withRules = buildPrompt({ ...base, rules: ['pescado: al menos 2 por semana', 'carne: como mucho 3 por semana'] });
+  assert.ok(withRules.includes('pescado: al menos 2 por semana') && withRules.includes('Reglas de frecuencia semanal'));
+  assert.ok(!buildPrompt(base).includes('Reglas de frecuencia semanal'));
+});

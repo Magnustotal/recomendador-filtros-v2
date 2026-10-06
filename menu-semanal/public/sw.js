@@ -3,14 +3,17 @@
 // Así los cambios publicados llegan solos y no hay que subir versiones a mano.
 
 const CACHE = 'menu-semanal-v1';
-const CORE = ['./', 'index.html', 'styles.css', 'app.js', 'lib.js', 'ai.js', 'menu-pdf.js', 'version.js', 'manifest.webmanifest', 'icons/icon.svg'];
+const CORE = ['./', 'index.html', 'styles.css', 'app.js', 'lib.js', 'ai.js', 'menu-pdf.js', 'dom.js', 'week-tools.js', 'extras.js', 'version.js', 'manifest.webmanifest', 'icons/icon.svg'];
 const OPTIONAL = ['icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
+// pdf.js (1,8 MB): para leer PDF sin conexión. No se precarga si el usuario ahorra datos.
+const PDF_JS = ['vendor/pdf.min.mjs', 'vendor/pdf.worker.min.mjs'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
     await cache.addAll(CORE.map((url) => new Request(url, { cache: 'reload' })));
-    await Promise.allSettled(OPTIONAL.map((url) => cache.add(new Request(url, { cache: 'reload' }))));
+    const optional = self.navigator?.connection?.saveData ? OPTIONAL : [...OPTIONAL, ...PDF_JS];
+    await Promise.allSettled(optional.map((url) => cache.add(new Request(url, { cache: 'reload' }))));
     await self.skipWaiting();
   })());
 });

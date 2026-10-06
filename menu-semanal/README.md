@@ -51,6 +51,15 @@ menu-semanal/
 └── netlify.toml       (publish = "public", functions = "netlify/functions")
 ```
 
+## Funciones de la 2.0
+
+- **Semana:** detalles por día (nota, «fuera de casa»/festivo, comensales por comida); menú de cada plato con **mover** y **copiar** (y **arrastrar y soltar** con ratón o lápiz; en táctil queda el menú); **plantillas** de semana; vista de **mes**; sugerencias que respetan los días fuera de casa y no repiten lo comido hace menos de 3 días.
+- **Platos:** grupos de alimentos (se deducen del nombre y se pueden cambiar), favoritos, tiempo y dificultad, receta (enlace o notas), ingredientes (texto libre), «congelado» (aviso el día antes dentro de la app) y filtros.
+- **Equilibrio:** reglas por semana (p. ej. pescado al menos 2) con recuento y estado en la semana; las reglas también viajan en el prompt de las cenas con IA.
+- **Datos:** pestaña de estadísticas (lo que más repites, grupos, cobertura, lo que llevas más tiempo sin comer); WhatsApp en cuatro formatos; imagen PNG de la semana; calendario `.ics`; **traspaso a otro móvil** con un código de texto (es una copia puntual, no sincroniza); aviso de copia de seguridad cada 30 días; platos de ejemplo al empezar; aviso «hay una versión nueva».
+- **Límites conocidos:** no hay recordatorios con la app cerrada (no hay notificaciones push); el arrastrar no funciona en todos los móviles; el aviso de versión nueva y la precarga de pdf.js sin conexión están implementados pero no los he probado en un dispositivo real; la imagen usa las fuentes y emojis del sistema.
+- **Pruebas:** `npm test` (unitarias) y `npm run e2e` (dos scripts: flujos generales y funciones nuevas, esta con axe-core para accesibilidad automática en las pantallas principales).
+
 ## Desplegar en Netlify
 
 **Opción A, Netlify Drop (solo sitio estático, sin IA):** genera el zip con `npm run zip` (queda en `dist/menu-semanal-v<versión>.zip`; esa carpeta **no se sube a Git**) y súbelo en Netlify → *Add new site* → *Deploy manually*. **Las funciones no se despliegan así** (no he encontrado documentado que Drop las admita), así que el asistente de IA no funcionará. Todo lo demás sí.
@@ -104,6 +113,7 @@ La versión vive en `public/version.js` (se muestra en **Ajustes**) y en `packag
 
 | Versión | Cambios |
 |---|---|
+| 2.0.0 | Gran actualización: días con nota/fuera de casa/comensales, mover/copiar/arrastrar, plantillas, vista de mes, grupos de alimentos y reglas de equilibrio, favoritos/tiempo/receta/ingredientes/congelados con filtros, estadísticas, formatos de WhatsApp, imagen y `.ics`, traspaso por código, avisos (copia, congelados, versión nueva), platos de ejemplo, pdf.js precargado, pruebas con axe-core |
 | 1.7.1 | Revisión: la entrada animada ya no se repite al añadir o quitar platos; `theme_color` del manifiesto alineado con el fondo; texto de «Borrar todo» sin referencias a la clave |
 | 1.7.0 | Acabado visual: luz cálida y viñeta, título con degradado, tarjetas con relieve y entrada escalonada, ingredientes con movimiento sutil, navegación de cristal esmerilado (todo respeta reduced-motion y alto contraste) |
 | 1.6.0 | La clave de Gemini ya no se introduce en la app: vive como variable de entorno en Netlify y las peticiones pasan por una Netlify Function (`/api/gemini`) con código de acceso opcional; CSP sin dominios externos |
