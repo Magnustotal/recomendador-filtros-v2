@@ -925,7 +925,7 @@ async function importFile(e) {
 async function resetAll() {
   const ok = await confirmDialog({
     title: '¿Borrar todo?',
-    body: 'Se eliminarán todos tus platos y menús de este móvil, y la clave de Gemini si la guardaste. Considera exportar una copia antes.',
+    body: 'Se eliminarán todos tus platos y menús de este móvil, y tus preferencias del asistente. Considera exportar una copia antes.',
     confirmLabel: 'Borrar todo',
     danger: true,
   });
@@ -939,10 +939,14 @@ async function resetAll() {
 
 /* ---------- Render principal ---------- */
 
+let animateNext = true; // la entrada animada solo al abrir la app o cambiar de pantalla, no al añadir un plato
+
 function render() {
   const fk = pendingFocus ?? document.activeElement?.dataset?.fk;
   pendingFocus = null;
   const node = { week: renderWeek, dishes: renderDishes, settings: renderSettings }[ui.view]();
+  if (!animateNext) node.classList.remove('view-enter');
+  animateNext = false;
   view.replaceChildren(node);
 
   $('#title').textContent = VIEWS[ui.view].title;
@@ -961,6 +965,7 @@ function onRoute() {
   if (next === ui.view) return;
   ui.view = next;
   ui.query = '';
+  animateNext = true;
   render();
   window.scrollTo(0, 0);
 }

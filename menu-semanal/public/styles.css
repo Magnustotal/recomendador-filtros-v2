@@ -399,11 +399,11 @@ body::before {
   background: linear-gradient(180deg, #fffdfb 0%, var(--surface-1) 100%);
   box-shadow: var(--shadow-2), inset 0 0 0 1px rgb(154 69 33 / 0.08);
   transition: transform 0.35s var(--spring), box-shadow 0.25s;
-  animation: rise 0.55s var(--spring) both;
 }
-.day:nth-child(2) { animation-delay: 0.04s; } .day:nth-child(3) { animation-delay: 0.08s; }
-.day:nth-child(4) { animation-delay: 0.12s; } .day:nth-child(5) { animation-delay: 0.16s; }
-.day:nth-child(6) { animation-delay: 0.2s; } .day:nth-child(7) { animation-delay: 0.24s; }
+.view-enter .day { animation: rise 0.55s var(--spring) both; }
+.view-enter .day:nth-child(2) { animation-delay: 0.04s; } .view-enter .day:nth-child(3) { animation-delay: 0.08s; }
+.view-enter .day:nth-child(4) { animation-delay: 0.12s; } .view-enter .day:nth-child(5) { animation-delay: 0.16s; }
+.view-enter .day:nth-child(6) { animation-delay: 0.2s; } .view-enter .day:nth-child(7) { animation-delay: 0.24s; }
 @media (hover: hover) and (pointer: fine) { .day:hover { transform: translateY(-3px); box-shadow: var(--shadow-3), inset 0 0 0 1px rgb(154 69 33 / 0.12); } }
 .day::before { height: 12px; box-shadow: 0 2px 4px rgb(74 40 20 / 0.18); }
 .day.today { background: linear-gradient(180deg, #fff3e0 0%, #fbe3d3 100%); box-shadow: 0 0 0 6px rgb(232 163 61 / 0.28), var(--shadow-3); }
