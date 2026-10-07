@@ -1,0 +1,36 @@
+/* Escaparate «Oferta(s) de la semana»: portada y tienda. Móvil: tarjetas que se deslizan con el dedo; escritorio: rejilla. */
+.ofertas[hidden] { display: none; }
+.ofertas .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; } /* la portada no trae esta clase */
+.ofertas { padding: 2.2rem 0 1.4rem; }
+.ofertas h2 { margin: 0.2em 0 0.6em; }
+.ofertas-visor { padding: 0.3rem 0 0.9rem; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; }
+.ofertas-visor:focus-visible { outline: 3px solid var(--maroon); outline-offset: -3px; }
+.ofertas-fila { display: flex; gap: 1rem; margin: 0; padding: 0; list-style: none; width: max-content; max-width: none; }
+/* position: relative contiene el texto oculto (.sr-only, que es absoluto): si no, se sale de la zona desplazable y ensancha la página */
+.of-card { position: relative; flex: 0 0 17.5rem; scroll-snap-align: start; display: flex; flex-direction: column; background: var(--cream-bright); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+.of-foto { display: grid; place-items: center; height: 8.5rem; background: var(--cream); }
+.of-foto img { width: 100%; height: 100%; object-fit: cover; }
+.of-ico { display: block; width: 4rem; height: 4rem; background: var(--maroon); -webkit-mask: var(--ico) center / contain no-repeat; mask: var(--ico) center / contain no-repeat; }
+.of-cuerpo { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; padding: 0.9rem 1rem 1rem; }
+.of-cuerpo p, .of-cuerpo h3 { margin: 0; }
+.of-etiqueta { align-self: flex-start; padding: 0.1rem 0.7rem; font-size: 0.85rem; font-weight: 800; color: var(--white); background: var(--maroon); border-radius: 999px; }
+.of-nombre { font-family: var(--font-display); font-size: 1.25rem; line-height: 1.2; color: var(--ink); }
+.of-precio { font-weight: 800; color: var(--maroon-deep); }
+.of-precio .precio-tachado { margin-right: 0.45rem; font-weight: 600; color: var(--ink-soft); text-decoration-thickness: 2px; }
+.of-precio .precio-oferta { font-size: 1.15em; color: var(--maroon); }
+.of-detalle { font-weight: 700; color: var(--ink-soft); }
+.of-hasta { font-size: 0.9rem; font-weight: 700; color: var(--ink-soft); }
+.of-ver { margin-top: auto; align-self: flex-start; }
+.of-cuerpo > :nth-last-child(2) { margin-bottom: 0.6rem; }
+.of-regalo { border-color: var(--green); }
+.of-regalo .of-etiqueta { background: var(--green); }
+.of-regalo .of-ico { background: var(--green); }
+@media (min-width: 900px) {
+  .ofertas-visor { overflow: visible; scroll-snap-type: none; }
+  .ofertas-fila { display: grid; grid-template-columns: repeat(auto-fill, minmax(16.5rem, 21rem)); width: auto; gap: 1.2rem; }
+  .of-card { flex: initial; }
+}
+@media (prefers-reduced-motion: reduce) { .ofertas-visor { scroll-behavior: auto; } }
+/* Tienda: el escaparate va dentro de la lista, con aire arriba y abajo */
+.ofertas-tienda { padding: 0 0 1rem; }
+.prod.resaltado { outline: 3px solid var(--maroon); outline-offset: 2px; }

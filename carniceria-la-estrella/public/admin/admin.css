@@ -237,3 +237,22 @@ label.btn-sec { cursor: pointer; }
 .oferta-fila > .btn-sec { margin-top: 0.4rem; }
 .etiqueta-oferta { font-weight: 700; color: var(--green); }
 .pedido-regalo { margin: 0.4rem 0; padding: 0.4rem 0.7rem; background: var(--cream); border: 1px solid var(--green); border-radius: var(--radius); }
+
+/* ---------- pestaña Ofertas ---------- */
+.of-grupo { margin: 0 0 1.2rem; }
+.of-grupo > h3, .of-grupo > summary { margin: 0 0 0.6rem; font-family: var(--font-display); font-size: 1.15rem; font-weight: 800; }
+.of-grupo > summary { min-height: 48px; display: flex; align-items: center; cursor: pointer; }
+.of-grupo-lista { display: grid; gap: 0.7rem; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); }
+.oferta-item { padding: 0.8rem 0.9rem; background: var(--cream-bright); border: 1px solid var(--line); border-radius: var(--radius); }
+.oferta-item header { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; margin-bottom: 0.3rem; }
+.oferta-item h4 { margin: 0; font-size: 1.05rem; }
+.oferta-item p { margin: 0.2rem 0; }
+.oferta-resumen { font-weight: 800; color: var(--maroon-deep); }
+.oferta-item .acciones { margin-top: 0.5rem; }
+.oferta-activa { border-color: var(--green); }
+.oferta-terminada { opacity: 0.75; }
+.etiqueta-estado { padding: 0 0.6rem; font-size: 0.8rem; font-weight: 800; border: 1px solid var(--line); border-radius: 999px; background: var(--cream); }
+.etiqueta-estado.e-activa { color: var(--green); border-color: var(--green); }
+.etiqueta-estado.e-programada { color: var(--warn); border-color: var(--warn); }
+.ofertas-resumen { margin: 0.3rem 0 0.6rem; padding-left: 1.2rem; }
+#dlg-oferta select, #dlg-oferta input[type="search"] { width: 100%; }

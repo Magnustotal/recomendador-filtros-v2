@@ -2,14 +2,15 @@
 // El navegador solo manda lo que el cliente quiere (ids, opciones, cantidades);
 // los precios y los totales que se ven aquí son orientativos: los decide el servidor.
 import { importeLinea, aCentimos, formatoEuro, formatoCantidad, cantidadValida } from "/assets/compartido/dinero.js";
-import { calcularLineas, precioEfectivo, nombreOferta, regalosDelPedido } from "/assets/compartido/ofertas.js";
+import { calcularLineas, precioEfectivo, nombreOferta, regalosDelPedido, fechaCorta } from "/assets/compartido/ofertas.js";
+import { pintarDestacadas } from "/assets/destacadas.js";
 import { ahoraEnMadrid, diaSemanaDeFecha, sumarDias, aMinutos, franjaDentroDeHorario } from "/assets/compartido/horario.js";
 
 const CLAVE_CARRITO = "ls_pedido_v1";
 const $ = (id) => document.getElementById(id);
 
 const el = {
-  estado: $("estado"), anuncios: $("anuncios"), notaPrecios: $("nota-precios"), cerrada: $("tienda-cerrada"), aviso: $("aviso-tienda"), regalos: $("regalos-tienda"), app: $("app"),
+  estado: $("estado"), anuncios: $("anuncios"), notaPrecios: $("nota-precios"), cerrada: $("tienda-cerrada"), aviso: $("aviso-tienda"), ofertas: $("ofertas"), ofertasTitulo: $("ofertas-titulo"), ofertasLista: $("ofertas-lista"), app: $("app"),
   buscar: $("buscar"), chips: $("chips"), sinResultados: $("sin-resultados"), productos: $("productos"),
   pedido: $("pedido"), vacio: $("carrito-vacio"), form: $("formulario"), lineas: $("lineas"), totales: $("totales"),
   errores: $("errores"), nombre: $("nombre"), telefono: $("telefono"),
@@ -43,7 +44,6 @@ const pasoDe = (p) => p.paso ?? (p.unidad === "kg" ? 250 : 1);
 const minimoDe = (p) => p.minimo ?? pasoDe(p);
 const maximoDe = (p) => p.maximo ?? (p.unidad === "kg" ? 25000 : 50);
 const unidadPrecio = (p) => (p.unidad === "kg" ? "kg" : "ud");
-const fechaCorta = (iso) => new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`));
 const etiquetaPrecio = (p) => (p.precio == null ? null : `${formatoEuro(p.precio)}/${p.unidad === "kg" ? "kg" : "ud"}`);
 
 // Mensajes de estado: la carga y los fallos van en #estado; los avisos puntuales
@@ -232,15 +232,28 @@ function filtrar() {
   el.sinResultados.hidden = visibles > 0;
 }
 
-// Aviso de los regalos activos hoy («Por cada 30 € de compra, de regalo…»)
-function pintarAvisoRegalos() {
-  const regalos = cat.ajustes.tienda.regalos ?? [];
-  el.regalos.replaceChildren(...regalos.map((r) => {
-    const base = r.repetir ? `Por cada ${formatoEuro(r.minimo)} de compra, de regalo ${r.regalo}` : `En compras de ${formatoEuro(r.minimo)} o más, de regalo ${r.regalo}`;
-    const extra = [r.repetir && r.maximo != null ? `máximo ${r.maximo} por pedido` : null, r.hasta ? `hasta el ${fechaCorta(r.hasta)}` : null].filter(Boolean).join(", ");
-    return crear("p", { texto: `${base}${extra ? ` (${extra})` : ""}.` });
-  }));
-  el.regalos.hidden = regalos.length === 0;
+// Escaparate «Oferta(s) de la semana»: las ofertas de producto y los regalos por compra de hoy
+function pintarOfertas() {
+  pintarDestacadas(cat, { seccion: el.ofertas, titulo: el.ofertasTitulo, lista: el.ofertasLista, enTienda: true });
+}
+
+// Salto a un producto concreto (desde el escaparate o desde la portada: /tienda#p-<id>).
+// Las categorías lejanas no se pintan hasta acercarse (content-visibility), así que se corrige la posición.
+function irAProducto(id, intentos = 8) {
+  const nodo = el.productos.querySelector(`.prod[data-id="${CSS.escape(id)}"]`);
+  if (!nodo) return;
+  if (el.buscar.value) { el.buscar.value = ""; filtrar(); }
+  nodo.scrollIntoView({ block: "center", behavior: "instant" });
+  if (intentos > 0) requestAnimationFrame(() => {
+    const r = nodo.getBoundingClientRect();
+    if (Math.abs(r.top + r.height / 2 - innerHeight / 2) > 40 && r.height > 0) irAProducto(id, intentos - 1);
+  });
+  nodo.classList.add("resaltado");
+  setTimeout(() => nodo.classList.remove("resaltado"), 2500);
+  nodo.querySelector(".btn-anadir")?.focus({ preventScroll: true });
+}
+function irAlHash() {
+  if (location.hash.startsWith("#p-")) irAProducto(decodeURIComponent(location.hash.slice(3)));
 }
 
 // ---------- carrito: pintar ----------
@@ -640,7 +653,7 @@ async function iniciar() {
 
   porId = new Map(cat.productos.map((p) => [p.id, p]));
   carrito = cargarCarrito();
-  pintarAvisoRegalos();
+  pintarOfertas();
   el.estado.hidden = true;
   el.estado.textContent = "";
   const fecha = cat.preciosActualizados
@@ -668,6 +681,8 @@ async function iniciar() {
     el.buscar.focus();
   });
   if (location.hash.startsWith("#cat-")) irASeccion($(location.hash.slice(1)));
+  irAlHash();
+  addEventListener("hashchange", irAlHash);
 }
 
 // En móvil el botón «volver arriba» tapaba el formulario del pedido: se oculta mientras ese panel está a la vista (solo CSS en pantallas pequeñas).

@@ -42,6 +42,7 @@
   <div class="pestanas" role="tablist" aria-label="Secciones del panel">
     <button id="tab-pedidos" role="tab" aria-selected="true" aria-controls="panel-pedidos" type="button">Pedidos <span id="contador-nuevos" class="contador" hidden></span></button>
     <button id="tab-productos" role="tab" aria-selected="false" aria-controls="panel-productos" tabindex="-1" type="button">Productos</button>
+    <button id="tab-ofertas" role="tab" aria-selected="false" aria-controls="panel-ofertas" tabindex="-1" type="button">Ofertas</button>
     <button id="tab-mercado" role="tab" aria-selected="false" aria-controls="panel-mercado" tabindex="-1" type="button">Mercado</button>
     <button id="tab-tienda" role="tab" aria-selected="false" aria-controls="panel-tienda" tabindex="-1" type="button">Tienda</button>
     <button id="tab-negocio" role="tab" aria-selected="false" aria-controls="panel-negocio" tabindex="-1" type="button">Negocio</button>
@@ -111,6 +112,22 @@
     </section>
 
     <!-- Tienda -->
+    <!-- Ofertas -->
+    <section id="panel-ofertas" role="tabpanel" aria-labelledby="tab-ofertas" hidden>
+      <h2>Ofertas</h2>
+      <p class="ayuda">Aquí programas las ofertas de la semana: eliges el producto, pones las fechas y se activan y se desactivan solas. En la portada y en la tienda aparecen como «Oferta de la semana» (si hay una) u «Ofertas de la semana» (si hay varias).</p>
+      <div class="barra">
+        <div class="campo buscador">
+          <label for="of-buscar" class="sr-only">Buscar una oferta por producto</label>
+          <input id="of-buscar" type="search" placeholder="Buscar por producto" autocomplete="off">
+        </div>
+        <button id="of-nueva" class="btn-prim" type="button">Crear oferta</button>
+      </div>
+      <div id="of-lista"></div>
+      <h3>Regalo por compra</h3>
+      <div id="of-regalos"></div>
+    </section>
+
     <!-- Mercado -->
     <section id="panel-mercado" role="tabpanel" aria-labelledby="tab-mercado" hidden>
       <h2>Precios de otras tiendas</h2>
@@ -150,6 +167,7 @@
 </div>
 
 <dialog id="dlg-producto" aria-labelledby="dlg-titulo"></dialog>
+<dialog id="dlg-oferta" aria-labelledby="dlg-of-titulo"></dialog>
 
 <script type="module" src="/admin/main.js"></script>
 </body>

@@ -486,6 +486,7 @@
   .maps-link { display: inline-flex; align-items: center; gap: 0.5em; margin-top: 0.8rem; min-height: 48px; color: var(--maroon); font-weight: 700; text-decoration: underline; }
 
 </style>
+<link rel="stylesheet" href="assets/ofertas.css">
 </head>
 <body>
 
@@ -547,6 +548,17 @@
             <g transform="rotate(35)"><line x1="-24" y1="0" x2="17" y2="0"/><path d="M17,0 L26,-3.6 L26,3.6 Z" fill="#f5ead3" stroke="none"/><line x1="-24" y1="0" x2="-30" y2="0" stroke-width="3.2"/></g>
           </g>
         </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OFERTA(S) DE LA SEMANA (se rellena desde /api/catalogo; oculta si no hay nada activo) ============ -->
+  <section id="ofertas" class="ofertas tint-cream scallop-top" hidden>
+    <div class="container">
+      <p class="eyebrow">Esta semana</p>
+      <h2 id="ofertas-titulo">Ofertas de la semana</h2>
+      <div class="ofertas-visor" role="region" aria-labelledby="ofertas-titulo">
+        <ul class="ofertas-fila" id="ofertas-lista"></ul>
       </div>
     </div>
   </section>
@@ -1038,6 +1050,7 @@
 {{{parcial.barra}}}
 
 <script src="assets/app.js"></script>
+<script type="module" src="/assets/ofertas-portada.js"></script>
 
 <script type="speculationrules">
 {

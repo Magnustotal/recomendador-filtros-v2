@@ -770,81 +770,21 @@ test("productos en móvil: «Agotado» y «Editar» comparten fila y los botones
   await page.context().close();
 });
 
-// ---------- ofertas temporales y regalo por compra ----------
-test("ofertas: se programan desde la ficha del producto y los errores se explican", async () => {
-  const antes = (await e.api.llamar("/datos")).datos.productos.find((p) => p.id === "elaborados-albondigas");
-  assert.equal((await e.api.llamar("/producto", { metodo: "PUT", cuerpo: { ...antes, precio: 9.9 } })).estado, 200); // el 3x2 solo se aplica a lo que tiene precio
-  const page = await entrar();
-  await page.click("#tab-productos");
-  await page.fill("#prod-buscar", "Albóndigas");
-  const abrirFicha = async () => { await page.locator(".prod-fila").first().getByRole("button", { name: /Editar/ }).click(); };
-  await abrirFicha();
-  const dlg = page.locator("#dlg-producto");
-  assert.match(await dlg.innerText(), /Sin ofertas/);
-  await dlg.getByRole("button", { name: /Añadir 3x2/ }).click();
-  assert.equal(await dlg.locator("#f-of-1-desde").inputValue(), "2026-10-05", "empieza hoy");
-  assert.equal(await dlg.locator("#f-of-1-hasta").inputValue(), "2026-10-11", "una semana");
-  assert.equal(await dlg.locator("#f-of-1-lleva").inputValue(), "3");
-  assert.equal(await dlg.locator("#f-of-1-paga").inputValue(), "2");
-  assert.match(await dlg.locator(".oferta-fila legend").innerText(), /Activa hoy/);
-  // un error: la fecha de fin antes de la de inicio
-  await dlg.locator("#f-of-1-hasta").fill("2026-10-01");
-  await dlg.getByRole("button", { name: "Guardar", exact: true }).click();
-  await dlg.locator(".errores").waitFor({ state: "visible" });
-  assert.match(await dlg.locator(".errores").innerText(), /fecha de fin no puede ser anterior/);
-  await dlg.locator("#f-of-1-hasta").fill("2026-10-11");
-  await dlg.getByRole("button", { name: "Guardar", exact: true }).click();
-  await dlg.waitFor({ state: "hidden" }); // la ficha se cierra al guardar
-  const alb = (await e.api.llamar("/datos")).datos.productos.find((p) => p.id === "elaborados-albondigas");
-  assert.deepEqual(alb.ofertas, [{ tipo: "cantidad", desde: "2026-10-05", hasta: "2026-10-11", lleva: 3, paga: 2 }]);
-  // la lista lo dice
-  await page.fill("#prod-buscar", "Albóndigas");
-  assert.match(await page.locator(".prod-fila").first().innerText(), /3x2 hasta el 11\/10/);
-
-  // una rebaja que no es más barata que el precio habitual (ya redondeado) se rechaza con el precio a la vista
-  await page.fill("#prod-buscar", "Secreto ibérico");
-  await abrirFicha();
-  await dlg.locator("#f-precio").fill("29,95");
-  await dlg.getByRole("button", { name: /Añadir rebaja/ }).click();
-  await dlg.locator("#f-of-1-precio").fill("31");
-  await dlg.getByRole("button", { name: "Guardar", exact: true }).click();
-  await dlg.locator(".errores").waitFor({ state: "visible" });
-  assert.match(await dlg.locator(".errores").innerText(), /tiene que ser más barato que el habitual \(30,90\s€\)/, "con el redondeo ,90 el habitual 29,95 queda en 30,90");
-  await dlg.locator("#f-of-1-precio").fill("19,95");
-  await dlg.getByRole("button", { name: "Guardar", exact: true }).click();
-  await dlg.waitFor({ state: "hidden" }); // la ficha se cierra al guardar
-  const sec = (await e.api.llamar("/datos")).datos.productos.find((p) => p.id === "cerdo-iberico-secreto-iberico");
-  assert.deepEqual(sec.ofertas, [{ tipo: "precio", desde: "2026-10-05", hasta: "2026-10-11", precio: 19.95 }]);
-  assert.equal(sec.precio, 30.9, "el habitual se redondea a ,90 (ajuste de la tienda); la oferta se queda en 19,95");
-  assert.deepEqual(errores(page).filter((m) => !/status of 400/.test(m)), [], "solo los dos 400 de las validaciones provocadas");
-  await page.context().close();
-});
-
-test("regalo por compra: se configura en la pestaña Tienda y se guarda", async () => {
-  const page = await entrar();
-  await page.click("#tab-tienda");
-  await page.getByRole("button", { name: "Añadir un regalo" }).click();
-  await page.fill("#a-regalo-1-texto", "250 g de chorizo");
-  await page.fill("#a-regalo-1-minimo", "30");
-  await page.fill("#a-regalo-1-hasta", "2026-10-11");
-  await page.locator("#form-tienda button[type=submit]").click();
-  await page.locator("#aviso", { hasText: "Cambios guardados" }).waitFor();
-  const r = (await e.api.llamar("/datos")).datos.ajustes.tienda.regalos;
-  assert.deepEqual(r, [{ regalo: "250 g de chorizo", minimo: 30, repetir: true, maximo: null, desde: null, hasta: "2026-10-11" }]);
-  // un regalo mal puesto se explica
-  await page.fill("#a-regalo-1-minimo", "0");
-  await page.locator("#form-tienda button[type=submit]").click();
-  await page.locator("#errores-tienda").waitFor({ state: "visible" });
-  assert.match(await page.locator("#errores-tienda").innerText(), /entre 1 y 10000/);
-  await page.getByRole("button", { name: "Descartar" }).click().catch(() => {});
-  await page.context().close();
-});
-
+// ---------- ofertas y regalo en el carrito y en el pedido (la pestaña «Ofertas» se prueba en ofertas.e2e.test.mjs) ----------
 test("tienda: precio tachado y de oferta, 3x2 en el carrito, ahorro y regalo; el pedido lo guarda el servidor", async () => {
+  // Preparación por la API: 3x2 en las albóndigas, rebaja en el secreto (con el redondeo ,90 de este entorno, 29,95 queda en 30,90) y un regalo
+  const inicial = (await e.api.llamar("/datos")).datos;
+  const poner = async (id, cambios) => assert.equal((await e.api.llamar("/producto", { metodo: "PUT", cuerpo: { ...inicial.productos.find((p) => p.id === id), ...cambios } })).estado, 200);
+  await poner("elaborados-albondigas", { precio: 9.9, ofertas: [{ tipo: "cantidad", desde: "2026-10-05", hasta: "2026-10-11", lleva: 3, paga: 2 }] });
+  await poner("cerdo-iberico-secreto-iberico", { precio: 29.95, ofertas: [{ tipo: "precio", desde: "2026-10-05", hasta: "2026-10-11", precio: 19.95 }] });
+  const ajustes = structuredClone(inicial.ajustes);
+  ajustes.tienda.regalos = [{ regalo: "250 g de chorizo", minimo: 30, repetir: true, maximo: null, desde: null, hasta: "2026-10-11" }];
+  assert.equal((await e.api.llamar("/ajustes", { metodo: "PUT", cuerpo: ajustes })).estado, 200);
+
   const tienda = await e.nuevaPagina({ ancho: 390 });
   await tienda.goto(e.url + "/tienda", { waitUntil: "networkidle" });
   await tienda.locator("#app").waitFor();
-  assert.match(await tienda.locator("#regalos-tienda").innerText(), /Por cada 30,00\s€ de compra, de regalo 250 g de chorizo \(hasta el 11 de octubre\)\./);
+  assert.match(await tienda.locator("#ofertas-lista .of-regalo").innerText(), /Regalo[\s\S]*250 g de chorizo[\s\S]*Por cada 30,00\s€ de compra/);
 
   await tienda.fill("#buscar", "Secreto ibérico");
   const sec = tienda.locator(".prod:not([hidden])", { has: tienda.getByRole("heading", { name: "Secreto ibérico", exact: true }) });

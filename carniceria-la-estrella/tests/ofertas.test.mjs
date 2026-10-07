@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { estaVigente, ofertaVigente, precioEfectivo, calcularLineas, regalosDelPedido, nombreOferta, hayRangosSolapados } from "../lib/ofertas.mjs";
+import { estaVigente, ofertaVigente, precioEfectivo, calcularLineas, regalosDelPedido, nombreOferta, hayRangosSolapados, destacadas, tituloDestacadas, textoRegalo, condicionRegalo, fechaCorta } from "../lib/ofertas.mjs";
 import { validarProducto, catalogoPublico } from "../lib/productos.mjs";
 import { validarAjustes } from "../lib/ajustes.mjs";
 import { validarPedido, mensajeWhatsApp } from "../lib/pedido.mjs";
@@ -279,6 +279,48 @@ test("mensaje de WhatsApp: cita la oferta, el ahorro y el regalo", () => {
   assert.match(dos, /Regalo por tu compra: 2 × 250 g de chorizo/);
   const sin = mensajeWhatsApp({ ...hacer([{ id: "pollo-pollo-entero", cantidad: 2 }], aj).valor }, "LE-2610-0003");
   assert.ok(!/Ahorro|Regalo/.test(sin));
+});
+
+// ---- escaparate ----
+const pd = (id, nombre, ofertas, extra = {}) => ({ id, nombre, unidad: "kg", precio: 10, categoria: "x", ofertas, ...extra });
+
+test("escaparate: título en singular con una sola cosa y en plural con varias", () => {
+  assert.equal(tituloDestacadas(1), "Oferta de la semana");
+  assert.equal(tituloDestacadas(2), "Ofertas de la semana");
+  assert.equal(tituloDestacadas(7), "Ofertas de la semana");
+});
+
+test("escaparate: solo lo activo hoy, con precio, sin ocultar ni agotar; por orden de fin y los regalos al final", () => {
+  const hoy = "2026-10-07";
+  const productos = [
+    pd("a", "Zanahorias de cerdo", [precio("2026-10-05", "2026-10-11", 7)]),
+    pd("b", "Albóndigas", [tres("2026-10-05", "2026-10-09")]),
+    pd("c", "Programada", [precio("2026-10-10", "2026-10-15", 7)]),
+    pd("d", "Terminada", [precio("2026-09-01", "2026-09-07", 7)]),
+    pd("e", "Sin precio", [tres("2026-10-05", "2026-10-11")], { precio: null }),
+    pd("f", "Agotada", [precio("2026-10-05", "2026-10-11", 7)], { agotado: true }),
+    pd("g", "Oculta", [precio("2026-10-05", "2026-10-11", 7)], { oculto: true }),
+    pd("h", "Sin ofertas", []),
+    pd("i", "Mal formada", [{ tipo: "precio", precio: 7 }]),
+    pd("j", "Rebaja que ya no lo es", [precio("2026-10-05", "2026-10-11", 12)]),
+  ];
+  const r = destacadas(productos, [regalo(), regalo({ regalo: "pasado", hasta: "2026-10-06" })], hoy);
+  assert.deepEqual(r.map((t) => (t.clase === "producto" ? t.p.nombre : `regalo: ${t.regalo.regalo}`)), ["Albóndigas", "Zanahorias de cerdo", "regalo: 250 g de chorizo"]);
+  assert.equal(r[1].precio, 7);
+  assert.equal(r[1].habitual, 10);
+  assert.equal(r[0].habitual, null, "el 3x2 no tacha nada");
+  assert.equal(r[0].hasta, "2026-10-09");
+  assert.deepEqual(destacadas([], [], hoy), []);
+  assert.deepEqual(destacadas(undefined, undefined, hoy), []);
+  assert.equal(tituloDestacadas(destacadas(productos.slice(0, 1), [], hoy).length), "Oferta de la semana");
+});
+
+test("textos del regalo: «por cada», «a partir de», máximo y fecha de fin", () => {
+  const s = (x) => textoRegalo(regalo(x)).replace(/\s/g, " ");
+  assert.equal(s({}), "Por cada 30,00 € de compra, de regalo 250 g de chorizo (hasta el 11 de octubre).");
+  assert.equal(s({ repetir: false, hasta: null }), "En compras de 30,00 € o más, de regalo 250 g de chorizo.");
+  assert.match(condicionRegalo(regalo({ maximo: 2 })).replace(/\s/g, " "), /Por cada 30,00 € de compra \(máximo 2 por pedido\)/);
+  assert.equal(fechaCorta("2026-10-11"), "11 de octubre");
 });
 
 function clone(o) { return JSON.parse(JSON.stringify(o)); }

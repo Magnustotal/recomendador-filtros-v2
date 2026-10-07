@@ -5,7 +5,6 @@ import { prepararFoto, pesoLegible, LADO_MAXIMO, LADO_MINIMO } from "./fotos.js"
 import { semaforo, rangoOrientativo, precioDesdeCoste, ajustarPorcentaje, MARGEN_POR_DEFECTO, NOMBRE_FIABILIDAD } from "/assets/compartido/precios.js";
 import { redondear } from "/assets/compartido/dinero.js";
 import { referenciaMercado, rangoDesdeMercado } from "/assets/compartido/mercado.js";
-import { sumarDias } from "/assets/compartido/horario.js";
 import { ofertaVigente, nombreOferta } from "/assets/compartido/ofertas.js";
 
 let productos = [];
@@ -433,52 +432,15 @@ function abrirEditor(original) {
   unidad.addEventListener("change", () => { refrescarCoste(); refrescarSem(); refrescarAjuste(); calculadora.querySelector('label[for="f-coste"]').textContent = `Coste de compra (€/${porUnidad()}, sin IVA)`; });
   mostrarModo(); refrescarCoste(); refrescarSem(); refrescarAjuste();
 
-  // --- ofertas temporales: se activan y desactivan solas en las fechas indicadas ---
-  const ofertas = structuredClone(p.ofertas ?? []).map((o) => ({ ...o, precio: o.precio == null ? "" : importeEs(o.precio) }));
-  const listaOfertas = h("div", { class: "ofertas-lista" });
-  const estadoOferta = (o) => (o.hasta < hoyIso ? "Terminada" : o.desde > hoyIso ? "Programada" : "Activa hoy");
-  const pintarOfertas = () => {
-    listaOfertas.replaceChildren(...(ofertas.length ? ofertas.map((o, i) => {
-      const n = i + 1;
-      const desde = h("input", { id: `f-of-${n}-desde`, type: "date", value: o.desde ?? "" });
-      const hasta = h("input", { id: `f-of-${n}-hasta`, type: "date", value: o.hasta ?? "" });
-      desde.addEventListener("input", () => { o.desde = desde.value; });
-      hasta.addEventListener("input", () => { o.hasta = hasta.value; });
-      const quitarO = h("button", { type: "button", class: "btn-sec", texto: "Quitar", "aria-label": `Quitar la oferta ${n}` });
-      quitarO.addEventListener("click", () => { ofertas.splice(i, 1); pintarOfertas(); });
-      let valores;
-      if (o.tipo === "precio") {
-        const pr = h("input", { id: `f-of-${n}-precio`, type: "text", inputmode: "decimal", autocomplete: "off", value: o.precio ?? "" });
-        pr.addEventListener("input", () => { o.precio = pr.value; });
-        valores = [campo(`f-of-${n}-precio`, `Precio de oferta (€/${porUnidad()})`, pr)];
-      } else {
-        const lleva = h("input", { id: `f-of-${n}-lleva`, type: "text", inputmode: "numeric", autocomplete: "off", value: o.lleva ?? "", maxlength: "2" });
-        const paga = h("input", { id: `f-of-${n}-paga`, type: "text", inputmode: "numeric", autocomplete: "off", value: o.paga ?? "", maxlength: "2" });
-        lleva.addEventListener("input", () => { o.lleva = lleva.value; });
-        paga.addEventListener("input", () => { o.paga = paga.value; });
-        valores = [campo(`f-of-${n}-lleva`, `Se lleva (${unidad.value === "kg" ? "kg" : "ud"})`, lleva), campo(`f-of-${n}-paga`, "Se paga", paga)];
-      }
-      return h("fieldset", { class: `oferta-fila oferta-${estadoOferta(o).toLowerCase().replace(" ", "-")}` },
-        h("legend", { texto: `${o.tipo === "precio" ? "Precio rebajado" : "Lleva más, paga menos"} · ${estadoOferta(o)}` }),
-        h("div", { class: "fila-tres" }, campo(`f-of-${n}-desde`, "Desde (incluido)", desde), campo(`f-of-${n}-hasta`, "Hasta (incluido)", hasta), ...valores), quitarO);
-    }) : [h("p", { class: "ayuda", texto: "Sin ofertas. Añade una abajo." })]));
-  };
-  const anadirOferta = (tipo) => {
-    const desde = hoyIso, hasta = sumarDias(hoyIso, 6); // una semana por defecto
-    ofertas.push(tipo === "precio" ? { tipo, desde, hasta, precio: "" } : { tipo, desde, hasta, lleva: 3, paga: 2 });
-    pintarOfertas();
-    listaOfertas.querySelector(`#f-of-${ofertas.length}-${tipo === "precio" ? "precio" : "lleva"}`)?.focus();
-  };
-  const btnOfPrecio = h("button", { type: "button", class: "btn-sec", texto: "Añadir rebaja de precio" });
-  const btnOfCantidad = h("button", { type: "button", class: "btn-sec", texto: "Añadir 3x2 (lleva 3, paga 2)" });
-  btnOfPrecio.addEventListener("click", () => anadirOferta("precio"));
-  btnOfCantidad.addEventListener("click", () => anadirOferta("cantidad"));
-  pintarOfertas();
-  const ofertasGrupo = h("fieldset", { class: "campo-grupo ofertas" }, h("legend", { texto: "Ofertas temporales" }),
-    h("p", { class: "ayuda", texto: "Se activan y se desactivan solas en las fechas que pongas (inicio y fin incluidos). Con una rebaja, la tienda muestra tu precio habitual tachado y el de oferta. Dos ofertas del mismo producto no pueden coincidir en fechas." }),
-    h("p", { class: "ayuda", texto: "Antes de tachar un precio, confirma con tu gestoría las normas de rebajas: creo que el precio tachado debe ser el más bajo de los últimos 30 días, pero no estoy seguro." }),
-    listaOfertas, h("div", { class: "acciones" }, btnOfPrecio, btnOfCantidad));
-  unidad.addEventListener("change", pintarOfertas);
+  // --- ofertas: se crean y se cambian en la pestaña «Ofertas»; aquí solo se resumen ---
+  const textoOfertaFicha = (o) => `${o.hasta < hoyIso ? "Terminada" : o.desde > hoyIso ? "Programada" : "Activa hoy"}: ${o.tipo === "precio" ? `rebaja a ${eurosTxt(o.precio)}` : nombreOferta(o)} (${diaMes(o.desde)} al ${diaMes(o.hasta)})`;
+  const irOfertas = h("button", { type: "button", class: "btn-sec", texto: "Crear o cambiar ofertas de este producto" });
+  irOfertas.addEventListener("click", () => { dlg.close(); contexto.irAOfertas(p); });
+  const ofertasGrupo = esNuevo ? null : h("fieldset", { class: "campo-grupo ofertas" }, h("legend", { texto: "Ofertas" }),
+    (p.ofertas ?? []).length
+      ? h("ul", { class: "ofertas-resumen" }, p.ofertas.map((o) => h("li", { texto: textoOfertaFicha(o) })))
+      : h("p", { class: "ayuda", texto: "Este producto no tiene ofertas." }),
+    h("div", { class: "acciones" }, irOfertas));
 
   const formulario = h("form", { novalidate: true, "aria-labelledby": "dlg-titulo" },
     h("h2", { id: "dlg-titulo", texto: esNuevo ? "Nuevo producto" : "Editar producto" }),
@@ -510,7 +472,7 @@ function abrirEditor(original) {
       paso: num(paso), minimo: num(minimo), maximo: num(maximo), precio: precio.value.trim() === "" ? null : precio.value,
       coste: costeIn.value.trim() === "" ? null : costeIn.value, merma: mermaIn.value.trim() === "" ? null : mermaIn.value, margen: margenIn.value.trim() === "" ? null : margenIn.value,
       opciones: opciones.value.split("\n").map((x) => x.trim()).filter(Boolean), alergenos: lista(alergenos.value),
-      ofertas: ofertas.map((o) => (o.tipo === "precio" ? { tipo: "precio", desde: o.desde, hasta: o.hasta, precio: String(o.precio).trim() === "" ? null : o.precio } : { tipo: "cantidad", desde: o.desde, hasta: o.hasta, lleva: Number(o.lleva), paga: Number(o.paga) })),
+      ofertas: p.ofertas ?? [], // se cambian en la pestaña «Ofertas»; aquí se conservan tal cual
       agotado: cAgotado.querySelector("input").checked, oculto: cOculto.querySelector("input").checked, alcohol: cAlcohol.querySelector("input").checked, foto: p.foto,
     };
     const r = await api("/producto", { metodo: "PUT", cuerpo });

@@ -1,7 +1,7 @@
 # Guía rápida del panel (para el carnicero)
 
 Entras en **tu-web/admin/** (la misma dirección de la web, añadiendo `/admin/`) y escribes la contraseña.
-En el móvil funciona igual que en el ordenador. Arriba tienes seis pestañas.
+En el móvil funciona igual que en el ordenador. Arriba tienes siete pestañas.
 
 ## Pedidos
 
@@ -28,7 +28,7 @@ En el móvil funciona igual que en el ordenador. Arriba tienes seis pestañas.
 - **Editar** abre la ficha completa: nombre, categoría, descripción, si se vende al peso o por unidades, de cuánto en cuánto se puede pedir (250 g por defecto), opciones al pedir (por ejemplo «En filetes», «Picada»), foto, y si es **Oculto** (no aparece en la tienda) o bebida alcohólica (el cliente tendrá que confirmar que es mayor de 18).
 - **Fotos por defecto:** cada categoría ya trae su foto y cada pieza muestra el icono de su categoría hasta que subas la suya.
 - **Foto:** pulsa *Subir foto* y elige una del móvil o del ordenador (formatos **JPG, PNG o WebP**, del tamaño que sea). Se ajusta sola: si es enorme se reduce y si es muy pequeña se amplía (puede verse algo borrosa); si es diminuta (menos de 120 px) te dirá que uses otra. Además se le quitan los datos ocultos, como la ubicación. Luego pulsa **Guardar**.
-- **Ofertas temporales:** en **Editar → «Ofertas temporales»** puedes programar (1) una **rebaja de precio**: pones el precio de oferta y las fechas, y la tienda enseña tu precio de siempre tachado y el de oferta; o (2) un **3x2** (o 2x1, 4x3…): «se lleva 3, se paga 2», que regala de cada 3 kg la parte que toque (3 kg pagan 2; 4,5 kg pagan 3,5). Empiezan y acaban **solas** en las fechas que pongas (el primer y el último día entran). Solo puede haber una oferta a la vez en cada producto, y la rebaja necesita que el producto ya tenga su precio normal. En la lista verás una etiqueta «3x2 hasta el 11/10». Antes de tachar un precio, confirma con tu gestoría las normas de rebajas (creo que el precio tachado debe ser el más bajo de los últimos 30 días).
+- **Ofertas:** se programan en su propia pestaña, **Ofertas** (ver más abajo). En la lista de productos verás una etiqueta como «3x2 hasta el 11/10», y en la ficha de cada producto («Editar») un resumen con un botón que te lleva a la pestaña Ofertas.
 - **Añadir producto** crea uno nuevo. Para dejar de ofrecer algo un tiempo, mejor *Oculto* o *Agotado* que *Eliminar*.
 
 ## Mercado
@@ -41,6 +41,17 @@ Sirve para que el semáforo de los precios se apoye en lo que cuestan **otras ti
 - **Fuentes:** puedes cambiar cada cuánto repasas cada tienda, quitarla o **añadir otra** (una carnicería online, un mayorista…). Antes de usar la web de otra empresa, mira sus condiciones: aquí solo anotas a mano lo que ves publicado.
 - El panel te avisa (y la pestaña **Estado**) si una tienda semanal lleva más de 7 días sin anotarse.
 
+## Ofertas
+
+Aquí programas lo que quieras anunciar. Se activa y se desactiva **solo** en las fechas que pongas (el primer y el último día entran), y en la **portada** y en la **tienda** sale un bloque «**Oferta de la semana**» (si hay una sola cosa) o «**Ofertas de la semana**» (si hay varias): tarjetas con foto, precio y «hasta el…», que en el móvil se deslizan con el dedo. Si no hay nada activo, el bloque no aparece.
+
+- **Crear oferta:** pulsa *Crear oferta*, busca el producto y elígelo en la lista, y escoge el tipo: una **rebaja de precio** (pones el precio de oferta; la tienda enseña tu precio de siempre **tachado** y el de oferta) o un **3x2** (o 2x1, 4x3…: «se lleva 3, se paga 2»; de cada 3 kg se regala 1: 3 kg pagan 2, 4,5 kg pagan 3,5). Las fechas vienen puestas para una semana; cámbialas si quieres.
+- **Reglas:** solo una oferta a la vez en cada producto (si dos coinciden en fechas, te avisa); la rebaja necesita que el producto tenga su precio normal y que la oferta sea más barata; el 3x2 también necesita precio. Puedes dejar ofertas **programadas** para más adelante: no se ven hasta su día.
+- **La lista:** *Activas hoy*, *Programadas* y *Terminadas* (plegadas, con un botón para borrarlas). Con *Cambiar* modificas una oferta y con *Quitar* la borras.
+- **Lo que no sale en el bloque:** un producto agotado o sin precio.
+- **Antes de tachar un precio**, confirma con tu gestoría las normas de rebajas: creo que el precio tachado debe ser el más bajo de los últimos 30 días, pero no estoy seguro.
+- **Regalo por compra**, más abajo en la misma pestaña: por ejemplo, «por cada 30 € de compra, 250 g de chorizo de regalo». Pulsa *Añadir un regalo*, escribe qué regalas y a partir de cuántos euros, y si quieres las fechas, y **guarda con *Guardar regalos***. «Se repite» regala uno más por cada 30 € (60 € = 2 regalos); si lo desmarcas, es uno solo. Cuenta lo que se paga por los productos (ya con las ofertas, sin el envío). El cliente lo ve en el bloque de ofertas, en su carrito («te faltan X € para tu regalo»), en el mensaje de WhatsApp, y a ti te sale en el pedido. El regalo es solo un texto: tú lo preparas.
+
 ## Tienda
 
 Aquí decides cómo funcionan los pedidos:
@@ -50,7 +61,6 @@ Aquí decides cómo funcionan los pedidos:
 - **Pedido mínimo, antelación, días de margen y días sin servicio** (festivos, vacaciones).
 - **Recogida** y **Reparto**: días y franjas horarias, coste del envío, envío gratis a partir de…, pedido mínimo para reparto.
 - **Zona de reparto:** puedes poner una **lista de códigos postales**, un **radio en km** desde la tienda, o las dos cosas. Con solo códigos postales, el cliente tiene que escribir uno de tu lista. Con radio, los códigos de la lista entran siempre y el resto se comprueba por distancia; si el programa no consigue localizar la dirección, el pedido entra igualmente con el aviso **«Dirección por verificar»** para que lo mires tú antes de aceptarlo. La distancia es en línea recta, no por carretera.
-- **Regalo por compra:** por ejemplo, «por cada 30 € de compra, 250 g de chorizo de regalo». Pulsa *Añadir un regalo*, escribe qué regalas y a partir de cuántos euros, y si quieres las fechas. «Se repite» regala uno más por cada 30 € (60 € = 2 regalos); si lo desmarcas, es uno solo. Cuenta lo que se paga por los productos (ya con las ofertas, sin el envío). El cliente lo ve en la tienda, en su pedido y en el mensaje de WhatsApp, y a ti te sale en el pedido. El regalo es solo un texto: tú lo preparas.
 - **Formas de pago:** efectivo, tarjeta (solo al recoger), Bizum y transferencia. La web **no cobra**: se paga al recoger o recibir.
 - Pulsa **Guardar cambios** abajo. Si algo está mal, te dirá qué campo es.
 

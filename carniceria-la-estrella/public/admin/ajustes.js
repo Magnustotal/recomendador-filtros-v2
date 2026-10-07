@@ -183,41 +183,6 @@ function grupo(titulo, ...hijos) {
   return h("fieldset", { class: "campo-grupo" }, h("legend", { texto: titulo }), ...hijos);
 }
 
-// Regalos por compra: «por cada X € de compra, de regalo Y», con fechas opcionales (hasta 5)
-function regalos() {
-  borrador.tienda.regalos ??= [];
-  const cont = h("div", { class: "regalos-lista" });
-  const pintar = () => {
-    const lista = borrador.tienda.regalos;
-    cont.replaceChildren(...(lista.length ? lista.map((r, i) => {
-      const n = i + 1;
-      const texto = h("input", { id: `a-regalo-${n}-texto`, type: "text", maxlength: "80", autocomplete: "off", value: r.regalo ?? "", placeholder: "Por ejemplo: 250 g de chorizo" });
-      const minimo = h("input", { id: `a-regalo-${n}-minimo`, type: "text", inputmode: "decimal", autocomplete: "off", value: importeEs(r.minimo) });
-      const maximo = h("input", { id: `a-regalo-${n}-maximo`, type: "text", inputmode: "numeric", autocomplete: "off", maxlength: "2", value: r.maximo ?? "" });
-      const desde = h("input", { id: `a-regalo-${n}-desde`, type: "date", value: r.desde ?? "" });
-      const hasta = h("input", { id: `a-regalo-${n}-hasta`, type: "date", value: r.hasta ?? "" });
-      const repetir = h("input", { id: `a-regalo-${n}-repetir`, type: "checkbox", checked: !!r.repetir });
-      const cambio = (campo, el, conv = (v) => v) => el.addEventListener("input", () => { r[campo] = conv(el.value); alCambiar(true); });
-      cambio("regalo", texto); cambio("minimo", minimo, (v) => (v.trim() === "" ? null : v)); cambio("maximo", maximo, (v) => (v.trim() === "" ? null : v)); cambio("desde", desde, (v) => v || null); cambio("hasta", hasta, (v) => v || null);
-      repetir.addEventListener("change", () => { r.repetir = repetir.checked; alCambiar(true); });
-      const quitar = h("button", { type: "button", class: "btn-sec", texto: "Quitar", "aria-label": `Quitar el regalo ${n}` });
-      quitar.addEventListener("click", () => { lista.splice(i, 1); alCambiar(true); pintar(); });
-      const c = (id, etiqueta, control, ayuda) => h("div", { class: "campo" }, h("label", { for: id, texto: etiqueta }), control, ayuda ? h("p", { class: "ayuda", texto: ayuda }) : null);
-      return h("fieldset", { class: "oferta-fila" }, h("legend", { texto: `Regalo ${n}` }),
-        c(`a-regalo-${n}-texto`, "De regalo", texto),
-        h("div", { class: "fila-dos" }, c(`a-regalo-${n}-minimo`, "Compra de (€)", minimo, "Productos ya con las ofertas, sin contar el envío."), c(`a-regalo-${n}-maximo`, "Máximo por pedido (opcional)", maximo)),
-        h("div", { class: "campo check" }, h("label", { for: `a-regalo-${n}-repetir` }, repetir, h("span", { texto: "Se repite: por cada tramo completo se regala uno más (si no, uno solo)" }))),
-        h("div", { class: "fila-dos" }, c(`a-regalo-${n}-desde`, "Desde (opcional, incluido)", desde), c(`a-regalo-${n}-hasta`, "Hasta (opcional, incluido)", hasta)),
-        quitar);
-    }) : [h("p", { class: "ayuda", texto: "Ningún regalo configurado." })]));
-    anadir.hidden = lista.length >= 5;
-  };
-  const anadir = h("button", { type: "button", class: "btn-sec", texto: "Añadir un regalo" });
-  anadir.addEventListener("click", () => { borrador.tienda.regalos.push({ regalo: "", minimo: 30, repetir: true, maximo: null, desde: null, hasta: null }); alCambiar(true); pintar(); cont.querySelector(`#a-regalo-${borrador.tienda.regalos.length}-texto`)?.focus(); });
-  pintar();
-  return h("div", {}, cont, anadir);
-}
-
 function selectRedondeo() {
   const id = "a-tienda-redondeo";
   const sel = h("select", { id }, h("option", { value: "", texto: "Sin redondeo" }), h("option", { value: "90", texto: "Terminar en ,90" }), h("option", { value: "95", texto: "Terminar en ,95" }));
@@ -264,9 +229,6 @@ function pintarTienda() {
       h("details", { class: "ayuda-desplegable" }, h("summary", { texto: "IVA por categoría (%)" }),
         aviso_zona("Son tipos de partida que he puesto yo (carne y casi todo, 10 %; huevos, 4 %; vino, 21 %). Confírmalos con tu gestoría y cámbialos si no coinciden."),
         h("div", { class: "rejilla-iva" }, categorias.map((c) => entrada(`tienda.precios.iva.${c.id}`, c.nombre, { tipo: "coord" }))))),
-    grupo("Regalo por compra",
-      aviso_zona("Por ejemplo: «por cada 30 € de compra, 250 g de chorizo de regalo». Se aplica solo en las fechas que pongas (o siempre, si las dejas vacías) y el cliente lo ve en la tienda, en su pedido y en el mensaje de WhatsApp. El regalo es un texto: tú lo preparas."),
-      regalos()),
     grupo("Formas de pago (siempre al recoger o recibir; la web no cobra)",
       interruptor("tienda.pagos.efectivo", "Efectivo"),
       interruptor("tienda.pagos.tarjetaRecogida", "Tarjeta (solo al recoger en tienda)"),

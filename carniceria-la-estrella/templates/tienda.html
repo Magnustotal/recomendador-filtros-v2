@@ -33,6 +33,7 @@
 {{{css.base}}}
 </style>
 <link rel="stylesheet" href="/assets/tienda.css">
+<link rel="stylesheet" href="/assets/ofertas.css">
 </head>
 <body id="top">
 
@@ -81,7 +82,12 @@
 
       <div id="anuncios" class="sr-only" role="status" aria-live="polite"></div>
       <div id="aviso-tienda" class="aviso" role="note" hidden></div>
-      <div id="regalos-tienda" class="regalo-aviso" role="note" hidden></div>
+      <section id="ofertas" class="ofertas ofertas-tienda" hidden>
+        <h2 id="ofertas-titulo">Ofertas de la semana</h2>
+        <div class="ofertas-visor" role="region" aria-labelledby="ofertas-titulo">
+          <ul class="ofertas-fila" id="ofertas-lista"></ul>
+        </div>
+      </section>
 
       <div class="shop-layout" id="app" hidden>
         <div class="shop-lista">

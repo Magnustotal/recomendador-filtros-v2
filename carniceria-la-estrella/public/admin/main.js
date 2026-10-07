@@ -3,6 +3,7 @@ import { api, cuandoCaduque, textoErrores } from "./api.js";
 import { h, $, aviso } from "./util.js";
 import { iniciarPedidos, cargar as cargarPedidos, vigilar } from "./pedidos.js";
 import { iniciarMercado, cargarMercado, resumenMercado } from "./mercado.js";
+import { iniciarOfertas, cargarOfertas, buscarEnOfertas } from "./ofertas.js";
 import { iniciarProductos, cargarProductos, fijarMercado, productosConPrecio, productosSinPrecio, orientativosPendientes, datosPrecios } from "./productos.js";
 import { iniciarAjustes, cargarAjustes, enviar, ajustesBorrador, refrescarTienda, fijarCategorias } from "./ajustes.js";
 
@@ -47,7 +48,7 @@ $("salir").addEventListener("click", async () => {
 });
 
 // ---------- pestañas ----------
-const PESTANAS = ["pedidos", "productos", "mercado", "tienda", "negocio", "estado"];
+const PESTANAS = ["pedidos", "productos", "ofertas", "mercado", "tienda", "negocio", "estado"];
 function irA(nombre, { enfocar = false } = {}) {
   for (const p of PESTANAS) {
     const boton = $(`tab-${p}`);
@@ -100,9 +101,24 @@ for (const cual of ["tienda", "negocio"]) {
 window.addEventListener("beforeunload", (e) => { if (sinGuardar) { e.preventDefault(); e.returnValue = ""; } });
 
 iniciarPedidos({ cuandoCambienNuevos: marcarNuevos });
+iniciarOfertas({
+  recargar: () => recargarProductos(),
+  // Los regalos son un ajuste de la tienda: se guardan con el resto de ajustes ya guardados, sin tocar lo que haya a medias en la pestaña Tienda
+  async guardarRegalos(lista) {
+    const base = structuredClone(guardado);
+    base.tienda.regalos = lista;
+    const r = await guardarAjustesServidor(base);
+    if (!r.ok) return { ok: false, errores: r.errores };
+    guardado.tienda.regalos = r.datos.ajustes.tienda.regalos;
+    ajustesBorrador().tienda.regalos = structuredClone(guardado.tienda.regalos); // que guardar la pestaña Tienda no devuelva los regalos antiguos
+    cargarOfertas({ regalos: guardado.tienda.regalos });
+    return { ok: true };
+  },
+});
 iniciarMercado({ alCambiar: (m) => { fijarMercado(m); pintarEstado(); }, recargar: () => recargarProductos() });
 
 iniciarProductos({
+  irAOfertas(p) { irA("ofertas"); buscarEnOfertas(p.nombre); },
   redondeoActual: () => guardado?.tienda.redondeo ?? null,
   preciosCfg: () => guardado?.tienda.precios ?? { margenDefecto: 30, iva: {} },
   async guardarRedondeo(valor) {
@@ -124,6 +140,7 @@ async function recargarProductos() {
   if (!r.ok) { aviso(textoErrores(r.errores), { error: true }); return; }
   cargarProductos({ productos: r.datos.productos, categorias: r.datos.categorias, orientativos: r.datos.orientativos, meta: r.datos.meta, mercado: r.datos.mercado, hoy: r.datos.hoy });
   cargarMercado({ mercado: r.datos.mercado, productos: r.datos.productos, hoy: r.datos.hoy });
+  cargarOfertas({ productos: r.datos.productos, categorias: r.datos.categorias, hoy: r.datos.hoy });
 }
 
 // ---------- estado y lista de comprobación ----------
@@ -190,6 +207,7 @@ async function abrirPanel() {
   cargarAjustes(r.datos.ajustes);
   cargarProductos({ productos: r.datos.productos, categorias: r.datos.categorias, orientativos: r.datos.orientativos, meta: r.datos.meta, mercado: r.datos.mercado, hoy: r.datos.hoy });
   cargarMercado({ mercado: r.datos.mercado, productos: r.datos.productos, hoy: r.datos.hoy });
+  cargarOfertas({ productos: r.datos.productos, categorias: r.datos.categorias, regalos: r.datos.ajustes.tienda.regalos ?? [], hoy: r.datos.hoy });
   const inicial = PESTANAS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "pedidos";
   if (inicial !== "pedidos") await cargarPedidos(); // para el contador de nuevos
   irA(inicial); // la pestaña de pedidos carga su lista al abrirse

@@ -5,7 +5,7 @@
 // No hay nada «programado»: cada oferta lleva su fecha de inicio y de fin (días completos, ambos incluidos, hora de
 // Madrid) y se comprueba contra el día de hoy cada vez que se calcula. Si hoy está dentro, se aplica; si no, no.
 // Todo el dinero va en céntimos enteros y las cantidades en gramos (kg) o unidades (ud), como en el resto de la web.
-import { importeLinea, aCentimos } from "./dinero.js";
+import { importeLinea, aCentimos, formatoEuro } from "./dinero.js";
 
 export const MAX_OFERTAS_POR_PRODUCTO = 8;
 export const MAX_REGALOS = 5;
@@ -90,6 +90,38 @@ export function regalosDelPedido(regalos, baseCent, hoy) {
     salida.push({ texto: r.regalo, cantidad, minimoCent, repetir: !!r.repetir, maximo: r.maximo ?? null, hasta: r.hasta ?? null, faltaCent });
   }
   return salida;
+}
+
+// ---- escaparate: lo que se enseña en la portada y en la tienda ----
+
+export const fechaCorta = (iso) => new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`));
+
+// «Por cada 30,00 € de compra (máximo 2 por pedido)» / «En compras de 30,00 € o más»
+export function condicionRegalo(r) {
+  const base = r.repetir ? `Por cada ${formatoEuro(r.minimo)} de compra` : `En compras de ${formatoEuro(r.minimo)} o más`;
+  return r.repetir && r.maximo != null ? `${base} (máximo ${r.maximo} por pedido)` : base;
+}
+export const textoRegalo = (r) => `${condicionRegalo(r)}, de regalo ${r.regalo}${r.hasta ? ` (hasta el ${fechaCorta(r.hasta)})` : ""}.`;
+
+// «Oferta de la semana» si hay una sola cosa que enseñar; «Ofertas de la semana» si hay varias.
+export const tituloDestacadas = (n) => (n === 1 ? "Oferta de la semana" : "Ofertas de la semana");
+
+/**
+ * Tarjetas del escaparate: las ofertas de producto que están activas hoy (con precio y sin agotar) por orden de fin,
+ * y después los regalos por compra activos hoy.
+ *   { clase: "producto", p, oferta, precio, habitual, hasta }  |  { clase: "regalo", regalo, hasta }
+ */
+export function destacadas(productos, regalos, hoy) {
+  const tarjetas = [];
+  for (const p of productos ?? []) {
+    if (p.oculto || p.agotado) continue;
+    const e = precioEfectivo(p, hoy);
+    if (!e.oferta) continue;
+    tarjetas.push({ clase: "producto", p, oferta: e.oferta, precio: e.precio, habitual: e.habitual, hasta: e.oferta.hasta });
+  }
+  tarjetas.sort((a, b) => (a.hasta < b.hasta ? -1 : a.hasta > b.hasta ? 1 : a.p.nombre.localeCompare(b.p.nombre, "es")));
+  for (const r of regalos ?? []) if (estaVigente(r, hoy) && r.minimo > 0) tarjetas.push({ clase: "regalo", regalo: r, hasta: r.hasta ?? null });
+  return tarjetas;
 }
 
 // ---- validación (la usan productos.mjs y ajustes.mjs) ----
