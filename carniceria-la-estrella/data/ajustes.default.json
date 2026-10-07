@@ -1,0 +1,112 @@
+{
+  "negocio": {
+    "nombre": "Carnicería La Estrella",
+    "razonSocial": "",
+    "nif": "",
+    "calle": "Av. de la Barzola, 40",
+    "cp": "41008",
+    "localidad": "Sevilla",
+    "provincia": "Sevilla",
+    "region": "Andalucía",
+    "barrio": "La Barzola (Los Príncipes)",
+    "distrito": "Distrito Macarena",
+    "telefono": "601006290",
+    "whatsapp": "34601006290",
+    "lat": 37.4119071,
+    "lng": -5.9763565,
+    "mapsUrl": "https://maps.app.goo.gl/SN8yAS3VacLA599n9",
+    "notaGoogle": "4,9",
+    "resenasGoogle": 9,
+    "citaGoogle": "Calidad a un buen precio y un equipo de trabajo humilde y cercano a la gente."
+  },
+  "horario": [
+    {
+      "dias": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "abre": "09:00",
+      "cierra": "15:00"
+    },
+    {
+      "dias": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "abre": "17:30",
+      "cierra": "20:30"
+    },
+    {
+      "dias": [
+        6
+      ],
+      "abre": "09:00",
+      "cierra": "15:00"
+    }
+  ],
+  "seo": {
+    "dominio": "https://carnicerialaestrella.netlify.app",
+    "titulo": "Carnicería La Estrella | Carnicería de barrio en La Barzola, Sevilla",
+    "descripcion": "Carnicería, charcutería y precocinados en La Barzola (Los Príncipes), Distrito Macarena, Sevilla. Carne fresca, cortes al gusto y encargos por WhatsApp."
+  },
+  "tienda": {
+    "activa": false,
+    "aviso": "",
+    "pedidoMinimo": null,
+    "redondeo": null,
+    "antelacionHoras": 2,
+    "diasMaximos": 14,
+    "diasSinServicio": [],
+    "recogida": {
+      "activa": true,
+      "dias": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "franjas": [
+        "09:00-11:00",
+        "11:00-13:00",
+        "13:00-15:00",
+        "17:30-19:30"
+      ]
+    },
+    "reparto": {
+      "activo": true,
+      "zona": "",
+      "minimo": null,
+      "coste": null,
+      "gratisDesde": null,
+      "dias": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "franjas": [
+        "10:00-13:00",
+        "18:00-20:30"
+      ]
+    },
+    "pagos": {
+      "efectivo": true,
+      "tarjetaRecogida": true,
+      "bizum": true,
+      "bizumNumero": "",
+      "transferencia": true,
+      "transferenciaDatos": ""
+    },
+    "textoEntrega": "Reparto a domicilio en la zona. Condiciones a confirmar por WhatsApp."
+  }
+}

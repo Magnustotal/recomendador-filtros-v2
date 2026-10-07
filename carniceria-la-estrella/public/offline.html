@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sin conexión | Carnicería La Estrella</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<style>
+  @font-face { font-family: "Playfair Display"; font-weight: 600 900; font-display: swap; src: url("assets/fonts/playfair.woff2") format("woff2"); }
+  @font-face { font-family: "Karla"; font-weight: 400 700; font-display: swap; src: url("assets/fonts/karla.woff2") format("woff2"); }
+  :root {
+    --cream: #f5ead3; --ink: #2a1d17; --maroon: #7a1f2a;
+    --font-display: "Playfair Display", Georgia, serif;
+    --font-body: "Karla", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; min-height: 100dvh; background: var(--cream); color: var(--ink); font-family: var(--font-body); }
+  main { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.4rem; text-align: center; padding: calc(2rem + env(safe-area-inset-top, 0px)) calc(1.25rem + env(safe-area-inset-right, 0px)) calc(2rem + env(safe-area-inset-bottom, 0px)) calc(1.25rem + env(safe-area-inset-left, 0px)); }
+  svg.mark { width: 60px; height: 60px; }
+  h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.9rem, 1.5rem + 2vw, 3rem); margin: 0.3em 0 0; }
+  p { max-width: 42ch; margin: 0; color: #4a3a30; font-size: 1.05rem; }
+  a.btn {
+    display: inline-flex; align-items: center; gap: 0.5em; margin-top: 0.6rem;
+    background: var(--maroon); color: #fff; font-weight: 700; text-decoration: none;
+    padding: 0.85em 1.8em; border-radius: 999px; box-shadow: 0 8px 20px -8px rgba(122,31,42,0.5);
+    transition: transform 0.18s;
+  }
+  a.btn:hover { transform: translateY(-2px); }
+  :focus-visible { outline: 3px solid var(--maroon); outline-offset: 2px; }
+</style>
+</head>
+<body>
+  <main>
+    <svg class="mark" viewBox="0 0 200 200" aria-hidden="true">
+      <circle cx="100" cy="100" r="96" fill="#7a1f2a"/>
+      <circle cx="100" cy="100" r="86" fill="none" stroke="#f5ead3" stroke-width="2" stroke-dasharray="3.2 5"/>
+      <g transform="translate(100,84)"><circle cx="0" cy="0" r="34" fill="#f5ead3"/><circle cx="-25" cy="-25" r="11" fill="#f5ead3"/><circle cx="25" cy="-25" r="11" fill="#f5ead3"/><ellipse cx="0" cy="10.5" rx="14.5" ry="10" fill="#e8c9a8" stroke="#7a1f2a" stroke-width="2"/><circle cx="-5.3" cy="10.5" r="2" fill="#7a1f2a"/><circle cx="5.3" cy="10.5" r="2" fill="#7a1f2a"/><circle cx="-12.3" cy="-7" r="2.6" fill="#2a1d17"/><circle cx="12.3" cy="-7" r="2.6" fill="#2a1d17"/></g>
+    </svg>
+    <h1>Sin conexión</h1>
+    <p>Esta página todavía no se ha guardado para verla sin internet. Conéctate y vuelve a intentarlo, o llama directamente si es urgente.</p>
+    <a class="btn" href="tel:+34601006290">Llamar: 601 00 62 90</a>
+  </main>
+</body>
+</html>

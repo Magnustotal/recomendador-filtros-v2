@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="96" fill="#7a1f2a"/>
+  <circle cx="100" cy="100" r="86" fill="none" stroke="#f5ead3" stroke-width="2" stroke-dasharray="3.2 5"/>
+  <g transform="translate(100,84)">
+    <circle cx="0" cy="0" r="34" fill="#f5ead3"/>
+    <circle cx="-25" cy="-25" r="11" fill="#f5ead3"/>
+    <circle cx="25" cy="-25" r="11" fill="#f5ead3"/>
+    <ellipse cx="0" cy="10.5" rx="14.5" ry="10" fill="#e8c9a8" stroke="#7a1f2a" stroke-width="2"/>
+    <circle cx="-5.3" cy="10.5" r="2" fill="#7a1f2a"/>
+    <circle cx="5.3" cy="10.5" r="2" fill="#7a1f2a"/>
+    <circle cx="-12.3" cy="-7" r="2.6" fill="#2a1d17"/>
+    <circle cx="12.3" cy="-7" r="2.6" fill="#2a1d17"/>
+  </g>
+  <g transform="translate(100,150)" stroke="#f5ead3" stroke-width="2.6" stroke-linecap="round" fill="none">
+    <g transform="rotate(-35)"><line x1="-28" y1="0" x2="20" y2="0"/><path d="M20,0 L31,-4.3 L31,4.3 Z" fill="#f5ead3" stroke="none"/><line x1="-28" y1="0" x2="-35" y2="0" stroke-width="3.8"/></g>
+    <g transform="rotate(35)"><line x1="-28" y1="0" x2="20" y2="0"/><path d="M20,0 L31,-4.3 L31,4.3 Z" fill="#f5ead3" stroke="none"/><line x1="-28" y1="0" x2="-35" y2="0" stroke-width="3.8"/></g>
+  </g>
+</svg>

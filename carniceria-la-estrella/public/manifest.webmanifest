@@ -1,0 +1,72 @@
+{
+  "name": "Carnicería La Estrella — Carne fresca en La Barzola, Sevilla",
+  "short_name": "La Estrella",
+  "description": "Carnicería, charcutería y precocinados en La Barzola, Sevilla. Carne fresca, cortes al gusto y encargos por WhatsApp.",
+  "start_url": "/",
+  "scope": "/",
+  "id": "/",
+  "lang": "es",
+  "display": "standalone",
+  "display_override": ["standalone", "browser"],
+  "theme_color": "#f5ead3",
+  "background_color": "#f5ead3",
+  "categories": ["food", "shopping"],
+  "shortcuts": [
+    {
+      "name": "Llamar",
+      "short_name": "Llamar",
+      "description": "Llamar a Carnicería La Estrella",
+      "url": "/#visitanos",
+      "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Cómo llegar",
+      "short_name": "Cómo llegar",
+      "description": "Cómo llegar a Carnicería La Estrella en Google Maps",
+      "url": "/#visitanos",
+      "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "assets/screenshot-wide.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Página principal de Carnicería La Estrella en escritorio"
+    },
+    {
+      "src": "assets/screenshot-narrow.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Página principal de Carnicería La Estrella en móvil"
+    }
+  ],
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

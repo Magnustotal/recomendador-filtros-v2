@@ -1,0 +1,50 @@
+<header class="site-header" id="site-header">
+  <div class="container">
+    <a class="brand" href="{{pagina.inicio}}">
+      <svg class="brand-mark" viewBox="0 0 200 200" aria-hidden="true">
+        <circle cx="100" cy="100" r="96" fill="#f5ead3" stroke="#7a1f2a" stroke-width="3"/>
+        <circle cx="100" cy="100" r="86" fill="none" stroke="#7a1f2a" stroke-width="1.5" stroke-dasharray="2.5 4"/>
+        <g transform="translate(100,86)">
+          <circle cx="0" cy="0" r="29" fill="#d98872" stroke="#7a1f2a" stroke-width="2.2"/>
+          <circle cx="-21" cy="-21" r="9.5" fill="#d98872" stroke="#7a1f2a" stroke-width="2.2"/>
+          <circle cx="21" cy="-21" r="9.5" fill="#d98872" stroke="#7a1f2a" stroke-width="2.2"/>
+          <ellipse cx="0" cy="9" rx="12.5" ry="8.5" fill="#c96b5a" stroke="#7a1f2a" stroke-width="2"/>
+          <circle cx="-4.5" cy="9" r="1.7" fill="#7a1f2a"/>
+          <circle cx="4.5" cy="9" r="1.7" fill="#7a1f2a"/>
+          <circle cx="-10.5" cy="-6" r="2.2" fill="#3a1a12"/>
+          <circle cx="10.5" cy="-6" r="2.2" fill="#3a1a12"/>
+        </g>
+        <g transform="translate(100,144)" stroke="#7a1f2a" stroke-width="2.1" stroke-linecap="round" fill="none">
+          <g transform="rotate(-35)"><line x1="-24" y1="0" x2="17" y2="0"/><path d="M17,0 L26,-3.6 L26,3.6 Z" fill="#7a1f2a" stroke="none"/><line x1="-24" y1="0" x2="-30" y2="0" stroke-width="3.2"/></g>
+          <g transform="rotate(35)"><line x1="-24" y1="0" x2="17" y2="0"/><path d="M17,0 L26,-3.6 L26,3.6 Z" fill="#7a1f2a" stroke="none"/><line x1="-24" y1="0" x2="-30" y2="0" stroke-width="3.2"/></g>
+        </g>
+      </svg>
+      <span class="brand-text" translate="no"><strong>La Estrella</strong><span>Carnicería</span></span>
+    </a>
+
+    <nav class="main-nav" id="main-nav" aria-label="Navegación principal">
+      <a href="{{pagina.p}}#catalogo">Productos</a>
+      <a href="{{pagina.p}}#tienda">La tienda</a>
+      <a href="{{pagina.p}}#nosotros">Quiénes somos</a>
+      <a href="{{pagina.p}}#servicios">Servicios</a>
+      <a href="{{pagina.p}}#opiniones">Opiniones</a>
+      <a href="{{pagina.p}}#faq">Preguntas</a>
+      <a href="{{pagina.p}}#visitanos">Visítanos</a>
+    </nav>
+
+    <div class="header-actions">
+      <a class="btn btn-green" href="{{pagina.enlacePedir}}"{{{pagina.externo}}} aria-label="{{pagina.etiquetaPedir}}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 21l1.65-4.95A8.5 8.5 0 1 1 8.6 19.4z"/><path d="M8.5 9.5c0 3.5 2.5 6 6 6 .5 0 1-.5 1-1.2 0-.3-.1-.5-.3-.6l-1.7-1a.7.7 0 0 0-.8.1l-.5.5a5 5 0 0 1-2.5-2.5l.5-.5a.7.7 0 0 0 .1-.8l-1-1.7a.7.7 0 0 0-.6-.3c-.7 0-1.2.5-1.2 1z" fill="currentColor" stroke="none"/></svg>
+        <span class="btn-label-full">Pedir</span>
+      </a>
+      <a class="btn btn-solid header-call" href="tel:{{negocio.telefonoE164}}" aria-label="Llamar por teléfono">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        <span class="btn-label-full">Llamar</span>
+      </a>
+      <button class="hamburger" id="nav-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Abrir menú de navegación">
+        <span></span>
+      </button>
+    </div>
+  </div>
+  <div class="nav-scrim" id="nav-scrim"></div>
+</header>

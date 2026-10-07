@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<script>document.documentElement.classList.add("js");</script>
+<!-- síncrono a propósito: marca <html class="js"> antes del primer pintado
+     para que el revelado por scroll solo se active si hay JavaScript -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{seo.titulo}}</title>
+<meta name="description" content="{{seo.descripcion}}">
+<meta name="theme-color" content="#f5ead3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="La Estrella">
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- ============================================================
+     SOBRE ESTE SITIO — LÉEME ANTES DE PUBLICAR
+
+     Cuarta versión. El usuario compartió una foto real de la fachada
+     (Google Maps) con el cartel de toda la vida: fondo crema, rótulo en
+     script oscuro "Carnicería la Estrella", subtítulo en rojo granate
+     "CARNICERIA - CHARCUTERIA - PRECOCINADO", un emblema circular con un
+     cerdo y dos cuchillos cruzados, y un toldo verde botella. El rediseño
+     recoge esa identidad real: paleta crema/granate/verde, una script
+     (Alex Brush) para el nombre, una serifa clásica (Playfair Display)
+     para los títulos, y un emblema circular propio inspirado en el suyo
+     (no es una copia exacta — el original tiene más detalle del que se
+     puede leer con fiabilidad en la foto — pero sí el mismo lenguaje:
+     cerdo + cuchillos cruzados + orla circular).
+
+     NUEVO en esta versión:
+     1) El catálogo ("El mostrador") ahora separa 13 categorías, cada una
+        con su propia ficha y su propia foto: Vacuno, Cerdo, Cerdo ibérico,
+        Jamones y paletillas, Quesos, Pollo, Pavo, Conejo, Embutidos,
+        Precocinados, Casquería, Caza y Recova (huevos). El usuario
+        confirmó que "cerdo ibérico" son carnes específicamente, y que
+        jamones/paletillas y quesos son SUS PROPIAS categorías, no parte
+        de "cerdo ibérico" (antes iban las tres mezcladas en una sola
+        ficha) — de ahí que ahora sean tres fichas: "Cerdo ibérico" (solo
+        carnes, foto de un corte crudo), "Jamones y paletillas" (foto de
+        jamones curados colgados — es la misma foto que antes estaba en
+        "Cerdo ibérico", movida aquí porque encaja mejor) y "Quesos" (foto
+        nueva). Todas las fichas llevan foto de banco de imágenes gratuito
+        (Pexels y Pixabay, ambos de uso comercial libre y sin atribución
+        obligatoria) — NO son fotos del producto real de la tienda, son
+        ilustrativas. Ese aviso es una etiqueta pequeña y discreta sobre
+        la propia foto ("Foto ilustrativa"), sin repetir de dónde viene en
+        cada ficha; esa parte (banco de imágenes, no es el producto real)
+        se explica una sola vez, en una nota justo encima de la rejilla
+        del catálogo. Pavo, Conejo y Caza usan foto de Pixabay en vez de
+        Pexels (pavo crudo, guiso de conejo, corte de caza): Pexels no
+        tenía fotos libres de esas carnes crudas sin gente de por medio ni
+        de animales vivos. Que el negocio venda exactamente el resto de
+        estas 13 categorías (incluida la caza, que suele ser de temporada)
+        sigue SIN CONFIRMAR — inclúyelas o quítalas según lo que vendan de
+        verdad.
+     2) Se ha añadido un botón "Pedir por WhatsApp" bien visible (cabecera,
+        portada y dos fichas del catálogo/servicios), con un mensaje
+        precargado distinto del genérico de contacto, para dejar claro que
+        ese enlace es para encargos.
+     3) Se ha quitado el formulario de contacto por email (y la página
+        gracias.html que le servía de destino): el negocio solo atiende
+        por teléfono y WhatsApp, no usa email. La política de privacidad
+        se ha actualizado para no mencionar ya ni el formulario ni a
+        Netlify como encargado del tratamiento de esos datos.
+
+     La foto de la fachada (assets/photos/fachada.jpg) es real, recortada
+     de esa misma foto de Google Maps. corte-parrilla-4x3.jpg (portada) y las
+     13 fotos del catálogo (Pexels y Pixabay) son banco de imágenes, no
+     producto real.
+
+     Datos REALES: nombre, dirección, teléfono, horario, valoración de
+     Google (4,9 · 9 reseñas), la reseña citada, "carnicería + charcutería
+     + precocinados" (viene del propio cartel), y que el negocio distingue
+     "Cerdo ibérico" (carnes), "Jamones y paletillas" y "Quesos" como tres
+     cosas separadas (confirmado por el usuario).
+
+     Datos DE EJEMPLO, a confirmar con el negocio: el resto de las 13
+     categorías del catálogo y el listado exacto de productos dentro de
+     cada una, el texto de "Quiénes somos", varias respuestas del FAQ. No
+     se ha
+     inventado email ni redes sociales — de hecho, en esta versión se ha
+     quitado el único punto de contacto que lo mencionaba. El aviso legal
+     lleva "[razón social a completar]" / "[NIF a completar]" como
+     placeholder explícito. El dominio de canonical/sitemap/robots es
+     https://carnicerialaestrella.netlify.app/ — el que el usuario
+     confirmó como el actual (subdominio de Netlify, de momento según sus
+     propias palabras). Si el negocio pasa a un dominio propio más
+     adelante, hay que actualizarlo en los 6 archivos donde aparece (usar
+     `grep -rl carnicerialaestrella.netlify.app .` para encontrarlos
+     todos, incluido el QR de /qr.html, que no es texto sino que hay que
+     regenerar).
+
+     v4.1.0 añade dos páginas de utilidad, sin enlazar desde el menú (son
+     para quien mantiene la web, no para clientes — ver README):
+     /test.html  Panel de comprobaciones automáticas (páginas, imágenes,
+                 PWA, datos estructurados, enlaces de teléfono/WhatsApp...).
+     /qr.html    Cartel para imprimir/guardar como PDF, con QR a la web y
+                 QR directo a pedir por WhatsApp. El QR de la web usa ya
+                 el dominio real de arriba (verificado decodificándolo).
+                 Al imprimir, la tarjeta ocupa toda la página A4 (una sola
+                 página, comprobado generando el PDF de verdad, no solo
+                 mirando la pantalla).
+
+     v4.3.0: el usuario aportó una guía genérica de cortes y variedades
+     tradicionales de carnicerías y mercados de Sevilla/Andalucía (cerdo
+     blanco, ibérico, vacuno, cordero, aves, casquería, embutidos, jamones,
+     quesos...). Se ha usado para que el texto de cada ficha del catálogo
+     mencione cortes y variedades más concretos y reales de la tradición
+     andaluza (p. ej. "cinta de lomo" y "costillar" en Cerdo, "abanico" en
+     Cerdo ibérico, "flamenquines" en Precocinados, "camperos y de
+     codorniz" en Recova) en vez de las descripciones más genéricas de
+     antes. Esa guía es EXPLÍCITAMENTE genérica ("la disponibilidad
+     concreta depende del establecimiento"), no una lista de lo que vende
+     este negocio en concreto — así que este texto sigue siendo DE
+     EJEMPLO, ahora más rico y creíble, pero igual de pendiente de
+     confirmar con el negocio que antes. De paso se corrigió un error: la
+     ficha "Cerdo" (blanco) mencionaba "secreto", que es un corte propio
+     del cerdo ibérico (por su infiltración de grasa), no del cerdo
+     blanco — se ha quitado de ahí y se mantiene solo en "Cerdo ibérico".
+
+     v4.4.0 — dos cambios, los dos a petición directa del usuario:
+     1) El catálogo ahora se ve en 4 bloques, con un separador visual
+        (".catalog-group-head": una etiqueta + una línea horizontal, como
+        elemento propio dentro de la rejilla, span completo) entre cada
+        uno — no es solo un reordenamiento silencioso de las 13 fichas:
+          Carnes frescas: Vacuno, Cerdo, Cerdo ibérico, Pollo, Pavo,
+                          Conejo, Caza.
+          Casquería: Casquería (sola, pero como bloque propio a
+                      propósito — no es ni carne fresca ni curado).
+          Charcutería y curados: Jamones y paletillas, Embutidos, Quesos.
+          Elaborados y otros: Elaborados, Recova.
+        Los números de cada ficha (01-13) siguen ese orden nuevo, no el
+        orden en que se añadieron históricamente.
+     2) "Precocinados" (nombre y enfoque) era incorrecto: esa ficha nunca
+        fue de platos ya cocinados listos para calentar — el usuario
+        aclaró que es hamburguesas, salchichas, pinchitos, San Jacobos,
+        flamenquines, pechugas a la bechamel, lagrimitas de pollo... todo
+        para cocinar en casa (freír, plancha, horno), no para recalentar.
+        Se ha renombrado a "Elaborados" en la ficha, el JSON-LD y el FAQ
+        correspondiente, y se ha cambiado la foto: antes era un guiso ya
+        cocinado (albóndigas en salsa), que además de no encajar con
+        "elaborados" tampoco encajaba con "precocinados" si se mira bien
+        (era un plato casero, no un guiso envasado). Ahora es hamburguesas
+        crudas apiladas — Pexels, banco de imágenes, ilustrativa como el
+        resto.
+        OJO: esto NO toca la frase "carnicería + charcutería +
+        precocinados" que aparece en meta description, hero y JSON-LD de
+        la Organization — esa frase es una cita literal del cartel real
+        de la fachada (dato REAL, confirmado por foto), y "precocinados"
+        ahí es la palabra que usa el propio cartel para ese rótulo, no el
+        nombre de esta ficha del catálogo. Son dos cosas distintas que
+        conviven a propósito: la cita del cartel se deja tal cual; la
+        ficha del catálogo usa el nombre más preciso que confirmó el
+        usuario.
+        También se cambió la foto de "Casquería": la anterior (lonchas de
+        lengua sobre plato blanco) no se reconocía a simple vista, según
+        el propio usuario. Ahora es un hígado de ternera crudo — igual de
+        ilustrativo, pero inconfundible.
+
+     v4.5.0 — correcciones de una auditoría de responsive + PWA (lectura
+     de código, sin prueba en dispositivo real): drawer del menú móvil con
+     overflow-y:auto y 100dvh; `inert` sobre el contenido de fondo mientras
+     el menú está abierto (app.js); objetivos táctiles a 48px; safe-area
+     superior/lateral en todas las páginas (viewport-fit=cover ya estaba
+     declarado en todas); srcset con miniaturas *-400.jpg en las 13 fichas
+     del catálogo (los JPG reales son 800x800, los atributos width/height
+     decían 800x500/800x600: corregido); regla display-mode: standalone.
+     Además, probado en navegador: cabecera que desbordaba a <=360px
+     (media queries de <=480/400/360px, "Llamar" de la cabecera oculto a
+     <=400px porque la barra inferior ya lo ofrece) y fondo oscuro/panel
+     del menú mal medidos por el backdrop-filter del header (ahora en
+     .site-header::before). Más objetivos táctiles a 48px.
+     No se ha añadido modo oscuro (decisión de diseño pendiente, ver README).
+
+     v4.9.0 — más recortes (ponytail-audit): tabla de horario estática (dos
+     sitios que editar, con prueba que los compara), sin botones de
+     instalar/compartir/copiar dirección, sin retrasos escalonados en el
+     revelado por scroll.
+
+     v4.8.0 — recortes (ponytail-audit): sin SRI ni ?v= en los scripts y sin
+     caché de un año salvo en las fuentes; sin calendario de festivos; sin
+     el rótulo superior de estado; sin la versión en el pie. Arreglado el
+     aviso del domingo. Detalle en el README.
+
+     v4.7.0 — rendimiento (se quitó el preload de fachada.jpg, la portada
+     es ahora corte-parrilla-4x3.jpg), accesibilidad (contraste del pie,
+     <dl>), "Bares y restaurantes" como lista y no como tarjetas, rayas
+     largas fuera del texto visible, y pruebas en tests/ (npm test). El
+     detalle y las cifras están en el README.
+
+     v4.6.0 — nueva sección "Bares y restaurantes" (#hosteleria, entre
+     Servicios y Opiniones, fondo granate): tres tarjetas, botón de
+     WhatsApp con mensaje propio para negocios y botón de llamar. Sin
+     enlace en el menú (ya tiene 7 y no cabría en pantallas medianas); se
+     llega por scroll. CONTENIDO DE EJEMPLO a confirmar con el negocio:
+     que sirvan a hostelería y en qué condiciones. El texto no promete
+     precios, reparto ni factura ("a convenir"). También en el JSON-LD
+     (Service "Pedidos para bares y restaurantes").
+     ============================================================ -->
+
+<link rel="canonical" href="{{seo.canonica}}">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_ES">
+<meta property="og:site_name" content="Carnicería La Estrella">
+<meta property="og:title" content="{{seo.titulo}}">
+<meta property="og:description" content="{{seo.descripcion}}">
+<meta property="og:image" content="{{seo.dominio}}/assets/og-image.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="{{seo.canonica}}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{seo.titulo}}">
+<meta name="twitter:description" content="{{seo.descripcion}}">
+<meta name="twitter:image" content="{{seo.dominio}}/assets/og-image.png">
+
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+
+<link rel="preconnect" href="https://www.google.com">
+
+<link rel="preload" href="assets/fonts/playfair.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/karla.woff2" as="font" type="font/woff2" crossorigin>
+
+<!-- Datos estructurados: solo hechos verificables. No se incluye
+     aggregateRating/review aunque la valoración real se muestre más abajo
+     en "Opiniones": Google desaconseja marcar como propia, en el propio
+     Schema.org, una valoración que en realidad viene de Google Maps.
+     @type: "GroceryStore" — verificado contra schema.org/Store: no existe
+     un tipo específico para "carnicería" en su vocabulario. -->
+<script type="application/ld+json">
+{{{jsonld.negocio}}}
+</script>
+
+<script type="application/ld+json">
+{{{jsonld.faq}}}
+</script>
+
+<!-- Alex Brush (script, solo para el nombre de la marca — nunca para
+     párrafos ni títulos de sección: una script a tamaño de cuerpo de
+     texto es ilegible) + Playfair Display (titulares) + Karla (texto).
+     Autoalojadas, solo el subconjunto "latin" (cubre el español entero:
+     tildes, ñ, ¿¡ — están todos dentro de Latin-1). Karla y Playfair
+     Display son fuentes variables: un único archivo cubre todos los
+     pesos que se usan aquí, de 400 a 900, sin descargar nada de más. -->
+<style>
+{{{css.base}}}
+
+  /* ---------- Hero ---------- */
+  .hero { position: relative; overflow: hidden; padding: 3.5rem 0 5rem; }
+  .hero .container {
+    display: grid; grid-template-columns: 1fr; gap: 3rem; align-items: center;
+  }
+  @media (min-width: 960px) {
+    .hero .container { grid-template-columns: 1.05fr 0.95fr; gap: 3.5rem; }
+  }
+  .hero-copy .eyebrow { margin-bottom: 0.3em; }
+  .hero h1 { font-size: clamp(2.4rem, 1.7rem + 3.4vw, 4.2rem); }
+  .hero h1 .script { font-family: var(--font-script); font-weight: 400; color: var(--maroon); font-size: 1.35em; line-height: 0.6; display: inline-block; margin: 0 0.05em; }
+  .hero-lede { margin-top: 1.4rem; font-size: 1.15rem; max-width: 46ch; color: var(--ink-soft); }
+  .hero-ctas { margin-top: 2.1rem; display: flex; flex-wrap: wrap; gap: 1rem; }
+  .rating-badge {
+    margin-top: 2.2rem; min-height: 48px; display: inline-flex; align-items: center; gap: 0.75em;
+    background: var(--cream-bright); border: 1px solid var(--line); border-radius: 999px;
+    padding: 0.55em 1.2em 0.55em 0.7em; text-decoration: none; color: var(--ink); box-shadow: var(--shadow);
+  }
+  .rating-badge .stars { color: var(--maroon); font-size: 1rem; letter-spacing: 0.05em; }
+  .rating-badge strong { font-weight: 800; }
+  .rating-badge .muted { color: var(--ink-soft); font-size: 0.9rem; }
+
+  .hero-art { position: relative; }
+  .hero-photo {
+    position: relative; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+    aspect-ratio: 4/3;
+  }
+  .hero-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .hero-badge-float {
+    position: absolute; bottom: -28px; left: -28px; width: 108px; height: 108px;
+    filter: drop-shadow(0 8px 14px rgba(42,29,23,0.35));
+  }
+  @media (max-width: 480px) {
+    .hero-badge-float { width: 84px; height: 84px; bottom: -18px; left: -14px; }
+  }
+
+  /* ---------- Catálogo ---------- */
+  .catalog-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.6rem;
+  }
+  .cat-card {
+    background: var(--cream-bright); border: 1px solid var(--line); border-radius: var(--radius);
+    overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column;
+    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  }
+  .cat-card:hover { transform: translateY(-5px); box-shadow: 0 20px 34px -18px rgba(42,29,23,0.4); }
+  .cat-card .cat-photo { position: relative; aspect-ratio: 16/10; overflow: hidden; }
+  .cat-card .cat-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s var(--ease); }
+  .cat-card:hover .cat-photo img { transform: scale(1.06); }
+  .photo-badge {
+    position: absolute; left: 0.7rem; bottom: 0.7rem; z-index: 1;
+    background: rgba(42,29,23,0.7); color: var(--cream-bright); backdrop-filter: blur(2px);
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.02em;
+    padding: 0.3em 0.7em; border-radius: 999px;
+  }
+  .cat-body { padding: 1.4rem 1.5rem 1.6rem; }
+  .cat-num { font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; color: var(--maroon); display: block; margin-bottom: 0.3em; }
+  .cat-card h3 { font-size: 1.3rem; margin-bottom: 0.35em; }
+  .cat-card p { color: var(--ink-soft); font-size: 0.96rem; margin: 0; }
+  .wa-link {
+    display: inline-flex; align-items: center; gap: 0.5em; margin-top: 0.8rem; min-height: 48px;
+    font-weight: 700; text-decoration: underline; color: var(--green);
+  }
+  .wa-link:hover { color: var(--green-deep); }
+  .tint-dark .wa-link, .tint-maroon .wa-link { color: var(--cream); }
+  .tint-dark .wa-link:hover { color: var(--cream-bright); }
+  .catalog-extra { margin-top: 2.2rem; padding: 1.4rem 1.5rem; background: var(--cream); border: 1px solid var(--line); border-radius: var(--radius); }
+  .catalog-extra h3 { margin: 0 0 0.4em; }
+  .catalog-extra p { margin: 0 0 1rem; max-width: 62ch; }
+  .catalog-note { margin-top: -0.6rem; margin-bottom: 1.8rem; font-size: 0.85rem; color: var(--ink-soft); opacity: 0.85; max-width: 62ch; }
+  .catalog-group-head { grid-column: 1 / -1; display: flex; align-items: center; gap: 0.9rem; margin-top: 1rem; }
+  .catalog-group-head:first-child { margin-top: 0; }
+  .catalog-group-head span {
+    font-weight: 700; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--maroon); white-space: nowrap;
+  }
+  .catalog-group-head::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  /* ---------- Galería ---------- */
+  .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.4rem; }
+  .gallery-grid .real-photo { grid-column: span 2; }
+  @media (max-width: 640px) { .gallery-grid .real-photo { grid-column: span 1; } }
+  .real-photo {
+    position: relative; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+    aspect-ratio: 16/9;
+  }
+  .real-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .real-photo figcaption {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 0.9rem 1.1rem;
+    background: linear-gradient(to top, rgba(20,14,10,0.75), transparent);
+    color: var(--white); font-weight: 700; font-size: 0.9rem;
+  }
+  .photo-placeholder {
+    border: 2px dashed var(--line); border-radius: var(--radius); background: var(--cream-bright);
+    aspect-ratio: 4/3; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; gap: 0.6rem; color: var(--ink-soft); padding: 1.5rem;
+  }
+  .photo-placeholder .icon { opacity: 0.55; }
+  .photo-placeholder strong { font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
+  .photo-placeholder span { font-size: 0.85rem; max-width: 22ch; }
+  .gallery-note { margin-top: 1.6rem; font-size: 0.95rem; color: var(--ink-soft); text-align: center; }
+  .gallery-note .maps-link { color: var(--maroon); font-weight: 700; }
+
+  /* ---------- Nosotros ---------- */
+  .about-grid { display: grid; grid-template-columns: 1fr; gap: 2.75rem; align-items: start; }
+  @media (min-width: 900px) { .about-grid { grid-template-columns: 1.15fr 0.85fr; } }
+  .about-text .lede { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.4rem, 1.15rem + 1vw, 2rem); line-height: 1.2; margin-bottom: 0.9rem; color: var(--maroon-deep); }
+  .about-text p.body-p { font-size: 1.05rem; color: var(--ink-soft); max-width: 64ch; }
+
+  .stat-card {
+    background: var(--cream-bright); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .stat-card .stat-row { display: flex; justify-content: space-between; gap: 1rem; padding: 1rem 1.4rem; border-bottom: 1px dashed var(--line); }
+  .stat-card .stat-row:last-child { border-bottom: none; }
+  .stat-row dt { font-weight: 700; color: var(--maroon); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; }
+  .stat-row dd { margin: 0; text-align: right; font-weight: 700; }
+  .stat-row dd a { color: inherit; text-decoration: underline; text-decoration-color: var(--maroon); text-decoration-thickness: 2px; text-underline-offset: 0.2em; display: inline-block; padding: 0.85rem 0; margin: -0.85rem 0; }
+  .stat-list { margin: 0; }
+  .stat-card-head { background: var(--maroon); color: var(--cream); padding: 1rem 1.4rem; font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; }
+
+  /* ---------- Servicios ---------- */
+  .service-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1.5rem; }
+  .service-item {
+    background: rgba(255,255,255,0.06); border: 1px solid var(--line-on-dark); border-radius: var(--radius);
+    padding: 1.8rem 1.6rem; display: flex; flex-direction: column; gap: 0.9rem;
+    transition: transform 0.2s var(--ease), background-color 0.2s var(--ease);
+  }
+  .service-item:hover { transform: translateY(-4px); background: rgba(255,255,255,0.1); }
+  .service-icon {
+    width: 52px; height: 52px; border-radius: 50%; background: var(--cream);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .service-icon svg { width: 26px; height: 26px; stroke: var(--maroon); color: var(--maroon); }
+  .service-item h3 { font-size: 1.2rem; color: var(--cream); }
+  .service-item p { color: rgba(245,234,211,0.78); font-size: 0.96rem; margin: 0; }
+  .biz-layout { display: grid; grid-template-columns: 1fr; gap: 2.5rem; align-items: start; }
+  @media (min-width: 900px) { .biz-layout { grid-template-columns: 1fr 1fr; gap: 4rem; } }
+  .biz-intro .section-head { margin-bottom: 0; }
+  .biz-cta { margin-top: 2rem; display: flex; flex-wrap: wrap; gap: 1rem; }
+  .biz-note { margin: 1.4rem 0 0; font-size: 0.9rem; color: rgba(245,234,211,0.85); max-width: 60ch; }
+  .biz-list { counter-reset: biz; border-top: 1px solid var(--line-on-dark); }
+  .biz-list li {
+    counter-increment: biz; display: grid; grid-template-columns: 3rem 1fr; column-gap: 1rem;
+    padding: 1.5rem 0; border-bottom: 1px solid var(--line-on-dark);
+  }
+  .biz-list li::before {
+    content: counter(biz, decimal-leading-zero); grid-row: span 2;
+    font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; color: var(--cream); opacity: 0.75;
+  }
+  .biz-list h3 { font-size: 1.2rem; color: var(--cream); margin-bottom: 0.35em; }
+  .biz-list p { margin: 0; color: rgba(245,234,211,0.9); font-size: 0.98rem; }
+
+  /* ---------- Opiniones ---------- */
+  .review-block { display: grid; grid-template-columns: 1fr; gap: 2.5rem; align-items: center; }
+  @media (min-width: 860px) { .review-block { grid-template-columns: 0.85fr 1.15fr; } }
+  .rating-huge { text-align: center; }
+  .rating-huge .num { font-family: var(--font-display); font-weight: 900; font-size: clamp(4.5rem, 3rem + 8vw, 7.5rem); color: var(--maroon); line-height: 1; display: block; }
+  .rating-huge .of5 { font-size: 1.2rem; color: var(--ink-soft); font-weight: 700; }
+  .rating-huge .stars { color: var(--maroon); font-size: 1.3rem; letter-spacing: 0.12em; display: block; margin-top: 0.3em; }
+  .rating-huge .count { color: var(--ink-soft); font-size: 0.98rem; margin-top: 0.4rem; }
+  .review-quote {
+    background: var(--cream-bright); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 2.2rem 2.2rem 1.8rem; box-shadow: var(--shadow); position: relative;
+  }
+  .quote-mark { font-family: var(--font-display); font-weight: 900; font-size: 4rem; line-height: 0.5; color: var(--maroon); display: block; margin-bottom: 0.3em; }
+  .quote-text { font-family: var(--font-display); font-weight: 600; font-size: clamp(1.2rem, 1.05rem + 0.5vw, 1.5rem); line-height: 1.35; color: var(--ink); }
+  .quote-text a { color: var(--maroon); text-decoration: underline; }
+  .quote-author { margin-top: 1.1rem; font-size: 0.9rem; letter-spacing: 0.04em; color: var(--ink-soft); font-weight: 700; }
+  .reviews-cta { margin-top: 2.2rem; font-size: 1rem; color: var(--ink-soft); text-align: center; }
+  .reviews-cta a { color: var(--maroon); font-weight: 700; text-decoration: underline; }
+
+  /* ---------- FAQ ---------- */
+  .faq-list { max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 0.9rem; }
+  .faq-item { background: var(--cream-bright); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .faq-item summary {
+    cursor: pointer; list-style: none; padding: 1.15rem 1.5rem; font-family: var(--font-display); font-weight: 700;
+    font-size: 1.08rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  }
+  .faq-item summary::-webkit-details-marker { display: none; }
+  .faq-item summary::after { content: "+"; font-family: var(--font-display); font-size: 1.5rem; line-height: 1; color: var(--maroon); flex-shrink: 0; }
+  .faq-item[open] summary::after { content: "–"; }
+  .faq-item p { margin: 0; padding: 0 1.5rem 1.3rem; color: var(--ink-soft); max-width: 62ch; }
+  @supports selector(::details-content) {
+    .faq-item { interpolate-size: allow-keywords; }
+    .faq-item::details-content {
+      overflow: hidden; height: 0; opacity: 0;
+      transition: height 0.3s var(--ease), opacity 0.22s var(--ease), content-visibility 0.3s;
+      transition-behavior: allow-discrete;
+    }
+    .faq-item[open]::details-content { height: auto; opacity: 1; }
+    @media (prefers-reduced-motion: reduce) { .faq-item::details-content { transition-duration: 0.001ms; } }
+  }
+
+  /* ---------- Visítanos ---------- */
+  .visit-grid { display: grid; grid-template-columns: 1fr; gap: 2.5rem; }
+  @media (min-width: 900px) { .visit-grid { grid-template-columns: 0.95fr 1.05fr; } }
+  .visit-panel { margin: 0; background: var(--cream-bright); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  .visit-row { display: flex; gap: 1rem; padding: 1rem 1.4rem; border-bottom: 1px dashed var(--line); }
+  .visit-row:last-child { border-bottom: none; }
+  .visit-row dt { font-weight: 700; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--maroon); width: 7.5rem; flex-shrink: 0; }
+  .visit-row dd { margin: 0; min-width: 0; overflow-wrap: break-word; font-weight: 600; }
+  .visit-row a { text-decoration: underline; text-decoration-color: var(--maroon); text-decoration-thickness: 2px; text-underline-offset: 0.2em; display: inline-block; padding: 0.85rem 0; margin: -0.85rem 0; }
+  .open-status {
+    display: inline-flex; align-items: center; gap: 0.6em; margin: 1.2rem 0 1.2rem 1.4rem;
+    padding: 0.5em 0.95em; border-radius: 999px; font-weight: 700; font-size: 0.88rem;
+    transition: opacity 0.25s var(--ease);
+  }
+  .open-status:empty { display: none; }
+  .open-status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: currentColor; }
+  .open-status.is-open { color: var(--green); background: rgba(31,74,58,0.1); }
+  .open-status.is-closed { color: var(--ink-soft); background: rgba(74,58,48,0.08); }
+
+  .schedule-table { width: 100%; border-collapse: collapse; font-size: 1rem; }
+  .schedule-table td { padding: 0.8em 1.4rem; border-bottom: 1px dashed var(--line); }
+  .schedule-table tr:last-child td { border-bottom: none; }
+  .schedule-table td:first-child { font-weight: 700; color: var(--ink-soft); width: 45%; }
+  .schedule-table td:last-child { text-align: right; font-weight: 700; }
+  .schedule-table tr.closed td:last-child { color: var(--ink-soft); }
+  .schedule-note { margin: 1rem 1.4rem 0; font-size: 0.88rem; color: var(--ink-soft); }
+
+  .map-col { display: flex; flex-direction: column; gap: 1rem; }
+  .map-frame { border-radius: var(--radius); border: 1px solid var(--line); overflow: hidden; box-shadow: var(--shadow); min-height: 340px; }
+  .map-frame iframe { width: 100%; height: 100%; min-height: 340px; border: 0; display: block; }
+  .map-col .btn { width: 100%; }
+
+  .social-row { display: flex; gap: 0.8rem; margin-top: 1.5rem; align-items: center; flex-wrap: wrap; }
+  .social-row a {
+    display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px;
+    border: 1.5px solid var(--ink); border-radius: 50%; text-decoration: none; color: var(--ink);
+    transition: background 0.15s, color 0.15s;
+  }
+  .social-row a:hover { background: var(--ink); color: var(--cream); }
+  .maps-link { display: inline-flex; align-items: center; gap: 0.5em; margin-top: 0.8rem; min-height: 48px; color: var(--maroon); font-weight: 700; text-decoration: underline; }
+
+</style>
+</head>
+<body>
+
+<div class="scroll-progress" aria-hidden="true"></div>
+<a class="skip-link" href="#main">Saltar al contenido</a>
+
+<div class="offline-banner" id="offline-banner" role="status" aria-live="polite">
+  Sin conexión · mostrando la última versión guardada
+</div>
+
+{{{parcial.cabecera}}}
+
+<main id="main">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="inicio">
+    <div class="container">
+      <div class="hero-copy">
+        <p class="eyebrow">{{negocio.eyebrow}}</p>
+        <h1>Carne fresca de <span class="script">tu barrio</span></h1>
+        <p class="hero-lede">
+          Carnicería, charcutería y precocinados de toda la vida. Ven, dinos qué vas a
+          cocinar y te decimos qué pieza pedir.
+        </p>
+        <div class="hero-ctas">
+          <a class="btn btn-green" href="{{tienda.enlacePedir}}"{{{tienda.externo}}}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 21l1.65-4.95A8.5 8.5 0 1 1 8.6 19.4z"/><path d="M8.5 9.5c0 3.5 2.5 6 6 6 .5 0 1-.5 1-1.2 0-.3-.1-.5-.3-.6l-1.7-1a.7.7 0 0 0-.8.1l-.5.5a5 5 0 0 1-2.5-2.5l.5-.5a.7.7 0 0 0 .1-.8l-1-1.7a.7.7 0 0 0-.6-.3c-.7 0-1.2.5-1.2 1z" fill="currentColor" stroke="none"/></svg>
+            {{tienda.etiquetaPedir}}
+          </a>
+          <a class="btn btn-outline-ink" href="https://www.google.com/maps/dir/?api=1&destination={{negocio.direccionCompleta|url}}" target="_blank" rel="noopener">Cómo llegar</a>
+          <a class="btn btn-outline-ink" href="tel:{{negocio.telefonoE164}}">Llamar ahora</a>
+        </div>
+        <a class="rating-badge" href="{{negocio.mapsUrl}}" target="_blank" rel="noopener">
+          <span class="stars" aria-hidden="true">★★★★★</span>
+          <strong>{{negocio.notaGoogle}}</strong>
+          <span class="muted">{{negocio.resenasGoogle}} reseñas en Google</span>
+        </a>
+      </div>
+
+      <div class="hero-art reveal" aria-hidden="true">
+        <div class="hero-photo">
+          <img src="assets/photos/corte-parrilla-4x3.jpg" alt="" width="800" height="600" fetchpriority="high">
+        </div>
+        <svg class="hero-badge-float" viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r="96" fill="#7a1f2a"/>
+          <circle cx="100" cy="100" r="86" fill="none" stroke="#f5ead3" stroke-width="1.5" stroke-dasharray="2.5 4"/>
+          <g transform="translate(100,86)">
+            <circle cx="0" cy="0" r="29" fill="#f5ead3"/>
+            <circle cx="-21" cy="-21" r="9.5" fill="#f5ead3"/>
+            <circle cx="21" cy="-21" r="9.5" fill="#f5ead3"/>
+            <ellipse cx="0" cy="9" rx="12.5" ry="8.5" fill="#e8c9a8" stroke="#7a1f2a" stroke-width="1.6"/>
+            <circle cx="-4.5" cy="9" r="1.7" fill="#7a1f2a"/>
+            <circle cx="4.5" cy="9" r="1.7" fill="#7a1f2a"/>
+            <circle cx="-10.5" cy="-6" r="2.2" fill="#2a1d17"/>
+            <circle cx="10.5" cy="-6" r="2.2" fill="#2a1d17"/>
+          </g>
+          <g transform="translate(100,144)" stroke="#f5ead3" stroke-width="2.1" stroke-linecap="round" fill="none">
+            <g transform="rotate(-35)"><line x1="-24" y1="0" x2="17" y2="0"/><path d="M17,0 L26,-3.6 L26,3.6 Z" fill="#f5ead3" stroke="none"/><line x1="-24" y1="0" x2="-30" y2="0" stroke-width="3.2"/></g>
+            <g transform="rotate(35)"><line x1="-24" y1="0" x2="17" y2="0"/><path d="M17,0 L26,-3.6 L26,3.6 Z" fill="#f5ead3" stroke="none"/><line x1="-24" y1="0" x2="-30" y2="0" stroke-width="3.2"/></g>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CATÁLOGO ============ -->
+  <section id="catalogo" class="tint-bright scallop-top">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow">Qué encontrarás</p>
+        <h2>El mostrador</h2>
+        <p>Carnes frescas, casquería, charcutería y curados, y elaborados de la casa: cada categoría con lo suyo, separada para que la encuentres rápido.</p>
+      </div>
+      <p class="catalog-note">Las fotos marcadas "Foto ilustrativa" son de banco de imágenes gratuito; no son fotos del producto real de la tienda.</p>
+
+      <div class="catalog-grid">
+        <div class="catalog-group-head reveal"><span>Carnes frescas</span></div>
+
+        <article class="cat-card reveal">
+          <div class="cat-photo">
+            <img src="assets/photos/vacuno.jpg" srcset="assets/photos/vacuno-400.jpg 400w, assets/photos/vacuno.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Corte de carne de vacuno sazonado" width="800" height="800" loading="lazy">
+            <span class="photo-badge">Foto ilustrativa</span>
+          </div>
+          <div class="cat-body">
+            <span class="cat-num">01</span>
+            <h3>Vacuno</h3>
+            <p>Chuletón, solomillo, entrecot, cadera y carne para guisar, cortada al momento.</p>
+          </div>
+        </article>
+
+        <article class="cat-card reveal">
+          <div class="cat-photo">
+            <img src="assets/photos/cerdo.jpg" srcset="assets/photos/cerdo-400.jpg 400w, assets/photos/cerdo.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Chuletas de cerdo sazonadas sobre tabla" width="800" height="800" loading="lazy">
+            <span class="photo-badge">Foto ilustrativa</span>
+          </div>
+          <div class="cat-body">
+            <span class="cat-num">02</span>
+            <h3>Cerdo</h3>
+            <p>Chuletas, cinta de lomo, panceta, costillar y todo el cerdo de toda la vida.</p>
+          </div>
+        </article>
+
+        <article class="cat-card reveal">
+          <div class="cat-photo">
+            <img src="assets/photos/cerdo-iberico.jpg" srcset="assets/photos/cerdo-iberico-400.jpg 400w, assets/photos/cerdo-iberico.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Corte de carne de cerdo ibérico" width="800" height="800" loading="lazy">
+            <span class="photo-badge">Foto ilustrativa</span>
+          </div>
+          <div class="cat-body">
+            <span class="cat-num">03</span>
+            <h3>Cerdo ibérico</h3>
+            <p>Secreto, presa, pluma, abanico y demás carnes de cerdo ibérico.</p>
+          </div>
+        </article>
+
+        <article class="cat-card reveal">
+          <div class="cat-photo">
+            <img src="assets/photos/pollo.jpg" srcset="assets/photos/pollo-400.jpg 400w, assets/photos/pollo.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Pechuga de pollo cruda con romero" width="800" height="800" loading="lazy">
+            <span class="photo-badge">Foto ilustrativa</span>
+          </div>
+          <div class="cat-body">
+            <span class="cat-num">04</span>
+            <h3>Pollo</h3>
+            <p>Pechuga, muslo, alitas y pollo entero, troceado como lo necesites.</p>
+          </div>
+        </article>
+
+        <article class="cat-card reveal">
+          <div class="cat-photo">
+            <img src="assets/photos/pavo.jpg" srcset="assets/photos/pavo-400.jpg 400w, assets/photos/pavo.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Filete de pavo crudo" width="800" height="800" loading="lazy">
+            <span class="photo-badge">Foto ilustrativa</span>
+          </div>
+          <div class="cat-body">
+            <span class="cat-num">05</span>
+            <h3>Pavo</h3>
+            <p>Pechuga, solomillos y filetes de pavo, una alternativa más ligera para el día a día.</p>
+          </div>
+        </article>
+
+        <article class="cat-card reveal">
+          <div class="cat-photo">
+            <img src="assets/photos/conejo.jpg" srcset="assets/photos/conejo-400.jpg 400w, assets/photos/conejo.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Guiso de conejo en cazuela de barro" width="800" height="800" loading="lazy">
+            <span class="photo-badge">Foto ilustrativa</span>
+          </div>
+          <div class="cat-body">
+            <span class="cat-num">06</span>
+            <h3>Conejo</h3>
+            <p>Conejo entero, troceado o en muslos, de toda la vida.</p>
+          </div>
+        </article>
+
+        <article class="cat-card reveal">
+          <div class="cat-photo">
+            <img src="assets/photos/caza.jpg" srcset="assets/photos/caza-400.jpg 400w, assets/photos/caza.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Corte de carne de caza sobre tabla" width="800" height="800" loading="lazy">
+            <span class="photo-badge">Foto ilustrativa</span>
+          </div>
+          <div class="cat-body">
+            <span class="cat-num">07</span>
+            <h3>Caza</h3>
+            <p>Producto de caza cuando hay temporada: venado, jabalí… pregúntanos qué tenemos.</p>
+          </div>
+        </article>
+
+        <div class="catalog-group-head reveal"><span>Casquería</span></div>
+
+        <article class="cat-card reveal">
+          <div class="cat-photo">
+            <img src="assets/photos/casqueria.jpg" srcset="assets/photos/casqueria-400.jpg 400w, assets/photos/casqueria.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Hígado fresco de ternera" width="800" height="800" loading="lazy">
+            <span class="photo-badge">Foto ilustrativa</span>
+          </div>
+          <div class="cat-body">
+            <span class="cat-num">08</span>
+            <h3>Casquería</h3>
+            <p>Callos, hígado, morro y el resto de la casquería, para quien la pide.</p>
+          </div>
+        </article>
+
+        <div class="catalog-group-head reveal"><span>Charcutería y curados</span></div>
+
+        <article class="cat-card reveal">
+          <div class="cat-photo">
+            <img src="assets/photos/jamones.jpg" srcset="assets/photos/jamones-400.jpg 400w, assets/photos/jamones.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Jamones ibéricos curados colgados" width="800" height="800" loading="lazy">
+            <span class="photo-badge">Foto ilustrativa</span>
+          </div>
+          <div class="cat-body">
+            <span class="cat-num">09</span>
+            <h3>Jamones y paletillas</h3>
+            <p>Jamón y paletilla ibérica de bellota, jamón serrano y huesos para el puchero.</p>
+          </div>
+        </article>
+
+        <article class="cat-card reveal">
+          <div class="cat-photo">
+            <img src="assets/photos/embutidos.jpg" srcset="assets/photos/embutidos-400.jpg 400w, assets/photos/embutidos.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Embutidos cortados finos sobre tabla de madera" width="800" height="800" loading="lazy">
+            <span class="photo-badge">Foto ilustrativa</span>
+          </div>
+          <div class="cat-body">
+            <span class="cat-num">10</span>
+            <h3>Embutidos</h3>
+            <p>Chorizo, salchichón, morcilla y demás embutidos para completar la compra.</p>
+          </div>
+        </article>
+
+        <article class="cat-card reveal">
+          <div class="cat-photo">
+            <img src="assets/photos/quesos.jpg" srcset="assets/photos/quesos-400.jpg 400w, assets/photos/quesos.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Queso curado entero y en cuñas" width="800" height="800" loading="lazy">
+            <span class="photo-badge">Foto ilustrativa</span>
+          </div>
+          <div class="cat-body">
+            <span class="cat-num">11</span>
+            <h3>Quesos</h3>
+            <p>Quesos de cabra y oveja andaluces, manchego y otros curados y semicurados.</p>
+          </div>
+        </article>
+
+        <div class="catalog-group-head reveal"><span>Elaborados y otros</span></div>
+
+        <article class="cat-card reveal">
+          <div class="cat-photo">
+            <img src="assets/photos/elaborados.jpg" srcset="assets/photos/elaborados-400.jpg 400w, assets/photos/elaborados.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Hamburguesas de carne crudas apiladas" width="800" height="800" loading="lazy">
+            <span class="photo-badge">Foto ilustrativa</span>
+          </div>
+          <div class="cat-body">
+            <span class="cat-num">12</span>
+            <h3>Elaborados</h3>
+            <p>Hamburguesas, salchichas, pinchitos, San Jacobos, flamenquines, pechugas a la bechamel, lagrimitas de pollo y demás elaborados de la casa.</p>
+          </div>
+        </article>
+
+        <article class="cat-card reveal">
+          <div class="cat-photo">
+            <img src="assets/photos/huevos.jpg" srcset="assets/photos/huevos-400.jpg 400w, assets/photos/huevos.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Cesta de huevos frescos" width="800" height="800" loading="lazy">
+            <span class="photo-badge">Foto ilustrativa</span>
+          </div>
+          <div class="cat-body">
+            <span class="cat-num">13</span>
+            <h3>Recova</h3>
+            <p>Huevos frescos, camperos y de codorniz, la recova de toda la vida.</p>
+          </div>
+        </article>
+      </div>
+
+      <div class="catalog-extra reveal">
+        <h3>Y además…</h3>
+        <p>{{{tienda.catalogoExtra}}}</p>
+        <a class="btn btn-solid" href="{{tienda.enlacePedir}}"{{{tienda.externo}}}>{{tienda.etiquetaPedir}}</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GALERÍA ============ -->
+  <section id="tienda" class="tint-cream scallop-top">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow">Así es la tienda</p>
+        <h2>Un vistazo al local</h2>
+        <p>La fachada, tal cual está hoy. Del interior todavía no tenemos fotos propias; en cuanto las tengamos, sustituimos estas fichas.</p>
+      </div>
+
+      <div class="gallery-grid reveal">
+        <figure class="real-photo">
+          <img src="assets/photos/fachada.jpg" alt="Fachada de Carnicería La Estrella, con el cartel original en la Av. de la Barzola" width="900" height="675" loading="lazy">
+          <figcaption>La fachada real, en la Av. de la Barzola</figcaption>
+        </figure>
+        <!-- sustituir por foto real cedida por el negocio -->
+        <figure class="photo-placeholder">
+          <svg class="icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <strong>Foto pendiente</strong>
+          <span>Mostrador y vitrina</span>
+        </figure>
+        <!-- sustituir por foto real cedida por el negocio -->
+        <figure class="photo-placeholder">
+          <svg class="icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <strong>Foto pendiente</strong>
+          <span>Obrador y trastienda</span>
+        </figure>
+      </div>
+      <p class="gallery-note">
+        Puedes ver más fotos reales de la tienda en nuestra ficha de Google Maps.
+        <a class="maps-link" href="{{negocio.mapsUrl}}" target="_blank" rel="noopener">Ver fotos en Google Maps →</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ QUIÉNES SOMOS ============ -->
+  <section id="nosotros" class="tint-bright scallop-top">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow">Quiénes somos</p>
+        <h2>Carne y confianza</h2>
+      </div>
+
+      <div class="about-grid">
+        <div class="about-text reveal">
+          <p class="lede">Del barrio, para el barrio.</p>
+          <p class="body-p">
+            Somos una carnicería familiar de la Barzola (Los Príncipes), en el Distrito Macarena de
+            Sevilla. Abrimos temprano para tener el género listo, y detrás del mostrador seguimos
+            tratando a la gente como se trata a quien conoces de toda la vida, porque a casi todo el
+            mundo que entra por esa puerta lo conocemos.
+          </p>
+          <p class="body-p">
+            Hay algo que solo te da la carnicería de barrio: alguien te dice qué corte pedir para lo
+            que vas a cocinar esa noche, te lo prepara a tu medida y no tienes que conformarte con la
+            bandeja ya envasada del súper. Y lo que gastas aquí se queda en el barrio, no en un
+            almacén al otro lado del país.
+          </p>
+          <p class="body-p">
+            ¿Buscas algo en concreto? Una pieza grande, un encargo para una celebración, un corte que
+            no ves en el mostrador. Dínoslo y, con un poco de margen, te lo tenemos listo.
+          </p>
+        </div>
+
+        <div class="reveal">
+          <div class="stat-card">
+            <div class="stat-card-head">Ficha del negocio</div>
+            <dl class="stat-list">
+              <div class="stat-row"><dt>Barrio</dt><dd>La Barzola, Sevilla</dd></div>
+              <div class="stat-row"><dt>Dirección</dt><dd>{{negocio.calle}}</dd></div>
+              <div class="stat-row"><dt>Teléfono</dt><dd><a href="tel:{{negocio.telefonoE164}}">{{{negocio.telefonoNbsp}}}</a></dd></div>
+              <div class="stat-row"><dt>Valoración</dt><dd>{{negocio.notaGoogle}} · {{negocio.resenasGoogle}} reseñas</dd></div>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SERVICIOS ============ -->
+  <section id="servicios" class="tint-dark scallop-top">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow">Además del mostrador</p>
+        <h2>Pensado para que compres fácil</h2>
+      </div>
+
+      <div class="service-grid reveal">
+        <div class="service-item">
+          <span class="service-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21l1.65-4.95A8.5 8.5 0 1 1 8.6 19.4z"/></svg>
+          </span>
+          <h3>Encargos por WhatsApp</h3>
+          <p>Escríbenos al {{negocio.telefonoEspaciado}} y te dejamos el pedido preparado para cuando pases a recogerlo.</p>
+          <a class="wa-link" href="{{negocio.waPedido}}" target="_blank" rel="noopener">Pedir por WhatsApp →</a>
+        </div>
+        <div class="service-item">
+          <span class="service-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19l4-1 9-9c1-1 1-2.4 0-3.4s-2.4-1-3.4 0l-9 9-1 4z"/><line x1="13.5" y1="7.5" x2="16.5" y2="10.5"/></svg>
+          </span>
+          <h3>Cortes al gusto</h3>
+          <p>Dinos cómo la necesitas (gruesa, fina, en tacos, para guisar…) y te la preparamos en el momento.</p>
+        </div>
+        <div class="service-item">
+          <span class="service-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c-1 3-5 5-5 10a5 5 0 0010 0c0-1.5-.8-2.5-1.5-3.5.3 1.5-.5 2.5-1.5 2.5-1.3 0-1.8-1-1.3-2.2.6-1.5-.2-3-1-4-.3 1.3-1.3 2-2 3.2-.5 1-.2 2.3.6 3"/></svg>
+          </span>
+          <h3>Barbacoas y eventos</h3>
+          <p>Pedidos grandes para cuadrillas, comuniones o cualquier celebración: avísanos con unos días de margen.</p>
+        </div>
+        <div class="service-item">
+          <span class="service-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16a1 1 0 011 1v9a1 1 0 01-1 1H9l-4 4v-4H4a1 1 0 01-1-1V6a1 1 0 011-1z"/><circle cx="9" cy="10.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="12" cy="10.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="15" cy="10.5" r="0.9" fill="currentColor" stroke="none"/></svg>
+          </span>
+          <h3>Consejo del carnicero</h3>
+          <p>Si no sabes qué pieza pedir para una receta, pregúntanos: te orientamos sin compromiso.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BARES Y RESTAURANTES ============ -->
+  <!-- Contenido DE EJEMPLO: el negocio no ha confirmado que sirva a
+       hostelería ni en qué condiciones (precios, reparto, factura). El
+       texto evita comprometer nada de eso ("a convenir"). Confirmar o
+       quitar la sección. -->
+  <section id="hosteleria" class="tint-maroon scallop-top">
+    <div class="container">
+      <div class="biz-layout">
+        <div class="biz-intro reveal">
+          <div class="section-head">
+            <p class="eyebrow">Para profesionales</p>
+            <h2>Bares y restaurantes</h2>
+            <p>¿Tienes un bar, una freiduría o un restaurante en el barrio? Cuéntanos qué cocinas y lo preparamos para tu negocio.</p>
+          </div>
+          <div class="biz-cta">
+            <a class="btn btn-cream" href="{{negocio.waHosteleria}}" target="_blank" rel="noopener">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 21l1.65-4.95A8.5 8.5 0 1 1 8.6 19.4z"/><path d="M8.5 9.5c0 3.5 2.5 6 6 6 .5 0 1-.5 1-1.2 0-.3-.1-.5-.3-.6l-1.7-1a.7.7 0 0 0-.8.1l-.5.5a5 5 0 0 1-2.5-2.5l.5-.5a.7.7 0 0 0 .1-.8l-1-1.7a.7.7 0 0 0-.6-.3c-.7 0-1.2.5-1.2 1z" fill="currentColor" stroke="none"/></svg>
+              Escribir por WhatsApp
+            </a>
+            <a class="btn btn-outline-cream" href="tel:{{negocio.telefonoE164}}">Llamar</a>
+          </div>
+          <p class="biz-note">Precios, reparto y condiciones, a convenir: pregúntanos y lo hablamos.</p>
+        </div>
+
+        <ol class="biz-list reveal">
+          <li>
+            <h3>Piezas enteras o porcionadas</h3>
+            <p>Te las dejamos enteras, o cortadas y porcionadas como las use tu cocina.</p>
+          </li>
+          <li>
+            <h3>Pedidos recurrentes</h3>
+            <p>Si pides siempre lo mismo, lo dejamos apuntado y lo tienes listo cuando pases.</p>
+          </li>
+          <li>
+            <h3>Te aconsejamos</h3>
+            <p>Dinos qué sirves y cuánto quieres gastar, y te decimos qué piezas te convienen.</p>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OPINIONES ============ -->
+  <section id="opiniones" class="tint-bright scallop-top">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow">Opiniones</p>
+        <h2>Lo que dicen de nosotros</h2>
+      </div>
+
+      <div class="review-block reveal">
+        <div class="rating-huge">
+          <span class="num">{{negocio.notaGoogle}}</span>
+          <span class="of5">de 5</span>
+          <span class="stars" aria-hidden="true">★★★★★</span>
+          <span class="count">{{negocio.resenasGoogle}} reseñas en Google Maps</span>
+        </div>
+        <div class="review-quote">
+          <span class="quote-mark" aria-hidden="true">“</span>
+          <p class="quote-text">
+            {{negocio.citaGoogle}} …
+            <a href="{{negocio.mapsUrl}}" target="_blank" rel="noopener">Leer entera en Google Maps</a>
+          </p>
+          <p class="quote-author">Reseña real en Google Maps</p>
+        </div>
+      </div>
+
+      <p class="reviews-cta">
+        ¿Te ha gustado la experiencia?
+        <a href="{{negocio.mapsUrl}}" target="_blank" rel="noopener">Déjanos tu opinión en Google</a>.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ PREGUNTAS FRECUENTES ============ -->
+  <section id="faq" class="tint-cream scallop-top">
+    <div class="container">
+      <div class="section-head reveal" style="margin-left:auto; margin-right:auto; text-align:center;">
+        <p class="eyebrow" style="justify-content:center;">Preguntas frecuentes</p>
+        <h2>Antes de llamar</h2>
+      </div>
+
+      <div class="faq-list">
+{{{faq.html}}}
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VISÍTANOS ============ -->
+  <section id="visitanos" class="tint-bright scallop-top">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow">Visítanos</p>
+        <h2>Te esperamos en la Barzola</h2>
+      </div>
+
+      <div class="visit-grid">
+        <div class="visit-details reveal">
+          <dl class="visit-panel">
+            <div class="visit-row">
+              <dt>Dirección</dt>
+              <dd>
+                {{negocio.calle}}<br>{{negocio.cp}} {{negocio.localidad}}
+              </dd>
+            </div>
+            <div class="visit-row"><dt>Teléfono</dt><dd><a href="tel:{{negocio.telefonoE164}}">{{{negocio.telefonoNbsp}}}</a></dd></div>
+            <div class="visit-row"><dt>WhatsApp</dt><dd><a href="{{negocio.waContacto}}" target="_blank" rel="noopener">{{{negocio.telefonoNbsp}}}</a></dd></div>
+            <div class="visit-row"><dt>Pago</dt><dd>Tarjeta y efectivo</dd></div>
+          </dl>
+
+          <p id="open-status" class="open-status" aria-live="polite"></p>
+
+          <!-- ¿CAMBIA EL HORARIO? Editar DOS sitios: el "openingHoursSpecification"
+               del JSON-LD del <head> (de ahí sale el aviso de "Abierto/cerrado
+               ahora", assets/app.js) y la tabla de aquí abajo, escrita a mano.
+               `npm test` comprueba que coinciden. -->
+          <div class="visit-panel" style="margin-top:1.5rem;">
+            <table class="schedule-table" id="schedule-table">
+              <tbody>
+{{{horario.filasHtml}}}
+              </tbody>
+            </table>
+          </div>
+          <p class="schedule-note" id="schedule-note">
+            Este horario puede sufrir algún pequeño cambio. El que mantenemos siempre al día es el
+            de nuestra ficha de Google Maps.
+          </p>
+
+          <div class="social-row">
+            <a href="{{negocio.waContacto}}" target="_blank" rel="noopener" aria-label="WhatsApp de Carnicería La Estrella">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21l1.65-4.95A8.5 8.5 0 1 1 8.6 19.4z"/><path d="M8.5 9.5c0 3.5 2.5 6 6 6 .5 0 1-.5 1-1.2 0-.3-.1-.5-.3-.6l-1.7-1a.7.7 0 0 0-.8.1l-.5.5a5 5 0 0 1-2.5-2.5l.5-.5a.7.7 0 0 0 .1-.8l-1-1.7a.7.7 0 0 0-.6-.3c-.7 0-1.2.5-1.2 1z" fill="currentColor" stroke="none"/></svg>
+            </a>
+          </div>
+
+          <a class="maps-link" href="{{negocio.mapsUrl}}" target="_blank" rel="noopener">Ver la ficha completa en Google Maps →</a>
+        </div>
+
+        <div class="map-col reveal">
+          <div class="map-frame">
+            <iframe
+              src="{{negocio.mapaSrc}}"
+              title="Mapa de ubicación de Carnicería La Estrella, Av. de la Barzola 40, Sevilla"
+              loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen>
+            </iframe>
+          </div>
+          <a class="btn btn-solid" href="https://www.google.com/maps/dir/?api=1&destination={{negocio.direccionCompleta|url}}" target="_blank" rel="noopener">Cómo llegar</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+{{{parcial.pie}}}
+
+{{{parcial.barra}}}
+
+<script src="assets/app.js"></script>
+
+<script type="speculationrules">
+{
+  "prefetch": [
+    {
+      "source": "document",
+      "where": {
+        "and": [
+          { "href_matches": "/*.html" },
+          { "not": { "selector_matches": "[target=_blank]" } }
+        ]
+      },
+      "eagerness": "moderate"
+    }
+  ]
+}
+</script>
+
+</body>
+</html>

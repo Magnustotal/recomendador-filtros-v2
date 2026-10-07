@@ -1,0 +1,44 @@
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <svg class="brand-mark" viewBox="0 0 200 200" aria-hidden="true">
+          <circle cx="100" cy="100" r="96" fill="#7a1f2a"/>
+          <circle cx="100" cy="100" r="86" fill="none" stroke="#f5ead3" stroke-width="1.5" stroke-dasharray="2.5 4"/>
+          <g transform="translate(100,86)">
+            <circle cx="0" cy="0" r="29" fill="#f5ead3"/>
+            <circle cx="-21" cy="-21" r="9.5" fill="#f5ead3"/>
+            <circle cx="21" cy="-21" r="9.5" fill="#f5ead3"/>
+            <ellipse cx="0" cy="9" rx="12.5" ry="8.5" fill="#e8c9a8" stroke="#7a1f2a" stroke-width="1.6"/>
+            <circle cx="-4.5" cy="9" r="1.7" fill="#7a1f2a"/>
+            <circle cx="4.5" cy="9" r="1.7" fill="#7a1f2a"/>
+            <circle cx="-10.5" cy="-6" r="2.2" fill="#2a1d17"/>
+            <circle cx="10.5" cy="-6" r="2.2" fill="#2a1d17"/>
+          </g>
+          <g transform="translate(100,144)" stroke="#f5ead3" stroke-width="2.1" stroke-linecap="round" fill="none">
+            <g transform="rotate(-35)"><line x1="-24" y1="0" x2="17" y2="0"/><path d="M17,0 L26,-3.6 L26,3.6 Z" fill="#f5ead3" stroke="none"/><line x1="-24" y1="0" x2="-30" y2="0" stroke-width="3.2"/></g>
+            <g transform="rotate(35)"><line x1="-24" y1="0" x2="17" y2="0"/><path d="M17,0 L26,-3.6 L26,3.6 Z" fill="#f5ead3" stroke="none"/><line x1="-24" y1="0" x2="-30" y2="0" stroke-width="3.2"/></g>
+          </g>
+        </svg>
+        <span class="brand-text" translate="no"><strong>La Estrella</strong><span>Carnicería</span></span>
+      </div>
+      <nav class="footer-nav" aria-label="Navegación del pie de página">
+        <a href="{{pagina.p}}#catalogo">Productos</a>
+        <a href="{{pagina.p}}#tienda">La tienda</a>
+        <a href="{{pagina.p}}#nosotros">Quiénes somos</a>
+        <a href="{{pagina.p}}#servicios">Servicios</a>
+        <a href="{{pagina.p}}#opiniones">Opiniones</a>
+        <a href="{{pagina.p}}#faq">Preguntas</a>
+        <a href="{{pagina.p}}#visitanos">Visítanos</a>
+      </nav>
+    </div>
+    <div class="footer-bottom">
+      <span>Carnicería de barrio · {{negocio.direccionCompleta}}</span>
+      <span><a href="/aviso-legal.html">Aviso legal</a> · <a href="/privacidad.html">Privacidad y cookies</a></span>
+      <span>© {{anio}} {{negocio.nombre}}, de toda la vida y ahora también en Internet.</span>
+      <span class="footer-credit">
+        Diseño y desarrollo: <a href="https://www.linkedin.com/in/javier-barrero-vazquez-/" target="_blank" rel="noopener">Javier B. V.</a>
+      </span>
+    </div>
+  </div>
+</footer>

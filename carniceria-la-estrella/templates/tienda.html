@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<script>document.documentElement.classList.add("js");</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tienda online | {{negocio.nombre}}</title>
+<meta name="description" content="Haz tu pedido online en {{negocio.nombre}}: carne fresca, casquería, elaborados, embutidos y más. Recogida en tienda o reparto a domicilio; el pedido nos llega por WhatsApp.">
+<meta name="theme-color" content="#f5ead3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="La Estrella">
+<meta name="mobile-web-app-capable" content="yes">
+
+<link rel="canonical" href="{{seo.dominio}}/tienda">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_ES">
+<meta property="og:site_name" content="{{negocio.nombre}}">
+<meta property="og:title" content="Tienda online | {{negocio.nombre}}">
+<meta property="og:description" content="Haz tu pedido online: carne fresca, casquería, elaborados y más, con recogida en tienda o reparto.">
+<meta property="og:image" content="{{seo.dominio}}/assets/og-image.png">
+<meta property="og:url" content="{{seo.dominio}}/tienda">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="/assets/favicon.ico" sizes="any">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preload" href="/assets/fonts/playfair.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/karla.woff2" as="font" type="font/woff2" crossorigin>
+
+<style>
+{{{css.base}}}
+</style>
+<link rel="stylesheet" href="/assets/tienda.css">
+</head>
+<body id="top">
+
+<div class="scroll-progress" aria-hidden="true"></div>
+<a class="skip-link" href="#main">Saltar al contenido</a>
+
+<div class="offline-banner" id="offline-banner" role="status" aria-live="polite">
+  Sin conexión · mostrando la última versión guardada
+</div>
+
+{{{parcial.cabecera}}}
+
+<main id="main">
+
+  <section class="shop-intro tint-bright">
+    <div class="container">
+      <p class="eyebrow">Pedidos online</p>
+      <h1>Haz tu pedido</h1>
+      <p class="shop-lede">Elige lo que necesitas, rellena tus datos y envíanos el pedido por WhatsApp. Lo preparamos para la hora que elijas. <strong>No se paga en la web</strong>: pagas al recoger o al recibirlo.</p>
+      <ol class="pasos" aria-label="Cómo funciona">
+        <li><span class="paso-num" aria-hidden="true">1</span> Elige los productos y la cantidad.</li>
+        <li><span class="paso-num" aria-hidden="true">2</span> Indica si recoges o quieres reparto, y cuándo.</li>
+        <li><span class="paso-num" aria-hidden="true">3</span> Envíanoslo por WhatsApp y te lo confirmamos.</li>
+      </ol>
+      <p class="shop-nota">Los precios y el peso son orientativos: el peso exacto y el importe definitivo se confirman al preparar tu pedido.</p>
+    </div>
+  </section>
+
+  <section class="shop" id="tienda-online" aria-labelledby="tienda-titulo">
+    <div class="container">
+      <h2 id="tienda-titulo" class="sr-only">Productos y pedido</h2>
+
+      <div id="estado" class="estado" role="status" aria-live="polite">Cargando los productos…</div>
+      <noscript>
+        <p class="estado">Para hacer el pedido en la web necesitas activar JavaScript. Mientras tanto puedes <a href="https://wa.me/{{negocio.whatsapp}}">escribirnos por WhatsApp</a> o llamar al <a href="tel:{{negocio.telefonoE164}}">{{negocio.telefonoEspaciado}}</a>.</p>
+      </noscript>
+
+      <div id="tienda-cerrada" class="estado" hidden>
+        <p><strong>La tienda online no está abierta todavía.</strong> Puedes hacer tu pedido por WhatsApp o llamando por teléfono, como siempre.</p>
+        <p class="acciones">
+          <a class="btn btn-green" href="{{negocio.waPedido}}" target="_blank" rel="noopener">Pedir por WhatsApp</a>
+          <a class="btn btn-outline-ink" href="tel:{{negocio.telefonoE164}}">Llamar</a>
+        </p>
+      </div>
+
+      <div id="anuncios" class="sr-only" role="status" aria-live="polite"></div>
+      <div id="aviso-tienda" class="aviso" role="note" hidden></div>
+
+      <div class="shop-layout" id="app" hidden>
+        <div class="shop-lista">
+          <div class="shop-barra">
+            <div class="buscador">
+              <label for="buscar" class="sr-only">Buscar un producto</label>
+              <input id="buscar" type="search" placeholder="Buscar: solomillo, chorizo, pollo…" autocomplete="off" enterkeyhint="search">
+            </div>
+            <nav aria-label="Categorías" class="chips" id="chips"></nav>
+          </div>
+          <p id="sin-resultados" class="estado" hidden>No hay productos que coincidan. Prueba con otra palabra o escríbenos por WhatsApp: si no está en la lista, a lo mejor lo tenemos.</p>
+          <div id="productos"></div>
+        </div>
+
+        <aside id="pedido" class="carrito" aria-labelledby="pedido-titulo" tabindex="-1">
+          <h2 id="pedido-titulo">Tu pedido</h2>
+          <div id="carrito-vacio" class="carrito-vacio">Todavía no has añadido nada. Elige productos de la lista.</div>
+
+          <form id="formulario" novalidate hidden>
+            <ul id="lineas" class="lineas"></ul>
+
+            <div class="totales" id="totales" aria-live="polite"></div>
+
+            <div id="errores" class="errores" role="alert" tabindex="-1" hidden></div>
+
+            <fieldset class="campo-grupo">
+              <legend>Tus datos</legend>
+              <div class="campo">
+                <label for="nombre">Nombre</label>
+                <input id="nombre" name="nombre" type="text" autocomplete="name" maxlength="60" required>
+                <p class="campo-error" id="error-nombre" hidden></p>
+              </div>
+              <div class="campo">
+                <label for="telefono">Teléfono</label>
+                <input id="telefono" name="telefono" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" required>
+                <p class="campo-ayuda">Para avisarte si hay algún cambio.</p>
+                <p class="campo-error" id="error-telefono" hidden></p>
+              </div>
+            </fieldset>
+
+            <fieldset class="campo-grupo">
+              <legend>Cómo lo quieres</legend>
+              <div class="opciones" id="opciones-entrega"></div>
+              <div class="campo" id="campo-direccion" hidden>
+                <label for="direccion">Dirección de entrega</label>
+                <input id="direccion" name="direccion" type="text" autocomplete="street-address" maxlength="200">
+                <p class="campo-ayuda" id="ayuda-zona"></p>
+                <p class="campo-error" id="error-direccion" hidden></p>
+              </div>
+              <div class="campo">
+                <label for="dia">Día</label>
+                <select id="dia" name="dia" required></select>
+                <p class="campo-error" id="error-dia" hidden></p>
+              </div>
+              <div class="campo">
+                <label for="franja">Franja horaria</label>
+                <select id="franja" name="franja" required></select>
+                <p class="campo-error" id="error-franja" hidden></p>
+              </div>
+            </fieldset>
+
+            <fieldset class="campo-grupo">
+              <legend>Cómo pagas</legend>
+              <p class="campo-ayuda">El pago se hace al recoger o al recibir el pedido.</p>
+              <div class="opciones" id="opciones-pago"></div>
+              <p class="campo-error" id="error-pago" hidden></p>
+            </fieldset>
+
+            <div class="campo">
+              <label for="comentarios">Comentarios (opcional)</label>
+              <textarea id="comentarios" name="comentarios" rows="3" maxlength="500" placeholder="Alergias, hora exacta, cómo cortarlo…"></textarea>
+            </div>
+
+            <div class="campo check" id="campo-edad" hidden>
+              <input id="mayor-edad" name="mayorEdad" type="checkbox">
+              <label for="mayor-edad">Declaro que soy mayor de 18 años (tu pedido incluye vino).</label>
+              <p class="campo-error" id="error-mayorEdad" hidden></p>
+            </div>
+
+            <div class="trampa" aria-hidden="true">
+              <label for="web">No rellenes este campo</label>
+              <input id="web" name="web" type="text" tabindex="-1" autocomplete="off">
+            </div>
+
+            <p class="legal-mini">Al enviar el pedido aceptas que guardemos tus datos para prepararlo, según la <a href="/privacidad.html">política de privacidad</a>.</p>
+
+            <button class="btn btn-solid btn-grande" type="submit" id="enviar">Enviar pedido</button>
+            <button class="btn-texto" type="button" id="vaciar">Vaciar el pedido</button>
+          </form>
+
+          <div id="confirmacion" class="confirmacion" role="status" tabindex="-1" hidden></div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+{{{parcial.pie}}}
+{{{parcial.barra}}}
+
+<script src="/assets/app.js"></script>
+<script type="module" src="/assets/tienda.js"></script>
+
+</body>
+</html>

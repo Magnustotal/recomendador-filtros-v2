@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Aviso legal | {{negocio.nombre}}</title>
+<meta name="robots" content="noindex, follow">
+<link rel="canonical" href="{{seo.dominio}}/aviso-legal.html">
+<link rel="icon" href="/assets/favicon.ico" sizes="any">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<style>
+  @font-face { font-family: "Playfair Display"; font-weight: 600 900; font-display: swap; src: url("/assets/fonts/playfair.woff2") format("woff2"); }
+  @font-face { font-family: "Karla"; font-weight: 400 700; font-display: swap; src: url("/assets/fonts/karla.woff2") format("woff2"); }
+  :root {
+    --cream: #f5ead3; --ink: #2a1d17; --ink-soft: #4a3a30; --maroon: #7a1f2a;
+    --font-display: "Playfair Display", Georgia, serif;
+    --font-body: "Karla", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--cream); color: var(--ink); font-family: var(--font-body); line-height: 1.6; }
+  .container { max-width: 720px; margin: 0 auto; padding: calc(3rem + env(safe-area-inset-top, 0px)) calc(1.25rem + env(safe-area-inset-right, 0px)) calc(5rem + env(safe-area-inset-bottom, 0px)) calc(1.25rem + env(safe-area-inset-left, 0px)); }
+  .top-link { display: inline-flex; align-items: center; gap: 0.5em; color: var(--maroon); text-decoration: none; font-weight: 700; margin-bottom: 2rem; }
+  .logo-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 2rem; }
+  .logo-row svg { width: 34px; height: 34px; }
+  .logo-row strong { font-family: var(--font-display); font-weight: 800; font-size: 1.2rem; }
+  h1 { font-family: var(--font-display); font-weight: 800; font-size: 2.2rem; margin: 0 0 0.3em; }
+  .updated { color: var(--ink-soft); font-size: 0.9rem; margin-bottom: 2rem; }
+  h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; margin: 2em 0 0.5em; border-bottom: 2px solid var(--ink); padding-bottom: 0.3em; }
+  p { color: var(--ink-soft); margin: 0 0 1em; }
+  a { color: var(--maroon); }
+  mark { background: rgba(122, 31, 42, 0.16); color: var(--ink); padding: 0 0.2em; }
+  :focus-visible { outline: 3px solid var(--maroon); outline-offset: 2px; }
+  @view-transition { navigation: auto; }
+  .logo-row svg { view-transition-name: site-logo; }
+</style>
+</head>
+<body>
+  <main class="container">
+    <a class="top-link" href="/">← Volver a la web</a>
+    <div class="logo-row">
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <circle cx="100" cy="100" r="96" fill="#7a1f2a"/>
+        <circle cx="100" cy="100" r="86" fill="none" stroke="#f5ead3" stroke-width="2" stroke-dasharray="3.2 5"/>
+        <g transform="translate(100,84)"><circle cx="0" cy="0" r="34" fill="#f5ead3"/><circle cx="-25" cy="-25" r="11" fill="#f5ead3"/><circle cx="25" cy="-25" r="11" fill="#f5ead3"/><ellipse cx="0" cy="10.5" rx="14.5" ry="10" fill="#e8c9a8" stroke="#7a1f2a" stroke-width="2"/><circle cx="-5.3" cy="10.5" r="2" fill="#7a1f2a"/><circle cx="5.3" cy="10.5" r="2" fill="#7a1f2a"/><circle cx="-12.3" cy="-7" r="2.6" fill="#2a1d17"/><circle cx="12.3" cy="-7" r="2.6" fill="#2a1d17"/></g>
+      </svg>
+      <strong>{{negocio.nombre}}</strong>
+    </div>
+    <h1>Aviso legal</h1>
+    <p class="updated">Última actualización: octubre de 2026.</p>
+
+    <h2>1. Datos identificativos</h2>
+    <p>
+      En cumplimiento del artículo 10 de la Ley 34/2002, de 11 de julio, de Servicios de la
+      Sociedad de la Información y de Comercio Electrónico (LSSI-CE), se informa de que este
+      sitio web es titularidad de {{{legal.razonSocial}}}, con NIF {{{legal.nif}}}, que opera bajo el
+      nombre comercial <strong>{{negocio.nombre}}</strong>, con domicilio en {{negocio.direccionCompleta}},
+      y teléfono <a href="tel:{{negocio.telefonoE164}}">{{negocio.telefonoEspaciado}}</a>.
+    </p>
+
+    <h2>2. Objeto</h2>
+{{{legal.objeto}}}
+
+    <h2>3. Condiciones de uso</h2>
+    <p>
+      El acceso a este sitio web es gratuito y no requiere registro previo. Quien lo visite se
+      compromete a hacer un uso adecuado de sus contenidos y a no emplearlos para actividades
+      ilícitas o contrarias a la buena fe y al orden público.
+    </p>
+
+    <h2>4. Propiedad intelectual e industrial</h2>
+    <p>
+      Los textos, el logotipo y el diseño de este sitio web son propiedad de {{negocio.nombre}} o se utilizan con la autorización correspondiente. Algunas fotografías del
+      catálogo son ilustrativas, de banco de imágenes gratuito (Pexels, uso comercial libre) y
+      no representan producto real de la tienda; está señalado junto a cada una. Queda prohibida
+      la reproducción total o parcial de este sitio sin autorización previa.
+    </p>
+
+    <h2>5. Enlaces a terceros</h2>
+    <p>
+      Este sitio incluye enlaces a Google Maps y WhatsApp. {{negocio.nombre}} no se hace
+      responsable del contenido de esas páginas ni de sus políticas de privacidad, que son
+      ajenas a este sitio web.
+    </p>
+
+    <h2>6. Limitación de responsabilidad</h2>
+    <p>
+      {{negocio.nombre}} no garantiza la disponibilidad continuada del sitio web ni se hace
+      responsable de los daños que pudieran derivarse de interrupciones, errores o fallos
+      técnicos ajenos a su control.
+    </p>
+
+{{{legal.condicionesPedido}}}
+    <h2>{{{legal.numLegislacion}}}. Legislación aplicable</h2>
+    <p>
+      Este aviso legal se rige por la legislación española. Para cualquier controversia
+      derivada del uso de este sitio web serán competentes los juzgados y tribunales que
+      correspondan conforme a la normativa aplicable en materia de consumidores y usuarios.
+    </p>
+
+    <p style="margin-top:2rem;">Consulta también nuestra <a href="/privacidad.html">política de privacidad y cookies</a>.</p>
+  </main>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Política de privacidad y cookies | {{negocio.nombre}}</title>
+<meta name="robots" content="noindex, follow">
+<link rel="canonical" href="{{seo.dominio}}/privacidad.html">
+<link rel="icon" href="/assets/favicon.ico" sizes="any">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<style>
+  @font-face { font-family: "Playfair Display"; font-weight: 600 900; font-display: swap; src: url("/assets/fonts/playfair.woff2") format("woff2"); }
+  @font-face { font-family: "Karla"; font-weight: 400 700; font-display: swap; src: url("/assets/fonts/karla.woff2") format("woff2"); }
+  :root {
+    --cream: #f5ead3; --ink: #2a1d17; --ink-soft: #4a3a30; --maroon: #7a1f2a;
+    --font-display: "Playfair Display", Georgia, serif;
+    --font-body: "Karla", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--cream); color: var(--ink); font-family: var(--font-body); line-height: 1.6; }
+  .container { max-width: 720px; margin: 0 auto; padding: calc(3rem + env(safe-area-inset-top, 0px)) calc(1.25rem + env(safe-area-inset-right, 0px)) calc(5rem + env(safe-area-inset-bottom, 0px)) calc(1.25rem + env(safe-area-inset-left, 0px)); }
+  .top-link { display: inline-flex; align-items: center; gap: 0.5em; color: var(--maroon); text-decoration: none; font-weight: 700; margin-bottom: 2rem; }
+  .logo-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 2rem; }
+  .logo-row svg { width: 34px; height: 34px; }
+  .logo-row strong { font-family: var(--font-display); font-weight: 800; font-size: 1.2rem; }
+  h1 { font-family: var(--font-display); font-weight: 800; font-size: 2.2rem; margin: 0 0 0.3em; }
+  .updated { color: var(--ink-soft); font-size: 0.9rem; margin-bottom: 2rem; }
+  h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; margin: 2em 0 0.5em; border-bottom: 2px solid var(--ink); padding-bottom: 0.3em; }
+  p, li { color: var(--ink-soft); margin: 0 0 1em; }
+  ul { padding-left: 1.3em; }
+  a { color: var(--maroon); }
+  mark { background: rgba(122, 31, 42, 0.16); color: var(--ink); padding: 0 0.2em; }
+  :focus-visible { outline: 3px solid var(--maroon); outline-offset: 2px; }
+  @view-transition { navigation: auto; }
+  .logo-row svg { view-transition-name: site-logo; }
+</style>
+</head>
+<body>
+  <main class="container">
+    <a class="top-link" href="/">← Volver a la web</a>
+    <div class="logo-row">
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <circle cx="100" cy="100" r="96" fill="#7a1f2a"/>
+        <circle cx="100" cy="100" r="86" fill="none" stroke="#f5ead3" stroke-width="2" stroke-dasharray="3.2 5"/>
+        <g transform="translate(100,84)"><circle cx="0" cy="0" r="34" fill="#f5ead3"/><circle cx="-25" cy="-25" r="11" fill="#f5ead3"/><circle cx="25" cy="-25" r="11" fill="#f5ead3"/><ellipse cx="0" cy="10.5" rx="14.5" ry="10" fill="#e8c9a8" stroke="#7a1f2a" stroke-width="2"/><circle cx="-5.3" cy="10.5" r="2" fill="#7a1f2a"/><circle cx="5.3" cy="10.5" r="2" fill="#7a1f2a"/><circle cx="-12.3" cy="-7" r="2.6" fill="#2a1d17"/><circle cx="12.3" cy="-7" r="2.6" fill="#2a1d17"/></g>
+      </svg>
+      <strong>{{negocio.nombre}}</strong>
+    </div>
+    <h1>Política de privacidad y cookies</h1>
+    <p class="updated">Última actualización: octubre de 2026.</p>
+
+    <h2>1. Responsable del tratamiento</h2>
+    <p>
+      {{{legal.razonSocial}}}, con NIF {{{legal.nif}}}, domicilio en {{negocio.direccionCompleta}},
+      y teléfono <a href="tel:{{negocio.telefonoE164}}">{{negocio.telefonoEspaciado}}</a> (en
+      adelante, "{{negocio.nombre}}"), es el responsable del tratamiento de los datos personales
+      que se recogen a través de este sitio web.
+    </p>
+
+    <h2>2. Qué datos tratamos y para qué</h2>
+{{{legal.datos}}}
+
+    <h2>3. Base legal</h2>
+{{{legal.base}}}
+
+    <h2>4. Plazo de conservación</h2>
+{{{legal.conservacion}}}
+
+    <h2>5. A quién cedemos tus datos</h2>
+    <p>
+      No vendemos ni cedemos tus datos a terceros, salvo obligación legal. Para que la web
+      funcione intervienen dos proveedores técnicos:
+    </p>
+    <ul>
+      <li><strong>Netlify</strong>, que aloja la web y guarda los datos de los pedidos en sus servidores
+        (actúa como encargado del tratamiento por nuestra cuenta).</li>
+      <li><strong>Google</strong>: el mapa de la sección "Visítanos" es un mapa embebido de Google Maps.
+        Al cargarse, Google puede tratar algunos datos técnicos (como tu dirección IP) conforme a su
+        propia política de privacidad, ajena a {{negocio.nombre}}.</li>
+{{{legal.whatsapp}}}
+    </ul>
+
+    <h2>6. Tus derechos</h2>
+    <p>
+      Puedes ejercer tus derechos de acceso, rectificación, supresión, oposición, limitación y
+      portabilidad de tus datos escribiendo o llamando al <a href="tel:{{negocio.telefonoE164}}">{{negocio.telefonoEspaciado}}</a>.
+      También puedes reclamar ante la Agencia Española de Protección de Datos
+      (<a href="https://www.aepd.es" target="_blank" rel="noopener">www.aepd.es</a>) si
+      consideras que no hemos tratado tus datos correctamente.
+    </p>
+
+    <h2>7. Cookies y almacenamiento en tu navegador</h2>
+    <p>
+      Esta web no utiliza cookies de analítica ni de publicidad y no instala ningún sistema de
+      seguimiento. Las tipografías están alojadas en el propio servidor, no en servidores de
+      terceros.
+    </p>
+{{{legal.almacenamiento}}}
+    <p>
+      El único elemento externo que puede generar tráfico y, en su caso, cookies de terceros es
+      el mapa embebido de Google Maps de la sección "Visítanos", sujeto a la política de cookies
+      propia de Google.
+    </p>
+  </main>
+</body>
+</html>

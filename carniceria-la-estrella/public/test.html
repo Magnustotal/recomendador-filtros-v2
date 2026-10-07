@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Panel de comprobaciones | Carnicería La Estrella</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<style>
+  @font-face { font-family: "Playfair Display"; font-weight: 600 900; font-display: swap; src: url("assets/fonts/playfair.woff2") format("woff2"); }
+  @font-face { font-family: "Karla"; font-weight: 400 700; font-display: swap; src: url("assets/fonts/karla.woff2") format("woff2"); }
+  :root {
+    --cream: #f5ead3; --cream-bright: #fffaf0; --ink: #2a1d17; --ink-soft: #4a3a30;
+    --maroon: #7a1f2a; --green: #1f4a3a; --line: rgba(42,29,23,0.14);
+    --font-display: "Playfair Display", Georgia, serif;
+    --font-body: "Karla", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--cream); color: var(--ink); font-family: var(--font-body); line-height: 1.55; }
+  .container { max-width: 860px; margin: 0 auto; padding: calc(3rem + env(safe-area-inset-top, 0px)) calc(1.25rem + env(safe-area-inset-right, 0px)) calc(5rem + env(safe-area-inset-bottom, 0px)) calc(1.25rem + env(safe-area-inset-left, 0px)); }
+  .top-link { display: inline-flex; align-items: center; gap: 0.5em; color: var(--maroon); text-decoration: none; font-weight: 700; margin-bottom: 2rem; }
+  h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.8rem, 1.5rem + 1.2vw, 2.4rem); margin: 0 0 0.3em; }
+  .lede { color: var(--ink-soft); max-width: 62ch; margin: 0 0 2rem; }
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  button#rerun-btn {
+    font: inherit; font-weight: 700; background: var(--maroon); color: #fff; border: none;
+    border-radius: 999px; padding: 0.7em 1.5em; cursor: pointer;
+  }
+  button#rerun-btn:hover { background: #611722; }
+  button#rerun-btn:disabled { opacity: 0.6; cursor: default; }
+  .test-summary { font-weight: 700; padding: 0.5em 1em; border-radius: 8px; }
+  .test-summary.is-ok { background: rgba(31,74,58,0.12); color: var(--green); }
+  .test-summary.is-warn { background: rgba(201,107,58,0.16); color: #8a4720; }
+  .test-summary.is-fail { background: rgba(122,31,42,0.12); color: var(--maroon); }
+  #test-timestamp { color: var(--ink-soft); font-size: 0.85rem; margin: 0 0 1.5rem; }
+  table { width: 100%; border-collapse: collapse; background: var(--cream-bright); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 0 var(--line); }
+  .test-row td { padding: 0.85em 1em; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 0.95rem; }
+  .test-row:last-child td { border-bottom: none; }
+  .test-icon { width: 2.2em; text-align: center; font-weight: 800; font-size: 1.05rem; }
+  .test-name { font-weight: 700; white-space: nowrap; }
+  .test-detail { color: var(--ink-soft); }
+  .is-ok .test-icon { color: var(--green); }
+  .is-warn .test-icon { color: #8a4720; }
+  .is-fail .test-icon { color: var(--maroon); }
+  .note { margin-top: 2rem; font-size: 0.85rem; color: var(--ink-soft); }
+  :focus-visible { outline: 3px solid var(--maroon); outline-offset: 2px; }
+  @media (max-width: 640px) {
+    .test-name { white-space: normal; }
+    table, tbody, tr, td { display: block; width: 100%; }
+    .test-row { padding: 0.9em 1em; border-bottom: 1px solid var(--line); }
+    .test-row td { border-bottom: none; padding: 0.15em 0; }
+    .test-icon { display: inline-block; width: auto; margin-right: 0.4em; }
+    .test-name { display: inline; }
+  }
+</style>
+</head>
+<body>
+  <main class="container">
+    <a class="top-link" href="/">← Volver a la web</a>
+    <h1>Panel de comprobaciones</h1>
+    <p class="lede">
+      Esta página no es para clientes: comprueba, desde el propio navegador y sin llamar a ningún
+      servicio externo, que las partes técnicas del sitio (páginas, imágenes, PWA, datos
+      estructurados, enlaces de contacto) funcionan después de cada cambio o despliegue.
+    </p>
+
+    <div class="toolbar">
+      <button type="button" id="rerun-btn">Volver a comprobar</button>
+      <span class="test-summary" id="test-summary">Comprobando…</span>
+    </div>
+    <p id="test-timestamp"></p>
+
+    <table>
+      <tbody id="test-list"></tbody>
+    </table>
+
+    <p class="note">
+      Si algo falla justo después de desplegar, prueba a recargar sin caché (Ctrl/Cmd+Shift+R):
+      varias pruebas dependen de que el navegador tenga ya la versión nueva de la página.
+    </p>
+  </main>
+  <script src="assets/test.js"></script>
+</body>
+</html>

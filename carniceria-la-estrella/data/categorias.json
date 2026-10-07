@@ -1,0 +1,128 @@
+[
+  {
+    "id": "vacuno",
+    "nombre": "Vacuno",
+    "grupo": "Carnes frescas",
+    "descripcion": "Ternera y vaca: del solomillo al morcillo, cortado al momento.",
+    "orden": 1
+  },
+  {
+    "id": "cerdo",
+    "nombre": "Cerdo",
+    "grupo": "Carnes frescas",
+    "descripcion": "Cerdo blanco: lomo, chuletas, costillas, panceta y el resto del despiece.",
+    "orden": 2
+  },
+  {
+    "id": "cerdo-iberico",
+    "nombre": "Cerdo ibérico",
+    "grupo": "Carnes frescas",
+    "descripcion": "Secreto, presa, pluma, abanico y demás piezas de cerdo ibérico.",
+    "orden": 3
+  },
+  {
+    "id": "cordero",
+    "nombre": "Cordero y cabrito",
+    "grupo": "Carnes frescas",
+    "descripcion": "Lechal, recental y cabrito: pierna, paletilla, chuletas y costillar.",
+    "orden": 4
+  },
+  {
+    "id": "pollo",
+    "nombre": "Pollo",
+    "grupo": "Carnes frescas",
+    "descripcion": "Entero, troceado o por piezas: pechuga, muslo, contramuslo, alitas.",
+    "orden": 5
+  },
+  {
+    "id": "pavo",
+    "nombre": "Pavo",
+    "grupo": "Carnes frescas",
+    "descripcion": "Pechuga, solomillo, muslo y alas de pavo.",
+    "orden": 6
+  },
+  {
+    "id": "conejo",
+    "nombre": "Conejo",
+    "grupo": "Carnes frescas",
+    "descripcion": "Entero, troceado o por piezas.",
+    "orden": 7
+  },
+  {
+    "id": "caza",
+    "nombre": "Caza",
+    "grupo": "Carnes frescas",
+    "descripcion": "Caza de temporada, por encargo.",
+    "orden": 8
+  },
+  {
+    "id": "casqueria",
+    "nombre": "Casquería",
+    "grupo": "Casquería",
+    "descripcion": "Callos, rabo de toro, hígado, mollejas, manitas y demás.",
+    "orden": 9
+  },
+  {
+    "id": "jamones",
+    "nombre": "Jamones y paletillas",
+    "grupo": "Charcutería y curados",
+    "descripcion": "Jamón y paletilla ibérica y serrana, loncheados al momento.",
+    "orden": 10
+  },
+  {
+    "id": "embutidos",
+    "nombre": "Embutidos y fiambres",
+    "grupo": "Charcutería y curados",
+    "descripcion": "Chorizo, salchichón, morcilla, longaniza, chicharrones y fiambres.",
+    "orden": 11
+  },
+  {
+    "id": "quesos",
+    "nombre": "Quesos",
+    "grupo": "Charcutería y curados",
+    "descripcion": "Quesos de oveja y cabra, curados y semicurados.",
+    "orden": 12
+  },
+  {
+    "id": "elaborados",
+    "nombre": "Elaborados",
+    "grupo": "Elaborados y otros",
+    "descripcion": "Hamburguesas, salchichas, pinchitos, flamenquines, San Jacobos, carne picada…",
+    "orden": 13
+  },
+  {
+    "id": "huevos",
+    "nombre": "Huevos (Recova)",
+    "grupo": "Elaborados y otros",
+    "descripcion": "Huevos camperos y de codorniz.",
+    "orden": 14
+  },
+  {
+    "id": "avios",
+    "nombre": "Avíos del puchero",
+    "grupo": "Despensa",
+    "descripcion": "Huesos, tocino, codillo y todo para el puchero y el cocido.",
+    "orden": 15
+  },
+  {
+    "id": "especias",
+    "nombre": "Especias",
+    "grupo": "Despensa",
+    "descripcion": "Pimentón, pimienta, comino, adobos y sal.",
+    "orden": 16
+  },
+  {
+    "id": "salsas",
+    "nombre": "Salsas",
+    "grupo": "Despensa",
+    "descripcion": "Salsas para carne y barbacoa.",
+    "orden": 17
+  },
+  {
+    "id": "vino",
+    "nombre": "Vino",
+    "grupo": "Despensa",
+    "descripcion": "Tintos, blancos y vinos de Jerez. Solo para mayores de 18 años.",
+    "orden": 18
+  }
+]
