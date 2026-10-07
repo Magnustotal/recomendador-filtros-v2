@@ -370,6 +370,11 @@ test("pedidos: el reparto muestra el código postal y avisa si la dirección est
   await page.context().close();
 });
 
+// Las herramientas de precios vienen plegadas en el móvil (abiertas en pantallas anchas)
+async function abrirHerramientas(page) {
+  if (!(await page.locator("#prod-herramientas").evaluate((d) => d.open))) await page.locator("#prod-herramientas > summary").click();
+}
+
 // ---------- precios orientativos, calculadora y semáforo ----------
 const filaProd = (page, nombre) => page.locator(".prod-fila", { has: page.getByRole("strong").filter({ hasText: new RegExp(`^${nombre}$`) }) });
 
@@ -487,6 +492,7 @@ test("«Aceptar todos»: pone el orientativo a lo que no tiene precio y la tiend
   await page.click("#tab-estado");
   assert.match(await page.locator("#lista-comprobacion").innerText(), /productos con precio orientativo sin aceptar/);
   await page.click("#tab-productos");
+  await abrirHerramientas(page);
   const antes = await page.locator("#prod-aceptar-todos").innerText();
   assert.match(antes, /^Aceptar los \d+ precios orientativos pendientes$/);
   await page.click("#prod-aceptar-todos");
@@ -502,5 +508,105 @@ test("«Aceptar todos»: pone el orientativo a lo que no tiene precio y la tiend
   await page.click("#tab-estado");
   assert.match(await page.locator("#lista-comprobacion").innerText(), /No quedan precios orientativos por revisar/);
   assert.deepEqual(errores(page), []);
+  await page.context().close();
+});
+
+test("fecha de precios: el panel la muestra, se actualiza con «Los precios están al día» y la ve el cliente", async () => {
+  const page = await entrar();
+  page.on("dialog", (d) => d.accept());
+  await page.click("#tab-productos");
+  await abrirHerramientas(page);
+  assert.match(await page.locator("#prod-fecha-precios").innerText(), /Precios actualizados por última vez: 5 de octubre de 2026\./);
+  await page.click("#prod-precios-al-dia");
+  await page.locator("#aviso", { hasText: "los precios se han actualizado hoy" }).waitFor();
+  const meta = (await e.api.llamar("/datos")).datos.meta;
+  assert.match(meta.precios, /^2026-10-05T/);
+  await page.click("#tab-estado");
+  assert.match(await page.locator("#lista-comprobacion").innerText(), /Los precios se actualizaron hace \d+ días?/);
+  assert.match(await page.locator("#lista-comprobacion").innerText(), /rangos de mercado/);
+  // el semáforo explica de dónde sale el rango de mercado
+  await page.click("#tab-productos");
+  await page.fill("#prod-buscar", "Entrecot de ternera");
+  await page.locator(".prod-fila").first().getByRole("button", { name: /Editar/ }).click();
+  assert.match(await page.locator("#dlg-producto .fuente-rango").innerText(), /Rango de mercado: estimación propia de octubre de 2026, con fiabilidad media\. No procede de una fuente oficial ni se actualiza sola/);
+  await page.context().close();
+});
+
+// ---------- productos por categorías, plegables ----------
+test("productos por categorías: plegadas al principio, con cuenta, y se abren y cierran", async () => {
+  const page = await entrar();
+  await page.click("#tab-productos");
+  const grupos = page.locator("#prod-lista details.prod-cat");
+  assert.equal(await grupos.count(), 18);
+  assert.equal(await page.locator("#prod-lista details.prod-cat[open]").count(), 0, "todas cerradas al entrar");
+  assert.equal(await page.locator("#prod-lista .prod-fila").count(), 0, "las filas no se pintan hasta abrir la categoría");
+  const resumen = grupos.filter({ hasText: "Vacuno" }).locator("summary");
+  assert.match(await resumen.innerText(), /Vacuno\s+22 productos/);
+  await resumen.click();
+  await page.locator("#pcat-vacuno .prod-fila").first().waitFor(); // las filas se pintan al abrir (evento «toggle»)
+  assert.equal(await page.locator("#pcat-vacuno .prod-fila").count(), 22);
+  assert.equal(await page.locator("#pcat-vacuno").getAttribute("open"), "");
+  await resumen.click();
+  assert.equal(await page.locator("#pcat-vacuno").getAttribute("open"), null);
+  // abrir y cerrar todas
+  await page.click("#prod-expandir");
+  await page.locator("#pcat-vino .prod-fila").first().waitFor();
+  assert.equal(await page.locator("#prod-lista details.prod-cat[open]").count(), 18);
+  assert.equal(await page.locator("#prod-lista .prod-fila").count(), (await e.api.llamar("/datos")).datos.productos.length);
+  await page.click("#prod-contraer");
+  assert.equal(await page.locator("#prod-lista details.prod-cat[open]").count(), 0);
+  await page.context().close();
+});
+
+test("productos por categorías: los botones de categoría llevan a la sección, como en la tienda", async () => {
+  const page = await entrar({ alto: 800 });
+  await page.click("#tab-productos");
+  assert.equal(await page.locator("#prod-chips .chip").count(), 18);
+  await page.locator("#prod-chips .chip", { hasText: "Vino" }).click();
+  await page.waitForTimeout(300);
+  const caja = await page.locator("#pcat-vino").boundingBox();
+  assert.ok(caja.y >= 0 && caja.y < 300, `Vino quedó en y=${Math.round(caja.y)}`);
+  assert.equal(await page.locator("#pcat-vino").getAttribute("open"), "");
+  await page.locator("#pcat-vino .prod-fila").first().waitFor();
+  assert.equal(await page.locator("#pcat-vino .prod-fila").count(), 8);
+  assert.equal(await page.locator("#prod-chips .chip[aria-current]").innerText(), "Vino");
+  // un producto nuevo nace en la categoría en la que se está trabajando
+  await page.click("#prod-nuevo");
+  assert.equal(await page.locator("#f-categoria").inputValue(), "vino");
+  await page.keyboard.press("Escape");
+  await page.context().close();
+});
+
+test("productos por categorías: al buscar se abren solo las que tienen coincidencias; al borrar, vuelve lo que estaba", async () => {
+  const page = await entrar();
+  await page.click("#tab-productos");
+  await page.locator("#pcat-cordero summary").click(); // una abierta a mano
+  await page.fill("#prod-buscar", "solomillo");
+  const abiertas = await page.locator("#prod-lista details.prod-cat[open] .cat-nombre").allInnerTexts();
+  assert.deepEqual(abiertas.sort(), ["Caza", "Cerdo", "Cerdo ibérico", "Pavo", "Pollo", "Vacuno"].sort());
+  assert.equal(await page.locator("#pcat-vino").count(), 0, "las categorías sin coincidencias desaparecen");
+  assert.equal(await page.locator("#prod-chips .chip").count(), 6);
+  await page.fill("#prod-buscar", "xyzxyz");
+  assert.match(await page.locator("#prod-lista").innerText(), /Ningún producto coincide/);
+  await page.fill("#prod-buscar", "");
+  assert.equal(await page.locator("#prod-lista details.prod-cat[open]").count(), 1, "solo la que se abrió a mano");
+  assert.equal(await page.locator("#pcat-cordero").getAttribute("open"), "");
+  await page.context().close();
+});
+
+test("productos por categorías: al aceptar un precio, la cuenta de la categoría se actualiza sin cerrar nada", async () => {
+  // (otras pruebas ya aceptaron todos los orientativos: se vacía el precio de uno por la API para que vuelva a haber sugerencia)
+  const datos = (await e.api.llamar("/datos")).datos;
+  const uno = datos.productos.find((p) => p.categoria === "cordero" && p.precio != null);
+  await e.api.llamar("/producto", { metodo: "PUT", cuerpo: { ...uno, precio: null } });
+  const page = await entrar();
+  await page.click("#tab-productos");
+  await page.locator("#pcat-cordero summary").click();
+  const antes = await page.locator("#pcat-cordero .cat-cuenta").innerText();
+  const sin = Number(antes.match(/(\d+) sin precio/)?.[1] ?? 0);
+  assert.ok(sin > 0, antes);
+  await page.locator("#pcat-cordero .prod-fila").first().getByRole("button", { name: /Aceptar el precio orientativo/ }).click();
+  await page.locator("#pcat-cordero .cat-cuenta", { hasText: sin - 1 === 0 ? "todos con precio" : `${sin - 1} sin precio` }).waitFor();
+  assert.equal(await page.locator("#pcat-cordero").getAttribute("open"), "");
   await page.context().close();
 });

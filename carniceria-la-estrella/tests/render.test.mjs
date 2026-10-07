@@ -130,3 +130,25 @@ test("privacidad: solo menciona OpenStreetMap cuando el reparto usa radio en km"
   assert.doesNotMatch(cerrada, /OpenStreetMap/);
   assert.doesNotMatch(con, /\{\{/);
 });
+
+test("pie: «Web actualizada el … · versión X» usa la fecha de publicación o la del último cambio del panel, la más reciente", async () => {
+  const { versionWeb } = await import("../lib/datos.generado.mjs");
+  const { infoWeb } = await import("../lib/render.mjs");
+  const paquete = JSON.parse((await import("node:fs")).readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+  assert.equal(versionWeb.version, paquete.version, "public/VERSION y package.json deben coincidir");
+  assert.match(versionWeb.fecha, /^\d{4}-\d{2}-\d{2}$/);
+
+  const sin = infoWeb(null);
+  assert.equal(sin.actualizadaISO, versionWeb.fecha);
+  // un cambio del panel posterior a la publicación manda
+  const tarde = infoWeb({ contenido: "2099-03-04T23:30:00Z" }); // 05/03/2099 00:30 en Madrid
+  assert.equal(tarde.actualizadaISO, "2099-03-05");
+  assert.equal(tarde.actualizada, "5 de marzo de 2099");
+  // uno anterior a la publicación no la rebaja
+  assert.equal(infoWeb({ contenido: "2020-01-01T10:00:00Z" }).actualizadaISO, versionWeb.fecha);
+
+  for (const pagina of ["index.html", "tienda.html"]) {
+    const html = renderizarPagina(pagina, ajustes(), { ahora: AHORA, meta: { contenido: "2099-03-04T23:30:00Z" } });
+    assert.match(html, /Web actualizada el <time datetime="2099-03-05">5 de marzo de 2099<\/time> · versión \d+\.\d+\.\d+/, pagina);
+  }
+});

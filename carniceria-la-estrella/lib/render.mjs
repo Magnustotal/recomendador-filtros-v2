@@ -3,8 +3,8 @@
 import { textosLegales } from "./legal.mjs";
 import { createHash } from "node:crypto";
 import { plantillas } from "./plantillas.generado.mjs";
-import { categorias } from "./datos.generado.mjs";
-import { filasHorario, especificacionJsonLd } from "./horario.mjs";
+import { categorias, versionWeb } from "./datos.generado.mjs";
+import { filasHorario, especificacionJsonLd, ahoraEnMadrid } from "./horario.mjs";
 
 export function escapar(valor) {
   return String(valor ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -88,7 +88,17 @@ export function base(ajustes, origen = "") {
   return (ajustes.seo.dominio || origen || "").replace(/\/$/, "");
 }
 
-export function contexto(ajustes, { origen = "", ahora = new Date() } = {}) {
+const fechaLarga = (iso) => new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`));
+
+// «Web actualizada»: la más reciente entre la fecha de publicación de esta versión y el último cambio hecho en el panel.
+export function infoWeb(meta) {
+  const fechas = [versionWeb.fecha];
+  if (meta?.contenido) fechas.push(ahoraEnMadrid(new Date(meta.contenido)).fecha);
+  const iso = fechas.filter((f) => /^\d{4}-\d{2}-\d{2}$/.test(f)).sort().at(-1);
+  return { version: versionWeb.version, actualizadaISO: iso, actualizada: fechaLarga(iso) };
+}
+
+export function contexto(ajustes, { origen = "", ahora = new Date(), meta = null } = {}) {
   const n = ajustes.negocio;
   const dir = `${n.calle}, ${n.cp} ${n.localidad}`;
   const wa = (texto) => `https://wa.me/${n.whatsapp}?text=${encodeURIComponent(texto)}`;
@@ -96,6 +106,7 @@ export function contexto(ajustes, { origen = "", ahora = new Date() } = {}) {
   const dominio = base(ajustes, origen);
   const activa = ajustes.tienda.activa;
   return {
+    web: infoWeb(meta),
     anio: new Intl.DateTimeFormat("es-ES", { year: "numeric", timeZone: "Europe/Madrid" }).format(ahora),
     negocio: {
       ...n,

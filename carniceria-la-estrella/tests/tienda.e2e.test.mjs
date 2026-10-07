@@ -268,3 +268,16 @@ test("zona de reparto por códigos postales: se explica, se rechaza lo que queda
     await e.api.llamar("/ajustes", { metodo: "PUT", cuerpo: original });
   }
 });
+
+test("pie con la fecha y la versión de la web, y nota de precios con su fecha de actualización", async () => {
+  const { readFileSync } = await import("node:fs");
+  const [version, fecha] = readFileSync(new URL("../public/VERSION", import.meta.url), "utf8").trim().split(/\r?\n/);
+  const larga = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${fecha}T12:00:00Z`));
+  const page = await abrir();
+  assert.match(await page.locator(".footer-version").innerText(), new RegExp(`^Web actualizada el ${larga} · versión ${version.replace(/\./g, "\\.")}$`));
+  // la nota de precios existe siempre; la fecha, solo cuando el carnicero ha actualizado precios
+  const nota = await page.locator("#nota-precios").innerText();
+  assert.match(nota, /Los precios pueden variar a diario; procuramos mantenerlos lo más al día posible\./);
+  assert.match(nota, /^Precios actualizados por última vez el 5 de octubre de 2026\. /, "el entorno de pruebas fija el reloj el 5/10/2026 y ya se han puesto precios");
+  await page.context().close();
+});

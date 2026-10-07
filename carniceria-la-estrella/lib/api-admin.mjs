@@ -40,13 +40,15 @@ export async function manejarAdmin(req, deps) {
 
     if (ruta === "/datos" && metodo === "GET") {
       const [ajustes, productos] = await Promise.all([deps.almacen.leerAjustes(), deps.almacen.leerProductos()]);
-      return json(200, { ok: true, ajustes, productos, categorias, orientativos: preciosOrientativos });
+      const meta = await deps.almacen.leerMeta().catch(() => ({}));
+      return json(200, { ok: true, ajustes, productos, categorias, orientativos: preciosOrientativos, meta });
     }
 
     if (ruta === "/ajustes" && metodo === "PUT") {
       const v = validarAjustes(await leerJson(req));
       if (!v.ok) return json(400, { ok: false, errores: v.errores });
       await deps.almacen.guardarAjustes(v.valor);
+      await deps.almacen.tocarMeta({ contenido: true }, new Date(deps.ahora()));
       await deps.purgar(["paginas", "catalogo"]);
       return json(200, { ok: true, ajustes: v.valor });
     }
@@ -56,17 +58,18 @@ export async function manejarAdmin(req, deps) {
       const ajustes = await deps.almacen.leerAjustes();
       const v = validarProducto(entrada, { categorias: IDS_CATEGORIA, redondeo: ajustes.tienda.redondeo });
       if (!v.ok) return json(400, { ok: false, errores: v.errores });
-      let guardado, fotoAnterior = null;
+      let guardado, fotoAnterior = null, precioCambiado = false;
       await deps.almacen.actualizarProductos((lista) => {
         const i = lista.findIndex((p) => p.id === v.valor.id);
         const esNuevo = typeof entrada.id !== "string" || !entrada.id; // sin id previo: se crea desde el nombre
         if (esNuevo && i >= 0) throw new ErrorHttp(409, "Ya existe un producto con ese nombre.");
-        if (i >= 0) { fotoAnterior = lista[i].foto; guardado = { ...v.valor, orden: v.valor.orden || lista[i].orden }; lista[i] = guardado; }
-        else { const maxOrden = lista.reduce((m, p) => Math.max(m, p.orden), 0); guardado = { ...v.valor, orden: maxOrden + 1 }; lista.push(guardado); }
+        if (i >= 0) { fotoAnterior = lista[i].foto; precioCambiado = lista[i].precio !== v.valor.precio; guardado = { ...v.valor, orden: v.valor.orden || lista[i].orden }; lista[i] = guardado; }
+        else { const maxOrden = lista.reduce((m, p) => Math.max(m, p.orden), 0); guardado = { ...v.valor, orden: maxOrden + 1 }; precioCambiado = v.valor.precio != null; lista.push(guardado); }
         return lista;
       });
       if (fotoAnterior && fotoAnterior !== guardado.foto) await deps.almacen.borrarFoto(fotoAnterior); // foto sustituida o quitada
-      await deps.purgar(["catalogo"]);
+      await deps.almacen.tocarMeta({ contenido: true, precios: precioCambiado }, new Date(deps.ahora()));
+      await deps.purgar(["catalogo", "paginas"]);
       return json(200, { ok: true, producto: guardado });
     }
 
@@ -80,7 +83,8 @@ export async function manejarAdmin(req, deps) {
       });
       if (!existia) return error(404, "Producto no encontrado.");
       if (foto) await deps.almacen.borrarFoto(foto);
-      await deps.purgar(["catalogo"]);
+      await deps.almacen.tocarMeta({ contenido: true }, new Date(deps.ahora()));
+      await deps.purgar(["catalogo", "paginas"]);
       return json(200, { ok: true });
     }
 
@@ -89,7 +93,8 @@ export async function manejarAdmin(req, deps) {
       if (final !== 90 && final !== 95) return error(400, "El final debe ser 90 o 95.");
       let tocados = 0;
       await deps.almacen.actualizarProductos((lista) => { const nueva = aplicarRedondeoATodos(lista, final); tocados = nueva.filter((p, i) => p.precio !== lista[i].precio).length; return nueva; });
-      await deps.purgar(["catalogo"]);
+      await deps.almacen.tocarMeta({ contenido: true, precios: tocados > 0 }, new Date(deps.ahora()));
+      await deps.purgar(["catalogo", "paginas"]);
       return json(200, { ok: true, tocados });
     }
 
@@ -105,8 +110,17 @@ export async function manejarAdmin(req, deps) {
         const precio = final && p.unidad === "kg" ? redondear(o[0], final) : o[0];
         return { ...p, precio };
       }));
-      await deps.purgar(["catalogo"]);
+      // Son estimaciones sin revisar: cuentan como cambio de contenido, pero NO como «precios al día».
+      await deps.almacen.tocarMeta({ contenido: true }, new Date(deps.ahora()));
+      await deps.purgar(["catalogo", "paginas"]);
       return json(200, { ok: true, aplicados });
+    }
+
+    // El carnicero confirma que ha repasado los precios (aunque no haya cambiado ninguno): se actualiza la fecha que ve el cliente.
+    if (ruta === "/precios-al-dia" && metodo === "POST") {
+      await deps.almacen.tocarMeta({ contenido: true, precios: true }, new Date(deps.ahora()));
+      await deps.purgar(["catalogo", "paginas"]);
+      return json(200, { ok: true, meta: await deps.almacen.leerMeta() });
     }
 
     if (ruta === "/foto" && metodo === "POST") {

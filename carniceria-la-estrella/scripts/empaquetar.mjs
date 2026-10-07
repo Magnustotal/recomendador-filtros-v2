@@ -13,12 +13,14 @@ const datos = {
   productos: JSON.parse(leer("data/productos.default.json")),
   precios: JSON.parse(leer("data/precios-orientativos.json")),
 };
+// Versión y fecha de publicación de la web: salen de public/VERSION (línea 1: versión, línea 2: fecha AAAA-MM-DD)
+const [versionWeb, fechaWeb] = leer("public/VERSION").trim().split(/\r?\n/);
 const plantillas = {};
 for (const f of readdirSync(new URL("templates/", raiz)).sort()) plantillas[f] = leer(`templates/${f}`);
 
 const cabecera = "// ARCHIVO GENERADO por scripts/empaquetar.mjs. No editar a mano.\n";
 const salidas = {
-  "lib/datos.generado.mjs": `${cabecera}export const ajustesPorDefecto = ${JSON.stringify(datos.ajustes, null, 2)};\nexport const categorias = ${JSON.stringify(datos.categorias, null, 2)};\nexport const productosPorDefecto = ${JSON.stringify(datos.productos)};\nexport const preciosOrientativos = ${JSON.stringify(datos.precios)};\n`,
+  "lib/datos.generado.mjs": `${cabecera}export const ajustesPorDefecto = ${JSON.stringify(datos.ajustes, null, 2)};\nexport const categorias = ${JSON.stringify(datos.categorias, null, 2)};\nexport const productosPorDefecto = ${JSON.stringify(datos.productos)};\nexport const preciosOrientativos = ${JSON.stringify(datos.precios)};\nexport const versionWeb = ${JSON.stringify({ version: versionWeb, fecha: fechaWeb })};\n`,
   "lib/plantillas.generado.mjs": `${cabecera}export const plantillas = ${JSON.stringify(plantillas, null, 1)};\n`,
 };
 

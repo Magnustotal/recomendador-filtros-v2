@@ -39,6 +39,19 @@ export function crearAlmacen(abrir = (nombre) => getStore({ name: nombre, consis
     async leerAjustes() { return completar(await config().get("ajustes", { type: "json" }), ajustesPorDefecto) ?? structuredClone(ajustesPorDefecto); },
     async guardarAjustes(valor) { await config().setJSON("ajustes", valor); },
 
+    // Fechas de «última actualización»: contenido = cualquier cambio hecho desde el panel; precios = último cambio
+    // (o confirmación) de precios. Son marcas informativas: si fallan, no deben romper nada.
+    async leerMeta() { return (await config().get("meta", { type: "json" })) ?? {}; },
+    async tocarMeta({ contenido = true, precios = false }, ahora = new Date()) {
+      try {
+        const meta = (await config().get("meta", { type: "json" })) ?? {};
+        const iso = ahora.toISOString();
+        if (contenido) meta.contenido = iso;
+        if (precios) meta.precios = iso;
+        await config().setJSON("meta", meta);
+      } catch (e) { console.warn("No se pudo guardar la fecha de actualización:", e?.message ?? e); }
+    },
+
     async leerProductos() { return (await config().get("productos", { type: "json" })) ?? structuredClone(productosPorDefecto); },
     actualizarProductos(transformar) { return actualizarJson(config(), "productos", productosPorDefecto, transformar); },
 

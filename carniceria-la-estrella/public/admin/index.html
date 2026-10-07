@@ -73,31 +73,37 @@
           <label for="prod-buscar" class="sr-only">Buscar producto</label>
           <input id="prod-buscar" type="search" placeholder="Buscar producto" autocomplete="off">
         </div>
-        <div class="campo">
-          <label for="prod-categoria" class="sr-only">Categoría</label>
-          <select id="prod-categoria"></select>
-        </div>
+        <button id="prod-expandir" class="btn-sec" type="button">Abrir todas</button>
+        <button id="prod-contraer" class="btn-sec" type="button">Cerrar todas</button>
         <button id="prod-nuevo" class="btn-prim" type="button">Añadir producto</button>
       </div>
-      <div class="barra redondeo">
-        <div class="campo">
-          <label for="prod-redondeo">Redondeo del precio por kilo</label>
-          <select id="prod-redondeo">
-            <option value="">Sin redondeo</option>
-            <option value="90">Terminar en ,90</option>
-            <option value="95">Terminar en ,95</option>
-          </select>
-        </div>
-        <button id="prod-redondear" class="btn-sec" type="button" disabled>Aplicar ahora a todos los precios por kilo</button>
-      </div>
-      <div class="barra orientativos">
-        <button id="prod-aceptar-todos" class="btn-sec" type="button" disabled>Aceptar los precios orientativos pendientes</button>
-        <details class="ayuda-desplegable">
-          <summary>¿De dónde salen los precios orientativos?</summary>
-          <p>Son una estimación mía para una carnicería de barrio de precio medio en Sevilla (otoño de 2026), con IVA incluido. Me he apoyado en pocos datos de internet, dispersos y de fechas distintas, y en mi criterio, <strong>sin verificarlos</strong>: sirven de punto de partida, no de tarifa. Cada uno lleva una fiabilidad (media o baja) que se ve al editarlo. Hasta que aceptes un precio, en la tienda se ve «Consultar».</p>
-        </details>
-      </div>
       <p id="prod-contador" class="ayuda" role="status"></p>
+      <nav id="prod-chips" class="chips chips-fijos" aria-label="Ir a una categoría"></nav>
+      <details class="herramientas" id="prod-herramientas">
+        <summary>Herramientas de precios (redondeo, orientativos y fecha de actualización)</summary>
+        <div class="barra redondeo">
+          <div class="campo">
+            <label for="prod-redondeo">Redondeo del precio por kilo</label>
+            <select id="prod-redondeo">
+              <option value="">Sin redondeo</option>
+              <option value="90">Terminar en ,90</option>
+              <option value="95">Terminar en ,95</option>
+            </select>
+          </div>
+          <button id="prod-redondear" class="btn-sec" type="button" disabled>Aplicar ahora a todos los precios por kilo</button>
+        </div>
+        <div class="barra orientativos">
+          <button id="prod-aceptar-todos" class="btn-sec" type="button" disabled>Aceptar los precios orientativos pendientes</button>
+          <details class="ayuda-desplegable">
+            <summary>¿De dónde salen los precios orientativos?</summary>
+            <p>Son una estimación mía para una carnicería de barrio de precio medio en Sevilla (otoño de 2026), con IVA incluido. Me he apoyado en pocos datos de internet, dispersos y de fechas distintas, y en mi criterio, <strong>sin verificarlos</strong>: sirven de punto de partida, no de tarifa. Cada uno lleva una fiabilidad (media o baja) que se ve al editarlo. Hasta que aceptes un precio, en la tienda se ve «Consultar».</p>
+          </details>
+        </div>
+        <div class="barra fecha-precios">
+          <p id="prod-fecha-precios" class="ayuda" role="status"></p>
+          <button id="prod-precios-al-dia" class="btn-sec" type="button">Los precios están al día (hoy)</button>
+        </div>
+      </details>
       <div id="prod-lista" class="prod-lista"></div>
     </section>
 

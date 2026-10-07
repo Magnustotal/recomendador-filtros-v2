@@ -266,6 +266,7 @@
   .footer-nav a:hover { color: var(--cream); }
   .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; padding-top: 1.8rem; font-size: 0.82rem; color: rgba(245,234,211,0.75); }
   .footer-bottom a { color: inherit; text-decoration: underline; }
+  .footer-version { flex-basis: 100%; font-size: 0.78rem; opacity: 0.85; }
   .footer-bottom span:not(.footer-credit) a { display: inline-flex; align-items: center; min-height: 48px; }
   .footer-credit { flex-basis: 100%; opacity: 0.7; padding-left: 4.5rem; }
   .footer-credit a { display: inline-block; padding: 0.85rem 0; margin: -0.85rem 0; }

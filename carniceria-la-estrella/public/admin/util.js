@@ -61,3 +61,7 @@ export function describirError(e) {
     || ETIQUETAS[e.campo] || (/^horario\[(\d+)\]/.test(e.campo) ? `Horario, tramo ${Number(e.campo.match(/\[(\d+)\]/)[1]) + 1}` : "");
   return etiqueta ? `${etiqueta}: ${e.mensaje}` : e.mensaje;
 }
+
+export function fechaConAnio(iso) {
+  return new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Madrid" }).format(new Date(iso));
+}

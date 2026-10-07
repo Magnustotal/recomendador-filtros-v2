@@ -8,7 +8,7 @@ const CLAVE_CARRITO = "ls_pedido_v1";
 const $ = (id) => document.getElementById(id);
 
 const el = {
-  estado: $("estado"), anuncios: $("anuncios"), cerrada: $("tienda-cerrada"), aviso: $("aviso-tienda"), app: $("app"),
+  estado: $("estado"), anuncios: $("anuncios"), notaPrecios: $("nota-precios"), cerrada: $("tienda-cerrada"), aviso: $("aviso-tienda"), app: $("app"),
   buscar: $("buscar"), chips: $("chips"), sinResultados: $("sin-resultados"), productos: $("productos"),
   pedido: $("pedido"), vacio: $("carrito-vacio"), form: $("formulario"), lineas: $("lineas"), totales: $("totales"),
   errores: $("errores"), nombre: $("nombre"), telefono: $("telefono"),
@@ -599,6 +599,11 @@ async function iniciar() {
   carrito = cargarCarrito();
   el.estado.hidden = true;
   el.estado.textContent = "";
+  const fecha = cat.preciosActualizados
+    ? new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${cat.preciosActualizados}T12:00:00Z`))
+    : null;
+  el.notaPrecios.textContent = `${fecha ? `Precios actualizados por última vez el ${fecha}. ` : ""}Los precios pueden variar a diario; procuramos mantenerlos lo más al día posible.`;
+  el.notaPrecios.hidden = false;
   if (t.aviso) { el.aviso.textContent = t.aviso; el.aviso.hidden = false; }
   el.app.hidden = false;
 

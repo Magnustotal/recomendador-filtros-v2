@@ -1,22 +1,35 @@
 // Pestaña "Productos": lista con precio y "agotado" editables en el momento, y un editor completo.
 import { api, textoErrores } from "./api.js";
-import { h, $, importeEs, aviso, sinAcentos, describirError } from "./util.js";
+import { h, $, importeEs, aviso, sinAcentos, describirError, fechaConAnio } from "./util.js";
 import { prepararFoto } from "./fotos.js";
 import { semaforo, rangoOrientativo, precioDesdeCoste, ajustarPorcentaje, MARGEN_POR_DEFECTO, NOMBRE_FIABILIDAD } from "/assets/compartido/precios.js";
 import { redondear } from "/assets/compartido/dinero.js";
 
 let productos = [];
 let categorias = [];
+let meta = {};
 let orientativos = null; // { precios: { id: [precio, fiabilidad] }, fecha, nivel, _nota }
 let contexto = null; // { redondeoActual(), guardarRedondeo(valor), recargar(), preciosCfg() }
 let busqueda = "";
-let categoriaFiltro = "";
+const abiertas = new Set(); // categorías desplegadas (cuando no se está buscando)
+let ultimaCategoria = ""; // la última que se ha abierto o a la que se ha ido: es la de un producto nuevo
 
 export function iniciarProductos(ctx) {
   contexto = ctx;
+  // En pantallas anchas las herramientas de precios se ven abiertas; en el móvil, plegadas para llegar antes a los productos.
+  $("prod-herramientas").open = matchMedia("(min-width: 800px)").matches;
   $("prod-buscar").addEventListener("input", (e) => { busqueda = sinAcentos(e.target.value.trim()); pintar(); });
-  $("prod-categoria").addEventListener("change", (e) => { categoriaFiltro = e.target.value; pintar(); });
+  $("prod-expandir").addEventListener("click", () => { for (const c of categorias) abiertas.add(c.id); pintar(); });
+  $("prod-contraer").addEventListener("click", () => { abiertas.clear(); pintar(); });
   $("prod-nuevo").addEventListener("click", () => abrirEditor(null));
+  $("prod-precios-al-dia").addEventListener("click", async () => {
+    if (!confirm("Esto indica a tus clientes que has repasado los precios hoy («Precios actualizados por última vez el …» en la tienda). ¿Lo has hecho?")) return;
+    const r = await api("/precios-al-dia", { metodo: "POST", cuerpo: {} });
+    if (!r.ok) { aviso(textoErrores(r.errores), { error: true }); return; }
+    meta = r.datos.meta;
+    pintar();
+    aviso("Hecho: la tienda muestra que los precios se han actualizado hoy.");
+  });
   $("prod-aceptar-todos").addEventListener("click", async () => {
     const n = orientativosPendientes();
     if (!n) return;
@@ -43,15 +56,11 @@ export function iniciarProductos(ctx) {
   });
 }
 
-export function cargarProductos({ productos: lista, categorias: cats, orientativos: orient }) {
+export function cargarProductos({ productos: lista, categorias: cats, orientativos: orient, meta: m }) {
   if (orient) orientativos = orient;
+  if (m) meta = m;
   productos = lista;
   categorias = cats;
-  const sel = $("prod-categoria");
-  const previo = sel.value;
-  sel.replaceChildren(h("option", { value: "", texto: "Todas las categorías" }), ...categorias.map((c) => h("option", { value: c.id, texto: c.nombre })));
-  sel.value = categorias.some((c) => c.id === previo) ? previo : "";
-  categoriaFiltro = sel.value;
   $("prod-redondeo").value = contexto.redondeoActual() ?? "";
   $("prod-redondear").disabled = !contexto.redondeoActual();
   pintar();
@@ -69,6 +78,14 @@ export function orientativoDe(id) {
   const [precio, fiabilidad] = e;
   return { precio, fiabilidad, ...rangoOrientativo(precio, fiabilidad) };
 }
+// De dónde sale el rango de mercado, dicho con claridad (no es una fuente oficial ni se actualiza solo).
+const NOMBRES_MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+export function referenciaTexto(o) {
+  const [a, m] = (orientativos?.fecha ?? "").split("-");
+  const cuando = a && m ? `${NOMBRES_MES[Number(m) - 1]} de ${a}` : "fecha desconocida";
+  return `Rango de mercado: estimación propia de ${cuando}, con fiabilidad ${NOMBRE_FIABILIDAD[o.fiabilidad]}. No procede de una fuente oficial ni se actualiza sola: tómalo como orientación.`;
+}
+export const datosPrecios = () => ({ fechaPrecios: meta?.precios ?? null, fechaReferencia: orientativos?.fecha ?? null });
 export const orientativosPendientes = () => productos.filter((p) => p.precio == null && orientativoDe(p.id)).length;
 const semDe = (p) => semaforo({ precio: p.precio, orientativo: orientativoDe(p.id), coste: p.coste, merma: p.merma ?? 0, iva: ivaDe(p.categoria), margenObjetivo: p.margen ?? cfgPrecios().margenDefecto ?? MARGEN_POR_DEFECTO });
 const SIMBOLO = { verde: "✔", ambar: "!", rojo: "✖", gris: "–" };
@@ -82,17 +99,81 @@ function etiquetaSem(r) {
 const nombreCategoria = (id) => categorias.find((c) => c.id === id)?.nombre ?? id;
 const unidadTexto = (p) => (p.unidad === "kg" ? "€/kg" : "€/ud");
 
-function pintar() {
-  const lista = productos
-    .filter((p) => (!categoriaFiltro || p.categoria === categoriaFiltro)
-      && (!busqueda || sinAcentos(`${p.nombre} ${nombreCategoria(p.categoria)}`).includes(busqueda)))
-    .sort((a, b) => categorias.findIndex((c) => c.id === a.categoria) - categorias.findIndex((c) => c.id === b.categoria) || a.orden - b.orden);
+const icono = (id) => h("span", { class: "icono", "aria-hidden": "true", style: `--ico:url(/assets/iconos/${id}.svg)` });
+const ordenar = (lista) => lista.sort((a, b) => a.orden - b.orden);
+const porCategoria = (id) => productos.filter((p) => p.categoria === id);
+const textoCuenta = (lista) => {
+  const sin = lista.filter((p) => p.precio == null).length;
+  return `${lista.length} producto${lista.length === 1 ? "" : "s"}${sin ? ` · ${sin} sin precio` : " · todos con precio"}`;
+};
+
+// Recalcula los contadores sin rehacer las filas (tras aceptar o cambiar un precio).
+function pintarCuentas() {
+  for (const c of categorias) {
+    const el = document.querySelector(`#pcat-${c.id} .cat-cuenta`);
+    if (el) el.textContent = textoCuenta(porCategoria(c.id));
+  }
   const pend = orientativosPendientes();
-  $("prod-contador").textContent = `${lista.length} de ${productos.length} productos · ${productosSinPrecio()} sin precio · ${pend} con precio orientativo sin aceptar`;
+  $("prod-contador").textContent = `${visibles()} de ${productos.length} productos · ${productosSinPrecio()} sin precio · ${pend} con precio orientativo sin aceptar`;
   const botonTodos = $("prod-aceptar-todos");
   botonTodos.disabled = pend === 0;
   botonTodos.textContent = pend ? `Aceptar los ${pend} precios orientativos pendientes` : "No quedan precios orientativos pendientes";
-  $("prod-lista").replaceChildren(...lista.map(fila));
+}
+let nVisibles = 0;
+const visibles = () => nVisibles;
+
+function irACategoria(id) {
+  abiertas.add(id);
+  ultimaCategoria = id;
+  const d = $(`pcat-${id}`);
+  if (d && !d.open) d.open = true; // dispara «toggle», que rellena las filas
+  if (!d) { pintar(); }
+  // Se vuelve a ajustar cuando ya se han pintado las filas (si no, la página aún es corta y se queda a medio camino)
+  const ir = () => $(`pcat-${id}`)?.scrollIntoView({ block: "start", behavior: "instant" });
+  ir();
+  requestAnimationFrame(() => requestAnimationFrame(ir));
+  for (const b of $("prod-chips").children) b.toggleAttribute("aria-current", b.dataset.cat === id);
+}
+
+function pintar() {
+  $("prod-fecha-precios").textContent = meta?.precios
+    ? `Precios actualizados por última vez: ${fechaConAnio(meta.precios)}. Es la fecha que ve el cliente en la tienda; se actualiza sola cuando cambias un precio, o al pulsar el botón.`
+    : "Todavía no hay fecha de actualización de precios: la tienda no muestra ninguna hasta que cambies un precio o pulses el botón.";
+  const buscando = busqueda !== "";
+  const grupos = [];
+  nVisibles = 0;
+  for (const c of categorias) {
+    const todos = porCategoria(c.id);
+    if (!todos.length) continue;
+    const coinciden = buscando ? todos.filter((p) => sinAcentos(`${p.nombre} ${c.nombre}`).includes(busqueda)) : todos;
+    if (!coinciden.length) continue;
+    nVisibles += coinciden.length;
+    const abierta = buscando || abiertas.has(c.id);
+    const cuerpo = h("div", { class: "prod-cat-lista" });
+    const d = h("details", { class: "prod-cat", id: `pcat-${c.id}` },
+      h("summary", {}, icono(c.id), h("span", { class: "cat-nombre", texto: c.nombre }), h("span", { class: "cat-cuenta", texto: textoCuenta(todos) })),
+      cuerpo);
+    const rellenar = () => { if (!cuerpo.childElementCount) cuerpo.replaceChildren(...ordenar([...coinciden]).map(fila)); };
+    // «Última categoría» solo cambia por una acción de la persona (no al repintar la lista)
+    d.querySelector("summary").addEventListener("click", () => { ultimaCategoria = c.id; });
+    d.addEventListener("toggle", () => {
+      if (d.open) { rellenar(); if (!buscando) abiertas.add(c.id); }
+      else if (!buscando) abiertas.delete(c.id);
+    });
+    if (abierta) { d.open = true; rellenar(); }
+    grupos.push({ c, d, n: coinciden.length });
+  }
+  $("prod-lista").replaceChildren(...grupos.map((g) => g.d));
+  if (!grupos.length) $("prod-lista").append(h("p", { class: "vacio", texto: "Ningún producto coincide con la búsqueda." }));
+  const chips = grupos.map(({ c, n }) => {
+    const b = h("button", { type: "button", class: "chip", "data-cat": c.id, "aria-label": `${c.nombre}, ${n} producto${n === 1 ? "" : "s"}` }, icono(c.id), c.nombre);
+    b.toggleAttribute("aria-current", c.id === ultimaCategoria);
+    b.addEventListener("click", () => irACategoria(c.id));
+    return b;
+  });
+  $("prod-chips").replaceChildren(...chips);
+  $("prod-chips").hidden = chips.length < 2;
+  pintarCuentas();
 }
 
 async function guardar(p, cambios, { estado, alFallar }) {
@@ -119,7 +200,7 @@ function fila(p) {
       const aceptar = h("button", { type: "button", class: "btn-sec btn-mini", texto: "Aceptar", "aria-label": `Aceptar el precio orientativo de ${p.nombre}: ${eurosTxt(o.precio)}` });
       aceptar.addEventListener("click", async () => {
         const g = await guardar(p, { precio: o.precio }, { estado });
-        if (g) actualizar();
+        if (g) { actualizar(); pintarCuentas(); }
       });
       sugerido.replaceChildren(h("span", { texto: `Orientativo: ${eurosTxt(o.precio)}${p.unidad === "kg" ? "/kg" : "/ud"}` }), aceptar);
     } else sugerido.replaceChildren();
@@ -129,7 +210,7 @@ function fila(p) {
   precio.addEventListener("change", async () => {
     const antes = p.precio;
     const g = await guardar(p, { precio: precio.value.trim() === "" ? null : precio.value }, { estado, alFallar: () => { precio.value = importeEs(antes); } });
-    if (g) { actualizar(); if (g.precio == null) estado.textContent = "✓ Sin precio (se verá «Consultar»)"; }
+    if (g) { actualizar(); pintarCuentas(); if (g.precio == null) estado.textContent = "✓ Sin precio (se verá «Consultar»)"; }
   });
   const agotado = h("input", { type: "checkbox", id: `ag-${p.id}`, checked: !!p.agotado });
   agotado.addEventListener("change", async () => {
@@ -150,7 +231,7 @@ function fila(p) {
 // ---------- editor ----------
 function abrirEditor(original) {
   const esNuevo = !original;
-  const p = original ? structuredClone(original) : { nombre: "", categoria: categoriaFiltro || categorias[0].id, descripcion: "", unidad: "kg", paso: 250, minimo: null, maximo: null, precio: null, agotado: false, oculto: false, opciones: [], foto: null, alcohol: false, alergenos: [] };
+  const p = original ? structuredClone(original) : { nombre: "", categoria: ultimaCategoria || categorias[0].id, descripcion: "", unidad: "kg", paso: 250, minimo: null, maximo: null, precio: null, agotado: false, oculto: false, opciones: [], foto: null, alcohol: false, alergenos: [] };
   const dlg = $("dlg-producto");
 
   const campo = (id, etiqueta, control, ayuda) => h("div", { class: "campo" }, h("label", { for: id, texto: etiqueta }), control, ayuda ? h("p", { class: "ayuda", texto: ayuda }) : null);
@@ -240,6 +321,8 @@ function abrirEditor(original) {
 
   const semPildora = h("div", { class: "sem-grande", role: "status" });
   const semDetalle = h("p", { class: "ayuda" });
+  const semFuente = h("p", { class: "ayuda fuente-rango" }, orient ? referenciaTexto(orient) : "");
+  semFuente.hidden = !orient;
   const marca = h("span", { class: "sem-marca", "aria-hidden": "true", texto: "▲" });
   const zona = h("span", { class: "sem-zona" });
   const barra = h("div", { class: "sem-barra", role: "img" }, zona, marca);
@@ -318,7 +401,7 @@ function abrirEditor(original) {
   for (const r of radios) r.querySelector("input").addEventListener("change", mostrarModo);
   const calculadora = h("fieldset", { class: "campo-grupo calculadora" }, h("legend", { texto: "Ayuda para poner el precio" }),
     h("div", { class: "modos", role: "radiogroup", "aria-label": "Cómo quieres poner el precio" }, radios),
-    panelDirecto, panelCoste, panelAjuste, semPildora, barra, semDetalle);
+    panelDirecto, panelCoste, panelAjuste, semPildora, barra, semDetalle, semFuente);
   precio.addEventListener("input", () => { trabajo = numero(precio); refrescarSem(); refrescarAjuste(); });
   for (const el of [costeIn, mermaIn, margenIn]) el.addEventListener("input", () => { refrescarCoste(); refrescarSem(); });
   categoria.addEventListener("change", () => { refrescarCoste(); refrescarSem(); });

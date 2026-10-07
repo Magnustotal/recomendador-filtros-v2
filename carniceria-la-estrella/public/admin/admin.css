@@ -184,3 +184,22 @@ label.btn-sec { cursor: pointer; }
 @media (min-width: 800px) {
   .prod-fila { grid-template-columns: minmax(0, 1fr) 17rem 8rem auto 10rem; }
 }
+
+/* ---------- productos por categorías (plegables) ---------- */
+.icono { display: inline-block; flex: none; width: 1.3em; height: 1.3em; background-color: currentColor; vertical-align: -0.25em; -webkit-mask: var(--ico) center / contain no-repeat; mask: var(--ico) center / contain no-repeat; }
+.chips-fijos { position: sticky; top: 3.9rem; z-index: 4; margin: 0 -1rem 0.6rem; padding: 0.5rem 1rem 0.3rem; background: var(--cream); border-bottom: 1px solid var(--line); scroll-snap-type: x proximity; }
+.chips-fijos .chip { display: inline-flex; align-items: center; gap: 0.45em; font-size: 0.92rem; scroll-snap-align: start; }
+.chips-fijos .chip[aria-current] { border-color: var(--maroon); box-shadow: inset 0 -3px 0 var(--maroon); }
+.prod-cat { margin: 0 0 0.8rem; background: var(--cream-bright); border: 1px solid var(--line); border-radius: var(--radius); scroll-margin-top: 3.4rem; }
+.herramientas { margin: 0 0 1rem; padding: 0 1rem; background: var(--cream-bright); border: 1px solid var(--line); border-radius: var(--radius); }
+.herramientas > summary { display: flex; align-items: center; min-height: 52px; cursor: pointer; font-weight: 700; color: var(--maroon); }
+.herramientas[open] > summary { margin-bottom: 0.4rem; }
+.prod-cat > summary { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.7rem; min-height: 56px; padding: 0.4rem 1rem; list-style: none; cursor: pointer; font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; }
+.prod-cat > summary::-webkit-details-marker { display: none; }
+.prod-cat > summary::after { content: "▸"; order: 99; margin-left: auto; font-family: var(--font-body); transition: transform 0.15s; }
+.prod-cat[open] > summary::after { transform: rotate(90deg); }
+.prod-cat[open] > summary { border-bottom: 1px solid var(--line); }
+.prod-cat .cat-cuenta { font-family: var(--font-body); font-size: 0.85rem; font-weight: 600; color: var(--ink-soft); }
+.prod-cat .icono { width: 1.5em; height: 1.5em; color: var(--maroon); }
+.prod-cat-lista { display: grid; gap: 0.6rem; padding: 0.7rem; }
+@media (prefers-reduced-motion: reduce) { .prod-cat > summary::after { transition: none; } }

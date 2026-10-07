@@ -24,13 +24,14 @@ export function ajustesPublicos(a) {
 }
 
 export async function catalogo(deps) {
-  const [ajustes, productos] = await Promise.all([deps.almacen.leerAjustes(), deps.almacen.leerProductos()]);
+  const [ajustes, productos, meta] = await Promise.all([deps.almacen.leerAjustes(), deps.almacen.leerProductos(), deps.almacen.leerMeta().catch(() => ({}))]);
   const publico = catalogoPublico(productos);
   const usadas = new Set(publico.map((p) => p.categoria));
   const cuerpo = {
     ok: true,
     ajustes: ajustesPublicos(ajustes),
     hoy: ahoraEnMadrid(new Date(deps.ahora())).fecha,
+    preciosActualizados: meta?.precios ? ahoraEnMadrid(new Date(meta.precios)).fecha : null,
     categorias: categorias.filter((c) => usadas.has(c.id)),
     productos: publico,
   };

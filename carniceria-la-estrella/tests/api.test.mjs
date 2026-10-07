@@ -334,3 +334,61 @@ test("orientativos: /datos los incluye y /orientativos rellena solo los producto
   assert.equal(pub.productos.find((p) => p.id === "vacuno-entrecot-de-ternera").precio, 5.9);
   assert.equal((await adm("/orientativos", { metodo: "POST", cuerpo: {} })).status, 401);
 });
+
+test("fechas de actualización: el contenido, los precios y la confirmación «al día» se anotan por separado", async () => {
+  const antes = await almacen.leerMeta();
+  reloj += 3 * 24 * 3600 * 1000; // pasan tres días
+  cookie = await entrar(); // la sesión dura 8 h: tras saltar días hay que volver a entrar
+  const hoy = new Date(reloj).toISOString().slice(0, 10);
+  const d = await (await adm("/datos", { cookie })).json();
+  assert.ok("meta" in d);
+  const p = d.productos.find((x) => x.id === "vacuno-tapa-de-ternera");
+
+  // agotar un producto cambia el contenido, pero no la fecha de precios
+  await adm("/producto", { metodo: "PUT", cuerpo: { ...p, agotado: true }, cookie });
+  let m = await almacen.leerMeta();
+  assert.equal(m.contenido.slice(0, 10), hoy);
+  assert.equal(m.precios, antes.precios);
+
+  // cambiar un precio sí actualiza la fecha de precios
+  await adm("/producto", { metodo: "PUT", cuerpo: { ...p, agotado: false, precio: 15.5 }, cookie });
+  m = await almacen.leerMeta();
+  assert.equal(m.precios.slice(0, 10), hoy);
+  const cat = await (await catalogo(deps())).json();
+  assert.equal(cat.preciosActualizados, hoy);
+
+  // aceptar de golpe los orientativos NO cuenta como «precios al día» (son estimaciones sin revisar)
+  reloj += 24 * 3600 * 1000;
+  cookie = await entrar(); // la sesión dura 8 h: tras saltar días hay que volver a entrar
+  const manana = new Date(reloj).toISOString().slice(0, 10);
+  await adm("/producto", { metodo: "PUT", cuerpo: { nombre: "Producto sin precio de prueba", categoria: "vacuno", unidad: "kg", paso: 250 }, cookie });
+  await adm("/orientativos", { metodo: "POST", cuerpo: {}, cookie });
+  m = await almacen.leerMeta();
+  assert.equal(m.contenido.slice(0, 10), manana);
+  assert.equal(m.precios.slice(0, 10), hoy, "la fecha de precios no cambia al aceptar orientativos en bloque");
+
+  // confirmar que están al día la actualiza (y exige sesión)
+  assert.equal((await adm("/precios-al-dia", { metodo: "POST", cuerpo: {} })).status, 401);
+  const r = await adm("/precios-al-dia", { metodo: "POST", cuerpo: {}, cookie });
+  assert.equal(r.status, 200);
+  assert.equal((await r.json()).meta.precios.slice(0, 10), manana);
+  assert.equal((await (await catalogo(deps())).json()).preciosActualizados, manana);
+
+  // el redondeo masivo cuenta como cambio de precios solo si toca algo
+  reloj += 24 * 3600 * 1000;
+  cookie = await entrar(); // la sesión dura 8 h: tras saltar días hay que volver a entrar
+  const pasado = new Date(reloj).toISOString().slice(0, 10);
+  await adm("/redondeo", { metodo: "POST", cuerpo: { final: 95 }, cookie });
+  assert.equal((await almacen.leerMeta()).precios.slice(0, 10), pasado);
+  await adm("/redondeo", { metodo: "POST", cuerpo: { final: 95 }, cookie }); // ya redondeado: no toca nada
+  reloj += 24 * 3600 * 1000;
+  cookie = await entrar(); // la sesión dura 8 h: tras saltar días hay que volver a entrar
+  await adm("/redondeo", { metodo: "POST", cuerpo: { final: 95 }, cookie });
+  assert.equal((await almacen.leerMeta()).precios.slice(0, 10), pasado, "sin cambios reales, la fecha no se mueve");
+
+  // se purga también la caché de las páginas (el pie lleva la fecha)
+  assert.ok(purgas.includes("paginas"));
+  // y el mapa del sitio usa la fecha de actualización
+  const sm = await (await pagina(new Request(`${ORIGEN}/sitemap.xml`), deps())).text();
+  assert.match(sm, /<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/);
+});

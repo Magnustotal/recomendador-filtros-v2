@@ -1,4 +1,4 @@
-# Carnicería La Estrella — web y tienda online (v5.2.0)
+# Carnicería La Estrella — web y tienda online (v5.3.0)
 
 Web del negocio (portada, aviso legal, privacidad) **más una tienda online con panel de administración**:
 el cliente elige productos (casi todo al peso, de 250 en 250 g), indica si recoge o quiere reparto, día y franja,
@@ -169,6 +169,27 @@ sitio publicado**. Quedan por confirmar al desplegar:
 - Las fotos de **producto** se suben desde el panel (se reducen a ≤ 900 px y ≤ 680 KB en el navegador).
 - El estado «sin conexión» de la PWA muestra la web visitada, pero **pedir exige conexión** (el carrito se conserva).
 
+## Versión, fechas de actualización y productos por categorías (v5.3.0)
+
+- **Pie de página** (portada y tienda): «Web actualizada el 7 de octubre de 2026 · versión 5.3.0». La fecha es la más reciente entre la de publicación de esa versión (`public/VERSION`, que `scripts/empaquetar.mjs` incrusta en la web) y el último cambio hecho desde el panel. La versión sale de `public/VERSION` y debe coincidir con `package.json` (hay una prueba).
+- **Fecha de los precios** (en la tienda, bajo el título: «Precios actualizados por última vez el … Los precios pueden variar a diario; procuramos mantenerlos lo más al día posible»). Se actualiza **sola** cuando el carnicero cambia un precio (a mano, con «Aceptar» o con el redondeo masivo si cambia algo) y con el botón **«Los precios están al día (hoy)»** (Productos → Herramientas de precios) para cuando los repasa sin tocar ninguno. **Aceptar de golpe los orientativos no la actualiza**, porque son estimaciones sin revisar. Mientras no haya fecha, la tienda muestra solo la frase general.
+- **Panel → Productos por categorías**: plegables como `<details>`, con su icono, número de productos y cuántos faltan por precio; botones de categoría fijos arriba (como en la tienda) que abren y llevan a la categoría; «Abrir todas / Cerrar todas»; el buscador abre solo las categorías con coincidencias. Un producto nuevo nace en la categoría en la que se estaba trabajando. Las herramientas de precios (redondeo, orientativos, fecha) van plegadas en el móvil.
+- **Aviso sobre los rangos de mercado:** el semáforo dice de dónde salen (estimación propia de octubre de 2026, no oficial, que no se actualiza sola) y el panel avisa cuando tienen más de dos meses. No hay hoy ninguna fuente que los actualice automáticamente (ver abajo).
+
+### Fuentes de los rangos de mercado: estado actual y lo que se ha comprobado
+
+Hoy los rangos son una **estimación propia**, sin ninguna fuente que los actualice. Se ha explorado, el 7 de octubre de 2026, qué se podría usar para mejorarlo (comprobaciones puntuales desde el entorno de desarrollo, no una auditoría):
+
+| Fuente | Qué se ha visto | Idoneidad |
+|---|---|---|
+| Mercadona (tienda online) | Su web responde con datos en JSON (con código de almacén de Sevilla), sin acceso público documentado: es una interfaz interna | Técnicamente posible; **sus condiciones de uso no se han revisado** y podría cambiar sin aviso |
+| Carrefour, El Corte Inglés | Devuelven 403 a consultas automáticas | **No** se debe intentar sortearlo |
+| Dia, Alcampo, Lidl | Sin datos de carne accesibles con una consulta sencilla (no se ha profundizado) | Por explorar |
+| OCU (observatorio mensual), observatorios autonómicos de consumo (p. ej. Castilla-La Mancha), MAPA (precios semanales en origen/canal) | Publican informes (PDF/web), no una interfaz de datos que se haya localizado | Sirven de **contraste manual** mensual o semanal, no de actualización automática |
+| Carnicerías online | No se ha identificado aún cuáles | Pendiente de decidir con el negocio |
+
+Limitaciones de fondo: los supermercados venden pocos cortes (cubrirían quizá una cuarta parte de los 225 productos) y a precios distintos de una carnicería de barrio, y emparejar cada producto con el suyo exige un trabajo de correspondencias que hay que mantener. Nada de esto está implementado: es el punto de partida para decidirlo.
+
 ## Precios orientativos, calculadora y semáforo (v5.2.0)
 
 - **Precios orientativos (`data/precios-orientativos.json`):** los 225 productos llevan un precio sugerido (€ con IVA, por kg o por unidad) y una fiabilidad (media o baja). Es **una estimación mía** para una carnicería de barrio de precio medio en Sevilla, otoño de 2026. Me he apoyado en pocos datos de internet, dispersos y de fechas distintas (por ejemplo, secreto ibérico en torno a 21 €/kg, presa 29 €/kg, entrecot de ternera 19–21 €/kg, chuletas de cordero 22 €/kg, paleta ibérica de bellota 46 €/kg en pieza) y en mi criterio; **no está verificada** y puede estar desfasada. Es un punto de partida, no una tarifa. Los de jamones, caza, despensa, vinos y encargos son los menos fiables.
@@ -197,6 +218,7 @@ Reglas: el cliente siempre escribe su código postal al pedir reparto. Si solo h
 
 ## Historial
 
+- **v5.3.0** — Pie con la fecha de actualización y la versión de la web; fecha de «precios actualizados» visible en la tienda (automática, más botón «Los precios están al día»); rangos de mercado con su origen y fecha; productos del panel agrupados por categorías plegables con navegación por botones.
 - **v5.2.0** — Precios orientativos para los 225 productos (se aceptan desde el panel; hasta entonces, «Consultar»), calculadora de precio (desde el coste, con merma, recargo e IVA, o ajustando el orientativo), semáforo de precio en la lista y en el editor, recargo habitual e IVA por categoría en los ajustes, y coste/merma/recargo privados por producto.
 - **v5.1.0** — Zona de reparto por códigos postales y/o radio en km (con localización de la dirección, pedidos «por verificar» y CP en pedidos y CSV); iconos y fotos por categoría en la tienda; miniatura con icono en cada pieza; fichas de «Cordero y cabrito» y «Despensa y vinos» en la portada.
 - **v5.0.0** — Tienda online, panel de administración, funciones de Netlify y almacén Blobs; páginas generadas desde los
