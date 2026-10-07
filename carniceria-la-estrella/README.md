@@ -1,4 +1,4 @@
-# Carnicería La Estrella — web y tienda online (v5.5.1)
+# Carnicería La Estrella — web y tienda online (v5.5.2)
 
 Web del negocio (portada, aviso legal, privacidad) **más una tienda online con panel de administración**:
 el cliente elige productos (casi todo al peso, de 250 en 250 g), indica si recoge o quiere reparto, día y franja,
@@ -220,13 +220,14 @@ Reglas: el cliente siempre escribe su código postal al pedir reparto. Si solo h
 
 ## Imágenes de la tienda (v5.1.0)
 
-- **Iconos de categoría y de pieza:** 14 de [Lucide](https://lucide.dev) (licencia ISC, `lucide-static` 1.52.0) y 4 dibujados a mano en el mismo estilo (cerdo, embutidos, quesos, cordero). Están en `public/assets/iconos/<categoría>.svg`; se pintan con máscara CSS (toman el color del texto).
+- **Iconos de categoría y de pieza:** 9 de [Lucide](https://lucide.dev) (licencia ISC, `lucide-static` 1.52.0) y 9 dibujados a mano en el mismo estilo (cerdo, quesos, cordero y, desde v5.5.2, caza —cabeza de ciervo—, cerdo ibérico —bellota—, embutidos —chorizo de herradura—, especias —guindilla—, pavo y salsas —botella—, que sustituyen a otros menos claros: un hueso, una mancha, una hoja, un pájaro y una gota). Los dibujé yo y se ven razonablemente bien, pero son dibujo de aficionado: se pueden cambiar por otros sustituyendo el SVG de `public/assets/iconos/<categoría>.svg`. Están en `public/assets/iconos/<categoría>.svg`; se pintan con máscara CSS (toman el color del texto).
 - **Foto en la cabecera de cada categoría** (`public/assets/photos/<categoría>.jpg` y `-400.jpg`), etiquetada «Foto ilustrativa»: 13 que ya tenía la web (Pexels/Pixabay) y 5 nuevas de **Pexels** (licencia Pexels: uso comercial libre, sin atribución obligatoria): cordero (id 17988080), especias (6397651), vino (8473122), avíos (15505487) y salsas (5604824). Son fotos genéricas, no producto real de la tienda.
 - **Cada pieza** muestra su foto si el carnicero la sube desde el panel; si no, el icono de su categoría.
 - Los 225 productos **no tienen una foto propia por defecto**: no tengo fuentes con licencia verificada para fotografiar cada corte. Se suben desde el panel (Productos → Editar → Subir foto).
 
 ## Historial
 
+- **v5.5.2** — Seis iconos de categoría más claros (caza, cerdo ibérico, embutidos, especias, pavo, salsas).
 - **v5.5.1** — Revisión de seguridad, código, accesibilidad y PWA (ver «Revisión de calidad»). Mercado: control de ediciones simultáneas, limpieza al borrar un producto, fecha de Madrid; huella de IP con clave; accesibilidad (nombres accesibles, región del panel); la tienda se puede ver sin conexión con el último catálogo.
 - **v5.5.0** — Pestaña «Mercado»: fuentes de precios de otras tiendas (8 supermercados de partida, más las que se añadan), precios anotados a mano con fecha, semáforo por mediana de las fuentes recientes y avisos de atraso.
 - **v5.4.0** — Fotos de producto: solo JPG/PNG/WebP, ajuste automático a 400–1000 px (cualquier resolución de origen), JPG ligero sin metadatos y comprobación de medidas en el servidor.
