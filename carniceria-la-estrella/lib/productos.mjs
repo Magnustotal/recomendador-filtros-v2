@@ -1,6 +1,6 @@
 import { texto, numeroOpcional, entero, booleano, listaTextos, recoger, ErrorValidacion } from "./validar.mjs";
 import { redondear } from "./dinero.mjs";
-import { estaVigente, fechaReal, hayRangosSolapados, MAX_OFERTAS_POR_PRODUCTO } from "./ofertas.mjs";
+import { estaVigente, fechaReal, hayRangosSolapados, precioAnterior, MAX_OFERTAS_POR_PRODUCTO } from "./ofertas.mjs";
 
 const euros = (n) => `${n.toFixed(2).replace(".", ",")} €`;
 
@@ -90,7 +90,12 @@ export function catalogoPublico(productos, hoy) {
   return productos
     .filter((p) => !p.oculto)
     .sort((a, b) => a.orden - b.orden)
-    .map(({ oculto, coste, merma, margen, ofertas, ...resto }) => ({ ...resto, ofertas: (ofertas ?? []).filter((o) => estaVigente(o, hoy)) })); // el coste y el margen son datos del negocio, no del cliente
+    // el coste, el margen y el historial de precios son datos del negocio, no del cliente. De cada rebaja activa se calcula aquí el precio
+    // anterior de los 30 días (el que se enseña tachado), porque el navegador no tiene el historial.
+    .map(({ oculto, coste, merma, margen, ofertas, historial, ...resto }) => ({
+      ...resto,
+      ofertas: (ofertas ?? []).filter((o) => estaVigente(o, hoy)).map((o) => (o.tipo === "precio" ? { ...o, anterior: precioAnterior({ ...resto, historial, ofertas }, o) } : o)),
+    }));
 }
 
 export function aplicarRedondeoATodos(productos, final) {

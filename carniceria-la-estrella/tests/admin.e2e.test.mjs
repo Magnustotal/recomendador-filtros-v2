@@ -1,7 +1,7 @@
 // Pruebas de navegador del panel de administración.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { arrancarEntorno, PASSWORD } from "./ayuda/entorno.mjs";
+import { arrancarEntorno, enFecha, PASSWORD } from "./ayuda/entorno.mjs";
 import { pngRuido } from "./ayuda/png.mjs";
 import { dimensionesImagen } from "../lib/http.mjs";
 
@@ -774,9 +774,12 @@ test("productos en móvil: «Agotado» y «Editar» comparten fila y los botones
 test("tienda: precio tachado y de oferta, 3x2 en el carrito, ahorro y regalo; el pedido lo guarda el servidor", async () => {
   // Preparación por la API: 3x2 en las albóndigas, rebaja en el secreto (con el redondeo ,90 de este entorno, 29,95 queda en 30,90) y un regalo
   const inicial = (await e.api.llamar("/datos")).datos;
-  const poner = async (id, cambios) => assert.equal((await e.api.llamar("/producto", { metodo: "PUT", cuerpo: { ...inicial.productos.find((p) => p.id === id), ...cambios } })).estado, 200);
+  // precios «de siempre» (con fecha de agosto en el historial): la rebaja de octubre tiene así precio anterior
+  const poner = (id, cambios) => enFecha("2026-08-01", async () => assert.equal((await e.api.llamar("/producto", { metodo: "PUT", cuerpo: { ...inicial.productos.find((p) => p.id === id), ...cambios } })).estado, 200));
   await poner("elaborados-albondigas", { precio: 9.9, ofertas: [{ tipo: "cantidad", desde: "2026-10-05", hasta: "2026-10-11", lleva: 3, paga: 2 }] });
-  await poner("cerdo-iberico-secreto-iberico", { precio: 29.95, ofertas: [{ tipo: "precio", desde: "2026-10-05", hasta: "2026-10-11", precio: 19.95 }] });
+  // El secreto es un producto NUEVO creado con fecha de agosto: así tiene precio «de siempre» en el historial (en este fichero los demás ya tienen su precio de hoy)
+  const nuevo = await enFecha("2026-08-01", () => e.api.llamar("/producto", { metodo: "PUT", cuerpo: { nombre: "Secreto de la casa", categoria: "cerdo-iberico", unidad: "kg", precio: 29.95, ofertas: [{ tipo: "precio", desde: "2026-10-05", hasta: "2026-10-11", precio: 19.95 }] } }));
+  assert.equal(nuevo.estado, 200, JSON.stringify(nuevo.datos));
   const ajustes = structuredClone(inicial.ajustes);
   ajustes.tienda.regalos = [{ regalo: "250 g de chorizo", minimo: 30, repetir: true, maximo: null, desde: null, hasta: "2026-10-11" }];
   assert.equal((await e.api.llamar("/ajustes", { metodo: "PUT", cuerpo: ajustes })).estado, 200);
@@ -786,14 +789,14 @@ test("tienda: precio tachado y de oferta, 3x2 en el carrito, ahorro y regalo; el
   await tienda.locator("#app").waitFor();
   assert.match(await tienda.locator("#ofertas-lista .of-regalo").innerText(), /Regalo[\s\S]*250 g de chorizo[\s\S]*Por cada 30,00\s€ de compra/);
 
-  await tienda.fill("#buscar", "Secreto ibérico");
-  const sec = tienda.locator(".prod:not([hidden])", { has: tienda.getByRole("heading", { name: "Secreto ibérico", exact: true }) });
+  await tienda.fill("#buscar", "Secreto de la casa");
+  const sec = tienda.locator(".prod:not([hidden])", { has: tienda.getByRole("heading", { name: "Secreto de la casa", exact: true }) });
   await sec.scrollIntoViewIfNeeded(); // las categorías lejanas no se pintan hasta que se acercan (content-visibility)
   assert.match(await sec.locator(".precio-tachado").textContent(), /30,90\s€\/kg/);
   assert.match(await sec.locator(".precio-oferta").textContent(), /19,95\s€\/kg/);
   assert.equal(await sec.locator(".precio-tachado").evaluate((s) => getComputedStyle(s).textDecorationLine), "line-through");
   assert.match(await sec.locator(".prod-oferta").textContent(), /Oferta · hasta el 11 de octubre/);
-  assert.match(await sec.locator(".prod-precio").textContent(), /Precio habitual.*Precio de oferta/s, "el texto oculto lo explica a lectores de pantalla");
+  assert.match(await sec.locator(".prod-precio").textContent(), /Precio anterior.*Precio de oferta/s, "el texto oculto lo explica a lectores de pantalla");
 
   await tienda.fill("#buscar", "Albóndigas");
   const alb = tienda.locator(".prod:not([hidden])", { has: tienda.getByRole("heading", { name: "Albóndigas", exact: true }) });
@@ -816,7 +819,7 @@ test("tienda: precio tachado y de oferta, 3x2 en el carrito, ahorro y regalo; el
 
   // el pedido lo calcula el servidor, no el navegador
   const r = await fetch(e.url + "/api/pedido", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({
-    lineas: [{ id: "elaborados-albondigas", cantidad: 3000 }, { id: "cerdo-iberico-secreto-iberico", cantidad: 2000 }],
+    lineas: [{ id: "elaborados-albondigas", cantidad: 3000 }, { id: "secreto-de-la-casa", cantidad: 2000 }],
     cliente: { nombre: "Laura Gil", telefono: "611222333" }, entrega: { tipo: "recogida", dia: "2026-10-06", franja: "11:00-13:00" }, pago: "efectivo", web: "",
   }) });
   assert.equal(r.status, 201, JSON.stringify(await r.clone().json()));

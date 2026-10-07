@@ -491,3 +491,41 @@ test("mercado: al borrar un producto se limpian sus precios y los guardados de u
   assert.equal((await r.json()).mercado.precios.fantasma, undefined);
   await almacen.actualizarProductos((l) => [...l, muslo]); // se deja el catálogo como estaba
 });
+
+test("historial de precios: cada cambio de precio se anota (ficha, redondeo y orientativos), el mismo día queda el último y no sale al público", async () => {
+  cookie ??= await entrar();
+  const fecha = ahoraEnMadrid(new Date(reloj)).fecha;
+  const leer = async (id) => (await almacen.leerProductos()).find((x) => x.id === id);
+  const base = await leer("vacuno-solomillo-de-ternera");
+  const antes = base.precio ?? null;
+  assert.equal((await adm("/producto", { metodo: "PUT", cookie, cuerpo: { ...base, precio: 24.31 } })).status, 200);
+  let p = await leer(base.id);
+  assert.deepEqual(p.historial[0], base.historial?.[0] ?? { desde: "2000-01-01", precio: antes }, "la base conserva el precio de antes (o el historial que ya había)");
+  assert.deepEqual(p.historial.at(-1), { desde: fecha, precio: p.precio }, "y se añade el cambio (con el redondeo que tenga la tienda aplicado)");
+  // el mismo precio otra vez: nada nuevo
+  assert.equal((await adm("/producto", { metodo: "PUT", cookie, cuerpo: { ...p, precio: 24.31 } })).status, 200);
+  assert.equal((await leer(base.id)).historial.length, p.historial.length, "mismo precio (ya redondeado): nada nuevo");
+  // el redondeo ,90 sube el precio por kilo: el mismo día sustituye al anterior
+  assert.equal((await adm("/redondeo", { metodo: "POST", cookie, cuerpo: { final: 90 } })).status, 200);
+  p = await leer(base.id);
+  assert.equal(p.precio, 24.9);
+  assert.deepEqual(p.historial.at(-1), { desde: fecha, precio: 24.9 });
+  assert.equal(p.historial.filter((e) => e.desde === fecha).length, 1);
+  // quitar el precio también cuenta (hasta que se ponga otro, no hay precio aplicado)
+  assert.equal((await adm("/producto", { metodo: "PUT", cookie, cuerpo: { ...p, precio: null, ofertas: [] } })).status, 200);
+  assert.deepEqual((await leer(base.id)).historial.at(-1), { desde: fecha, precio: null });
+  // aceptar los orientativos: lo que se queda sin precio lo recibe y queda anotado
+  assert.equal((await adm("/orientativos", { metodo: "POST", cookie })).status, 200);
+  p = await leer(base.id);
+  assert.ok(p.precio != null && p.historial.at(-1).precio === p.precio);
+  // un producto nuevo arranca su historial con su primer precio
+  const nuevo = await adm("/producto", { metodo: "PUT", cookie, cuerpo: { nombre: "Producto de historial", categoria: "elaborados", unidad: "ud", precio: 3.5 } });
+  assert.equal(nuevo.status, 200);
+  assert.deepEqual((await nuevo.json()).producto.historial, [{ desde: fecha, precio: 3.5 }]);
+  // el público nunca ve el historial; el panel sí
+  const publico = await (await catalogo(deps())).json();
+  assert.ok(publico.productos.every((x) => !("historial" in x)));
+  const panel = await (await adm("/datos", { cookie })).json();
+  assert.ok(panel.productos.find((x) => x.id === base.id).historial.length >= 2);
+  await adm(`/producto?id=${(await almacen.leerProductos()).find((x) => x.nombre === "Producto de historial").id}`, { metodo: "DELETE", cookie });
+});

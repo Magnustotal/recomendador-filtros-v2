@@ -10,6 +10,7 @@ import { validarProducto, aplicarRedondeoATodos } from "./productos.mjs";
 import { categorias, preciosOrientativos, mercadoPorDefecto } from "./datos.generado.mjs";
 import { redondear } from "./dinero.mjs";
 import { validarMercado } from "./mercado.mjs";
+import { historialActualizado } from "./ofertas.mjs";
 import { ahoraEnMadrid } from "./horario.mjs";
 import { randomUUID } from "node:crypto";
 
@@ -80,12 +81,13 @@ export async function manejarAdmin(req, deps) {
       const v = validarProducto(entrada, { categorias: IDS_CATEGORIA, redondeo: ajustes.tienda.redondeo });
       if (!v.ok) return json(400, { ok: false, errores: v.errores });
       let guardado, fotoAnterior = null, precioCambiado = false;
+      const hoyMadrid = ahoraEnMadrid(new Date(deps.ahora())).fecha;
       await deps.almacen.actualizarProductos((lista) => {
         const i = lista.findIndex((p) => p.id === v.valor.id);
         const esNuevo = typeof entrada.id !== "string" || !entrada.id; // sin id previo: se crea desde el nombre
         if (esNuevo && i >= 0) throw new ErrorHttp(409, "Ya existe un producto con ese nombre.");
-        if (i >= 0) { fotoAnterior = lista[i].foto; precioCambiado = lista[i].precio !== v.valor.precio; guardado = { ...v.valor, orden: v.valor.orden || lista[i].orden }; lista[i] = guardado; }
-        else { const maxOrden = lista.reduce((m, p) => Math.max(m, p.orden), 0); guardado = { ...v.valor, orden: maxOrden + 1 }; precioCambiado = v.valor.precio != null; lista.push(guardado); }
+        if (i >= 0) { fotoAnterior = lista[i].foto; precioCambiado = lista[i].precio !== v.valor.precio; guardado = { ...v.valor, orden: v.valor.orden || lista[i].orden, historial: historialActualizado(lista[i], v.valor.precio, hoyMadrid) }; lista[i] = guardado; }
+        else { const maxOrden = lista.reduce((m, p) => Math.max(m, p.orden), 0); guardado = { ...v.valor, orden: maxOrden + 1, historial: historialActualizado(null, v.valor.precio, hoyMadrid) }; precioCambiado = v.valor.precio != null; lista.push(guardado); }
         return lista;
       });
       if (fotoAnterior && fotoAnterior !== guardado.foto) await deps.almacen.borrarFoto(fotoAnterior); // foto sustituida o quitada
@@ -115,7 +117,12 @@ export async function manejarAdmin(req, deps) {
       const { final } = await leerJson(req);
       if (final !== 90 && final !== 95) return error(400, "El final debe ser 90 o 95.");
       let tocados = 0;
-      await deps.almacen.actualizarProductos((lista) => { const nueva = aplicarRedondeoATodos(lista, final); tocados = nueva.filter((p, i) => p.precio !== lista[i].precio).length; return nueva; });
+      const hoyMadrid = ahoraEnMadrid(new Date(deps.ahora())).fecha;
+      await deps.almacen.actualizarProductos((lista) => {
+        const nueva = aplicarRedondeoATodos(lista, final).map((p, i) => (p.precio !== lista[i].precio ? { ...p, historial: historialActualizado(lista[i], p.precio, hoyMadrid) } : p));
+        tocados = nueva.filter((p, i) => p.precio !== lista[i].precio).length;
+        return nueva;
+      });
       await deps.almacen.tocarMeta({ contenido: true, precios: tocados > 0 }, new Date(deps.ahora()));
       await deps.purgar(["catalogo", "paginas"]);
       return json(200, { ok: true, tocados });
@@ -126,12 +133,13 @@ export async function manejarAdmin(req, deps) {
       const ajustes = await deps.almacen.leerAjustes();
       const final = ajustes.tienda.redondeo;
       let aplicados = 0;
+      const hoyMadrid = ahoraEnMadrid(new Date(deps.ahora())).fecha;
       await deps.almacen.actualizarProductos((lista) => lista.map((p) => {
         const o = preciosOrientativos.precios[p.id];
         if (p.precio != null || !o) return p;
         aplicados++;
         const precio = final && p.unidad === "kg" ? redondear(o[0], final) : o[0];
-        return { ...p, precio };
+        return { ...p, precio, historial: historialActualizado(p, precio, hoyMadrid) };
       }));
       // Son estimaciones sin revisar: cuentan como cambio de contenido, pero NO como «precios al día».
       await deps.almacen.tocarMeta({ contenido: true }, new Date(deps.ahora()));

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { estaVigente, ofertaVigente, precioEfectivo, calcularLineas, regalosDelPedido, nombreOferta, hayRangosSolapados, destacadas, tituloDestacadas, textoRegalo, condicionRegalo, fechaCorta } from "../lib/ofertas.mjs";
+import { historialActualizado, precioAnterior, rebajaValida, estaVigente, ofertaVigente, precioEfectivo, calcularLineas, regalosDelPedido, nombreOferta, hayRangosSolapados, destacadas, tituloDestacadas, textoRegalo, condicionRegalo, fechaCorta } from "../lib/ofertas.mjs";
 import { validarProducto, catalogoPublico } from "../lib/productos.mjs";
 import { validarAjustes } from "../lib/ajustes.mjs";
 import { validarPedido, mensajeWhatsApp } from "../lib/pedido.mjs";
@@ -321,6 +321,91 @@ test("textos del regalo: «por cada», «a partir de», máximo y fecha de fin",
   assert.equal(s({ repetir: false, hasta: null }), "En compras de 30,00 € o más, de regalo 250 g de chorizo.");
   assert.match(condicionRegalo(regalo({ maximo: 2 })).replace(/\s/g, " "), /Por cada 30,00 € de compra \(máximo 2 por pedido\)/);
   assert.equal(fechaCorta("2026-10-11"), "11 de octubre");
+});
+
+// ---- precio anterior de 30 días (Ley 7/1996, art. 20) e historial de precios ----
+test("historial: el producto de siempre arranca con su precio actual; cada cambio suma una entrada; el mismo día se queda el último", () => {
+  const antiguo = { precio: 25 };
+  assert.deepEqual(historialActualizado(antiguo, 25, "2026-10-05"), [{ desde: "2000-01-01", precio: 25 }], "sin cambio, solo la base");
+  const h1 = historialActualizado(antiguo, 29.95, "2026-10-05");
+  assert.deepEqual(h1, [{ desde: "2000-01-01", precio: 25 }, { desde: "2026-10-05", precio: 29.95 }]);
+  assert.deepEqual(historialActualizado({ precio: 29.95, historial: h1 }, 29.95, "2026-10-06"), h1, "el mismo precio no añade nada");
+  assert.deepEqual(historialActualizado({ precio: 29.95, historial: h1 }, 28, "2026-10-05").at(-1), { desde: "2026-10-05", precio: 28 }, "errata corregida el mismo día: solo cuenta la última");
+  assert.equal(historialActualizado({ precio: 29.95, historial: h1 }, 28, "2026-10-09").length, 3);
+  assert.deepEqual(historialActualizado({ precio: 29.95, historial: h1 }, 31, "2026-09-01").at(-1), { desde: "2026-10-05", precio: 31 }, "una fecha anterior a la última entrada no desordena el historial");
+  assert.deepEqual(historialActualizado(null, 9.5, "2026-10-05"), [{ desde: "2026-10-05", precio: 9.5 }], "producto nuevo");
+  assert.deepEqual(historialActualizado(null, null, "2026-10-05"), [], "nuevo y sin precio");
+  assert.deepEqual(historialActualizado({ precio: null }, 9.5, "2026-10-05"), [{ desde: "2000-01-01", precio: null }, { desde: "2026-10-05", precio: 9.5 }]);
+  let h = [];
+  for (let i = 0; i < 80; i++) h = historialActualizado({ precio: i + 1, historial: h.length ? h : undefined }, i + 2, `2026-${String(1 + Math.floor(i / 28)).padStart(2, "0")}-${String(1 + (i % 28)).padStart(2, "0")}`);
+  assert.ok(h.length <= 60);
+});
+
+test("precio anterior: sin historial ni otras ofertas es el habitual; si se subió hace poco, vale el más bajo de los 30 días", () => {
+  const of = precio("2026-10-07", "2026-10-13", 19.95);
+  assert.equal(precioAnterior(kg({ ofertas: [of] }), of), 29.95);
+  const subido = kg({ historial: [{ desde: "2000-01-01", precio: 25 }, { desde: "2026-10-06", precio: 29.95 }], ofertas: [of] });
+  assert.equal(precioAnterior(subido, of), 25, "ayer valía 25 €: ese es el anterior, no 29,95");
+  const antiguo = kg({ historial: [{ desde: "2000-01-01", precio: 25 }, { desde: "2026-08-01", precio: 29.95 }], ofertas: [of] });
+  assert.equal(precioAnterior(antiguo, of), 29.95, "la subida es de hace más de 30 días");
+  assert.equal(precioAnterior(kg({ historial: [{ desde: "2000-01-01", precio: 40 }, { desde: "2026-09-08", precio: 30 }, { desde: "2026-09-20", precio: 35 }], ofertas: [of] }), of), 30, "el más bajo de la ventana (7 sep a 6 oct)");
+});
+
+test("precio anterior: la ventana son los 30 días justos antes del inicio", () => {
+  const of = precio("2026-10-31", "2026-11-06", 19.95); // ventana: del 1 al 30 de octubre
+  const h = (subida) => kg({ historial: [{ desde: "2000-01-01", precio: 20 }, { desde: subida, precio: 29.95 }], ofertas: [of] });
+  assert.equal(precioAnterior(h("2026-10-02"), of), 20, "el 1 de octubre aún valía 20 € y entra en la ventana");
+  assert.equal(precioAnterior(h("2026-10-01"), of), 29.95, "si la subida fue el 1 de octubre, el 30 de septiembre ya queda fuera");
+});
+
+test("rebajas seguidas: la segunda, a menos de 30 días de la primera, tiene como anterior el precio de la primera", () => {
+  const a = precio("2026-10-05", "2026-10-11", 19.95);
+  const b = precio("2026-10-26", "2026-11-01", 24.95);
+  const c = precio("2026-12-05", "2026-12-11", 24.95);
+  const p = kg({ ofertas: [a, b, c] });
+  assert.equal(precioAnterior(p, a), 29.95);
+  assert.equal(precioAnterior(p, b), 19.95);
+  assert.deepEqual(rebajaValida(p, b), { valida: false, anterior: 19.95, motivo: "no-baja" });
+  assert.deepEqual(rebajaValida(p, c), { valida: true, anterior: 29.95, motivo: null }, "la segunda acabó el 1 de noviembre: más de 30 días antes del 5 de diciembre");
+  // lo que se cobra y lo que se enseña
+  assert.deepEqual({ ...precioEfectivo(p, "2026-10-07"), oferta: undefined }, { precio: 19.95, habitual: 29.95, oferta: undefined });
+  const dentroB = precioEfectivo(p, "2026-10-28");
+  assert.equal(dentroB.precio, 24.95, "se cobra lo programado");
+  assert.equal(dentroB.habitual, null, "pero sin tachar nada");
+  assert.equal(dentroB.oferta, null, "ni anunciarla como oferta");
+  assert.deepEqual(destacadas([{ ...p, id: "x", nombre: "X", categoria: "c" }], [], "2026-10-28"), [], "no sale en el escaparate");
+  assert.equal(destacadas([{ ...p, id: "x", nombre: "X", categoria: "c" }], [], "2026-12-07").length, 1);
+  const [l] = calcularLineas([{ p, cantidad: 1000 }], "2026-10-28");
+  assert.equal(l.subtotalCent, 2495);
+  assert.equal(l.ahorroCent, 0, "sin ahorro que anunciar");
+});
+
+test("primera vez a la venta: sin precio en los 30 días anteriores no hay rebaja que anunciar", () => {
+  const of = precio("2026-09-20", "2026-09-26", 19.95);
+  const nuevo = kg({ historial: [{ desde: "2026-10-01", precio: 29.95 }], ofertas: [of] });
+  assert.deepEqual(rebajaValida(nuevo, of), { valida: false, anterior: null, motivo: "primera" });
+  const conVentana = precio("2026-10-03", "2026-10-09", 19.95);
+  assert.equal(precioAnterior({ ...nuevo, ofertas: [conVentana] }, conVentana), 29.95, "con dos días de precio en la ventana ya hay anterior");
+});
+
+test("el ahorro se mide contra el precio anterior legal, no contra el habitual actual", () => {
+  const of = precio("2026-10-07", "2026-10-13", 19.95);
+  const p = kg({ historial: [{ desde: "2000-01-01", precio: 25 }, { desde: "2026-10-06", precio: 29.95 }], ofertas: [of] });
+  const [l] = calcularLineas([{ p, cantidad: 1000 }], "2026-10-08");
+  assert.equal(l.habitual, 25);
+  assert.equal(l.ahorroCent, 505, "25,00 - 19,95");
+});
+
+test("catálogo público: trae el precio anterior ya calculado y no filtra el historial", () => {
+  const of = precio("2026-10-07", "2026-10-13", 19.95);
+  const p = { ...kg({ historial: [{ desde: "2000-01-01", precio: 25 }, { desde: "2026-10-06", precio: 29.95 }], ofertas: [of, tres("2026-12-01", "2026-12-07")] }), orden: 1, categoria: "c", coste: 1 };
+  const [pub] = catalogoPublico([p], "2026-10-08");
+  assert.equal("historial" in pub, false);
+  assert.deepEqual(pub.ofertas, [{ ...of, anterior: 25 }]);
+  // el navegador, sin historial, llega al mismo resultado con ese dato
+  assert.equal(precioEfectivo(pub, "2026-10-08").habitual, 25);
+  const sinNada = catalogoPublico([{ ...p, historial: undefined, ofertas: [of] }], "2026-10-08")[0];
+  assert.equal(sinNada.ofertas[0].anterior, 29.95, "producto antiguo sin historial: se supone que siempre valió lo de ahora");
 });
 
 function clone(o) { return JSON.parse(JSON.stringify(o)); }

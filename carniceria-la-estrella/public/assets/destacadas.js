@@ -31,7 +31,7 @@ function tarjetaProducto(t, ir) {
   const base = p.unidad === "kg" ? 1000 : 1;
   const precio = t.habitual != null
     ? crear("p", { class: "of-precio" },
-      crear("span", { class: "sr-only", texto: "Precio habitual " }), crear("s", { class: "precio-tachado", texto: `${formatoEuro(t.habitual)}/${unidadDe(p)}` }),
+      crear("span", { class: "sr-only", texto: "Precio anterior " }), crear("s", { class: "precio-tachado", texto: `${formatoEuro(t.habitual)}/${unidadDe(p)}` }),
       crear("span", { class: "sr-only", texto: ". Precio de oferta " }), crear("span", { class: "precio-oferta", texto: `${formatoEuro(t.precio)}/${unidadDe(p)}` }))
     : crear("p", { class: "of-precio", texto: `${formatoEuro(t.precio)}/${unidadDe(p)}` });
   return crear("li", { class: "of-card" },

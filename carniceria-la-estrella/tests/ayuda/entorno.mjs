@@ -74,3 +74,12 @@ async function prepararTienda(api, { modificar, precios }) {
     }
   }
 }
+
+// Ejecuta `fn` con el reloj del servidor local en otra fecha (el servidor corre en este mismo proceso). Sirve para dejar precios
+// «de siempre» en el historial: un precio puesto hoy cuenta como primer precio del producto, y entonces una rebaja que empieza hoy
+// no sería una rebaja (no hay precio anterior en los 30 días previos).
+export async function enFecha(fechaISO, fn) {
+  const real = Date.now;
+  Date.now = () => Date.parse(`${fechaISO}T07:00:00Z`);
+  try { return await fn(); } finally { Date.now = real; }
+}

@@ -109,7 +109,7 @@ function pintarFila(p) {
   else if (ef.habitual != null) {
     // Rebaja: precio habitual tachado y precio de oferta (el texto oculto lo aclara a quien usa lector de pantalla)
     lineaPrecio = crear("p", { class: "prod-precio" },
-      crear("span", { class: "sr-only", texto: "Precio habitual " }), crear("s", { class: "precio-tachado", texto: precio }),
+      crear("span", { class: "sr-only", texto: "Precio anterior " }), crear("s", { class: "precio-tachado", texto: `${formatoEuro(ef.habitual)}/${unidadPrecio(p)}` }),
       crear("span", { class: "sr-only", texto: ". Precio de oferta " }), crear("span", { class: "precio-oferta", texto: `${formatoEuro(ef.precio)}/${unidadPrecio(p)}` }));
   } else lineaPrecio = crear("p", { class: "prod-precio", texto: precio });
   const textoOferta = ef.oferta == null ? null

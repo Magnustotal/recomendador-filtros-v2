@@ -3,7 +3,7 @@
 import { api, textoErrores } from "./api.js";
 import { h, $, importeEs, aviso, describirError, sinAcentos } from "./util.js";
 import { sumarDias } from "/assets/compartido/horario.js";
-import { fechaCorta, nombreOferta, MAX_OFERTAS_POR_PRODUCTO, MAX_REGALOS } from "/assets/compartido/ofertas.js";
+import { fechaCorta, nombreOferta, rebajaValida, MAX_OFERTAS_POR_PRODUCTO, MAX_REGALOS } from "/assets/compartido/ofertas.js";
 
 let productos = [];
 let categorias = [];
@@ -56,6 +56,17 @@ function resumenTxt(p, o) {
   return `${nombreOferta(o)}: se llevan ${o.lleva}${base} y se pagan ${o.paga}${base}`;
 }
 
+// Qué va a pasar con una rebaja según la regla de los 30 días (Ley 7/1996, art. 20): el tachado es el menor precio aplicado antes
+function textoRebaja(p, o, n, ignorar) {
+  const r = rebajaValida(p, o, ignorar);
+  if (r.valida) {
+    const extra = r.anterior !== p.precio ? ` Ojo: tu precio actual es ${eurosTxt(p.precio)}, pero en los 30 días anteriores aplicaste ${eurosTxt(r.anterior)}, y ese es el que hay que tachar.` : "";
+    return `La tienda enseñará ${eurosTxt(r.anterior)} tachado y ${eurosTxt(n)} (−${Math.round((1 - n / r.anterior) * 100)} %).${extra}`;
+  }
+  if (r.motivo === "primera") return `⚠ Ese producto no tenía precio en los 30 días anteriores: sale a la venta por primera vez, así que no se anuncia como rebaja. Se cobrará ${eurosTxt(n)} sin tachar nada.`;
+  return `⚠ En los 30 días anteriores aplicaste ${eurosTxt(r.anterior)}, que no es más caro que ${eurosTxt(n)}: esto no cuenta como rebaja (hay que tachar el precio más bajo de esos 30 días). Se cobrará ${eurosTxt(n)} sin tachado ni etiqueta de oferta. Cambia el precio o las fechas.`;
+}
+
 // ---------- lista ----------
 function todas() {
   const lista = [];
@@ -79,6 +90,7 @@ function tarjeta({ p, o, i }) {
     h("header", {}, h("h4", { texto: p.nombre }), h("span", { class: `etiqueta-estado e-${estado}`, texto: ETIQUETA_ESTADO[estado] })),
     h("p", { class: "oferta-resumen", texto: resumenTxt(p, o) }),
     h("p", { class: "ayuda", texto: `${rangoTxt(o)} · ${nombreCat(p.categoria)}` }),
+    o.tipo === "precio" && estado !== "terminada" && p.precio != null && o.precio < p.precio && !rebajaValida(p, o).valida ? h("p", { class: "oferta-aviso", texto: textoRebaja(p, o, o.precio) }) : null,
     h("div", { class: "acciones" }, editar, quitar));
 }
 
@@ -173,11 +185,15 @@ function abrirDialogo(edicion = null) {
     panelPrecio.hidden = !esPrecio;
     panelCantidad.hidden = esPrecio;
     const n = num(precio);
-    ayudaPrecio.textContent = p?.precio != null && n != null && n > 0 ? (n < p.precio ? `La tienda enseñará ${eurosTxt(p.precio)} tachado y ${eurosTxt(n)} (−${Math.round((1 - n / p.precio) * 100)} %).` : `Tiene que ser más barato que el precio habitual (${eurosTxt(p.precio)}).`) : "Se enseña tu precio habitual tachado y este.";
+    if (p?.precio != null && n != null && n > 0) {
+      if (n >= p.precio) ayudaPrecio.textContent = `Tiene que ser más barato que el precio habitual (${eurosTxt(p.precio)}).`;
+      else if (!/^\d{4}-\d{2}-\d{2}$/.test(desde.value)) ayudaPrecio.textContent = "Pon la fecha de inicio para comprobar el precio anterior.";
+      else ayudaPrecio.textContent = textoRebaja(p, { tipo: "precio", desde: desde.value, hasta: hasta.value, precio: n }, n, edicion?.o);
+    } else ayudaPrecio.textContent = "Se enseña el precio anterior tachado y este.";
     const l = num(lleva), g = num(paga), u = p ? (p.unidad === "kg" ? "kg" : "ud") : "";
     ayudaCantidad.textContent = l && g && g < l ? `Con ${l} ${u} se pagan ${g} ${u}; se regala de cada tramo completo (con ${l * 2} ${u}, el doble).` : "Se paga menos de lo que se lleva (por ejemplo, lleva 3 y paga 2).";
   }
-  for (const el of [tipoPrecio, tipoCantidad, precio, lleva, paga]) el.addEventListener("input", refrescar);
+  for (const el of [tipoPrecio, tipoCantidad, precio, lleva, paga, desde, hasta]) el.addEventListener("input", refrescar);
   buscar.addEventListener("input", () => pintarProductos(selProd.value));
   selProd.addEventListener("change", mostrarProducto);
   pintarProductos(edicion?.p.id);
@@ -191,7 +207,7 @@ function abrirDialogo(edicion = null) {
     ...(edicion ? [h("p", { class: "ayuda", texto: `${edicion.p.nombre} · ${nombreCat(edicion.p.categoria)}` })] : [campo(id("buscar"), "Producto", buscar), campo(id("producto"), "Elige el producto", selProd), infoProd]),
     h("fieldset", { class: "campo-grupo" }, h("legend", { texto: "Qué oferta" }), tipos, panelPrecio, panelCantidad),
     h("div", { class: "fila-dos" }, campo(id("desde"), "Desde (incluido)", desde), campo(id("hasta"), "Hasta (incluido)", hasta)),
-    h("p", { class: "ayuda", texto: "Se activa y se desactiva sola en esas fechas. Antes de tachar un precio, confirma con tu gestoría las normas de rebajas: creo que el precio tachado debe ser el más bajo de los últimos 30 días, pero no estoy seguro." }),
+    h("p", { class: "ayuda", texto: "Se activa y se desactiva sola en esas fechas. Con una rebaja, la tienda tacha el precio anterior, que según la Ley 7/1996 (art. 20) es el más bajo que hayas aplicado a ese producto en los 30 días previos al inicio: la web lo calcula con el historial de tus precios y ofertas. Conviene que tu gestoría lo confirme." }),
     h("div", { class: "dlg-acciones" }, guardarBtn, cancelar));
 
   formulario.addEventListener("submit", async (ev) => {

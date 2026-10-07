@@ -37,7 +37,7 @@ export function iniciarProductos(ctx) {
   $("prod-aceptar-todos").addEventListener("click", async () => {
     const n = orientativosPendientes();
     if (!n) return;
-    if (!confirm(`Se pondrá el precio orientativo a los ${n} productos que aún no tienen precio (no se toca ninguno que ya tenga). Después los verás en la tienda con ese precio. ¿Continuar?`)) return;
+    if (!confirm(`Se pondrá el precio orientativo a los ${n} productos que aún no tienen precio (no se toca ninguno que ya tenga). Son estimaciones sin verificar (no son una tarifa): un precio equivocado se publica en la tienda y puede obligarte a mantenerlo o a cancelar pedidos. Revísalos después. ¿Continuar?`)) return;
     const r = await api("/orientativos", { metodo: "POST", cuerpo: {} });
     if (!r.ok) { aviso(textoErrores(r.errores), { error: true }); return; }
     await contexto.recargar();
@@ -110,6 +110,16 @@ function textoOfertaFila(p) {
   if (activa) return `${nombreOferta(activa)} hasta el ${diaMes(activa.hasta)}`;
   const proxima = (p.ofertas ?? []).filter((o) => o.desde > hoyIso).sort((a, b) => (a.desde < b.desde ? -1 : 1))[0];
   return proxima ? `${nombreOferta(proxima)} programada: ${diaMes(proxima.desde)}` : null;
+}
+// Aviso ante un precio que parece una errata (un cero de más o de menos, una coma mal puesta): muy lejos del que tenía o del orientativo
+function precioSospechoso(p, texto) {
+  const n = Number(String(texto ?? "").trim().replace(",", "."));
+  if (!Number.isFinite(n) || n <= 0) return null;
+  const orientativo = p.id ? orientativoDe(p.id) : null;
+  const motivos = [];
+  if (p.precio != null && (n < p.precio * 0.5 || n > p.precio * 2)) motivos.push(`antes era ${eurosTxt(p.precio)}`);
+  if (orientativo && (n < orientativo.precio * 0.4 || n > orientativo.precio * 2.5)) motivos.push(`el orientativo es ${eurosTxt(orientativo.precio)}`);
+  return motivos.length ? `El precio ${eurosTxt(n)} se aleja mucho (${motivos.join("; ")}). ¿Es correcto? Un precio mal escrito se publica en la tienda y puede obligarte a mantenerlo o a cancelar pedidos.` : null;
 }
 const SIMBOLO = { verde: "✔", ambar: "!", rojo: "✖", gris: "–" };
 const eurosTxt = (n) => `${Number(n).toFixed(2).replace(".", ",")} €`;
@@ -232,6 +242,8 @@ function fila(p) {
 
   precio.addEventListener("change", async () => {
     const antes = p.precio;
+    const sospecha = precioSospechoso(p, precio.value);
+    if (sospecha && !confirm(sospecha)) { precio.value = importeEs(antes); return; }
     const g = await guardar(p, { precio: precio.value.trim() === "" ? null : precio.value }, { estado, alFallar: () => { precio.value = importeEs(antes); } });
     if (g) { actualizar(); pintarCuentas(); if (g.precio == null) estado.textContent = "✓ Sin precio (se verá «Consultar»)"; }
   });
@@ -463,6 +475,8 @@ function abrirEditor(original) {
 
   formulario.addEventListener("submit", async (ev) => {
     ev.preventDefault();
+    const sospecha = precioSospechoso(p, precio.value);
+    if (sospecha && !confirm(sospecha)) { precio.focus(); return; }
     guardarBtn.disabled = true;
     const lista = (t) => t.split(/[\n,]/).map((x) => x.trim()).filter(Boolean);
     const num = (el) => (el.value.trim() === "" ? null : Number(el.value));

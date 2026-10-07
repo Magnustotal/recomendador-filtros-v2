@@ -256,3 +256,4 @@ label.btn-sec { cursor: pointer; }
 .etiqueta-estado.e-programada { color: var(--warn); border-color: var(--warn); }
 .ofertas-resumen { margin: 0.3rem 0 0.6rem; padding-left: 1.2rem; }
 #dlg-oferta select, #dlg-oferta input[type="search"] { width: 100%; }
+.oferta-aviso { margin: 0.4rem 0; padding: 0.5rem 0.7rem; font-weight: 700; color: var(--warn); background: #fff4e0; border: 1px solid var(--warn); border-radius: var(--radius); }

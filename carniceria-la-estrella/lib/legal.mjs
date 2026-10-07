@@ -84,6 +84,8 @@ export function textosLegales(ajustes, escapar) {
     condicionesPedido: `    <h2>7. Condiciones de los pedidos online</h2>
     <ul>
       <li><strong>Precios.</strong> Los precios mostrados son precios finales para el consumidor, con los impuestos incluidos. Los productos sin precio se confirman por WhatsApp o teléfono.</li>
+      <li><strong>Errores de precio.</strong> Si detectamos un error evidente en un precio (por ejemplo, una errata al escribirlo), te lo comunicaremos antes de preparar el pedido y podrás mantenerlo con el precio correcto o cancelarlo sin ningún coste.</li>
+      <li><strong>Ofertas.</strong> Cada oferta indica hasta cuándo es válida y sus condiciones. Cuando se anuncia una rebaja, junto al precio rebajado se muestra el precio anterior, que es el más bajo que hayamos aplicado al mismo producto en los 30 días previos.</li>
       <li><strong>Peso y importe.</strong> Muchos productos se venden al peso. El peso real puede variar ligeramente al prepararlos y el importe definitivo se confirma al preparar el pedido.</li>
       <li><strong>Confirmación.</strong> Un pedido enviado por la web no queda confirmado hasta que ${nombre} lo confirma por WhatsApp o teléfono. Podemos no aceptarlo, por ejemplo, si un producto no está disponible; en ese caso te avisaremos.</li>
       <li><strong>Desistimiento.</strong> Se trata de alimentos frescos que pueden deteriorarse con rapidez y de productos cortados o preparados a medida, por lo que no se aplica el derecho de desistimiento (art. 103 del texto refundido de la Ley General para la Defensa de los Consumidores y Usuarios). Si hay algún problema con tu pedido, avísanos y lo solucionamos.</li>

@@ -2,7 +2,7 @@
 // Reloj fijo: lunes 5 de octubre de 2026, 09:00 en Madrid. Los tests van en orden y comparten datos.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { arrancarEntorno, PASSWORD } from "./ayuda/entorno.mjs";
+import { arrancarEntorno, enFecha, PASSWORD } from "./ayuda/entorno.mjs";
 
 let e;
 before(async () => { e = await arrancarEntorno(); });
@@ -20,7 +20,8 @@ async function entrar(opciones) {
   return page;
 }
 const producto = async (id) => (await e.api.llamar("/datos")).datos.productos.find((p) => p.id === id);
-const ponerPrecio = async (id, precio) => assert.equal((await e.api.llamar("/producto", { metodo: "PUT", cuerpo: { ...(await producto(id)), precio } })).estado, 200);
+// Los precios se ponen con fecha de agosto: así son «de siempre» y una rebaja de octubre tiene precio anterior
+const ponerPrecio = (id, precio) => enFecha("2026-08-01", async () => assert.equal((await e.api.llamar("/producto", { metodo: "PUT", cuerpo: { ...(await producto(id)), precio } })).estado, 200));
 const ALB = "elaborados-albondigas";
 const SEC = "cerdo-iberico-secreto-iberico";
 
@@ -109,6 +110,29 @@ test("ofertas: se crean eligiendo el producto en la lista, con errores explicado
   await ficha.locator("#f-descripcion").fill("Veteado de grasa, jugoso.");
   await ficha.getByRole("button", { name: "Guardar", exact: true }).click();
   await ficha.waitFor({ state: "hidden" });
+  assert.equal((await producto(SEC)).ofertas.length, 1);
+
+  // regla de los 30 días: una segunda rebaja a menos de 30 días de la primera (21,95 €) a 23,95 € no es una rebaja de verdad
+  await page.click("#tab-ofertas");
+  await page.fill("#of-buscar", "");
+  await page.click("#of-nueva");
+  await dlg.locator("#f-of-buscar").fill("Secreto");
+  await dlg.locator("#f-of-producto").selectOption(SEC);
+  await dlg.locator("#f-of-precio").fill("23,95");
+  await dlg.locator("#f-of-desde").fill("2026-10-26");
+  await dlg.locator("#f-of-hasta").fill("2026-11-01");
+  assert.match(await dlg.innerText(), /⚠ En los 30 días anteriores aplicaste 21,95\s€.*no cuenta como rebaja/s);
+  await dlg.locator("#f-of-desde").fill("2026-12-20");
+  await dlg.locator("#f-of-hasta").fill("2026-12-26");
+  assert.match(await dlg.innerText(), /La tienda enseñará 29,95\s€ tachado y 23,95\s€/, "con más de 30 días de margen, vuelve a ser una rebaja");
+  await dlg.locator("#f-of-desde").fill("2026-10-26");
+  await dlg.locator("#f-of-hasta").fill("2026-11-01");
+  await dlg.getByRole("button", { name: "Crear oferta", exact: true }).click();
+  await page.locator("#aviso", { hasText: "Oferta creada para Secreto ibérico" }).waitFor();
+  await page.fill("#of-buscar", "Secreto");
+  assert.match(await page.locator("#of-lista .oferta-aviso").innerText(), /⚠ En los 30 días anteriores aplicaste 21,95\s€/);
+  await page.getByRole("button", { name: "Quitar la oferta de Secreto ibérico" }).last().click();
+  await page.locator("#aviso", { hasText: "Oferta quitada" }).waitFor();
   assert.equal((await producto(SEC)).ofertas.length, 1);
   assert.deepEqual(errores(page), []);
   await page.context().close();
@@ -239,4 +263,49 @@ test("escaparate: una sola cosa = «Oferta de la semana»; sin nada, no aparece;
   assert.match(decodeURIComponent(href), /oferta de Secreto ibérico/);
   await cerrada.context().close();
   await poner((a) => { a.tienda.activa = true; });
+});
+
+test("erratas: un precio que se aleja mucho del anterior o del orientativo pide confirmación antes de guardarse", async () => {
+  const id = "vacuno-morcillo-de-ternera";
+  await ponerPrecio(id, 10.9);
+  const page = await entrar();
+  await page.click("#tab-productos");
+  await page.fill("#prod-buscar", "morcillo de ternera");
+  const fila = page.locator(".prod-fila").first();
+  const precio = fila.locator("input[type=text]");
+  // 1,09 en vez de 10,90 (una coma mal puesta): se pregunta y, si se dice que no, el precio no cambia
+  let mensaje = "";
+  page.once("dialog", async (d) => { mensaje = d.message(); await d.dismiss(); });
+  await precio.fill("1,09");
+  await precio.blur();
+  await page.waitForFunction(() => true);
+  await page.waitForTimeout(300);
+  assert.match(mensaje, /El precio 1,09\s€ se aleja mucho \(antes era 10,90\s€/);
+  assert.equal(await precio.inputValue(), "10,90", "vuelve al precio de antes");
+  assert.equal((await producto(id)).precio, 10.9, "no se ha guardado");
+  // un cambio normal no pregunta
+  let preguntas = 0;
+  page.on("dialog", async (d) => { preguntas++; await d.accept(); });
+  await precio.fill("11,40");
+  await precio.blur();
+  await fila.locator(".fila-estado", { hasText: "Guardado" }).waitFor();
+  assert.equal(preguntas, 0);
+  assert.equal((await producto(id)).precio, 11.4);
+  // y si se confirma, se guarda aunque sea raro (la persona sabe lo que hace)
+  await precio.fill("2,50");
+  await precio.blur();
+  for (let i = 0; i < 40 && (await producto(id)).precio !== 2.5; i++) await page.waitForTimeout(100); // el «Guardado» de antes aún se ve: se espera al servidor
+  assert.equal(preguntas, 1);
+  assert.equal((await producto(id)).precio, 2.5);
+  assert.equal((await producto(id)).historial.at(-1).precio, 2.5, "y queda en el historial");
+  assert.deepEqual(errores(page), []);
+  await page.context().close();
+});
+
+test("textos legales: la tienda y el aviso legal avisan de los errores de precio y de cómo se calcula el precio anterior", async () => {
+  const tienda = await (await fetch(e.url + "/tienda")).text();
+  assert.match(tienda, /Si detectamos un error evidente en algún precio, te lo comunicaremos antes de preparar tu pedido y podrás mantenerlo con el precio correcto o cancelarlo sin coste\./);
+  const legal = await (await fetch(e.url + "/aviso-legal.html")).text();
+  assert.match(legal, /<strong>Errores de precio\.<\/strong> Si detectamos un error evidente/);
+  assert.match(legal, /el precio anterior, que es el más bajo que hayamos aplicado al mismo producto en los 30 días previos/);
 });
