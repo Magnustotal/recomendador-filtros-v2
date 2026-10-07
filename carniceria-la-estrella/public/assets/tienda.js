@@ -12,7 +12,7 @@ const el = {
   buscar: $("buscar"), chips: $("chips"), sinResultados: $("sin-resultados"), productos: $("productos"),
   pedido: $("pedido"), vacio: $("carrito-vacio"), form: $("formulario"), lineas: $("lineas"), totales: $("totales"),
   errores: $("errores"), nombre: $("nombre"), telefono: $("telefono"),
-  entrega: $("opciones-entrega"), campoDireccion: $("campo-direccion"), direccion: $("direccion"), ayudaZona: $("ayuda-zona"),
+  entrega: $("opciones-entrega"), campoDireccion: $("campo-direccion"), direccion: $("direccion"), cp: $("cp"), ayudaZona: $("ayuda-zona"),
   dia: $("dia"), franja: $("franja"), pago: $("opciones-pago"), comentarios: $("comentarios"),
   campoEdad: $("campo-edad"), edad: $("mayor-edad"), web: $("web"),
   enviar: $("enviar"), vaciar: $("vaciar"), confirmacion: $("confirmacion"),
@@ -48,6 +48,9 @@ function mostrarEstado(texto) {
   el.estado.hidden = false;
   el.estado.textContent = texto;
 }
+// Icono de categoría (SVG como máscara: toma el color del texto). Los archivos están en /assets/iconos/<id>.svg
+const icono = (id, clase = "") => crear("span", { class: `icono ${clase}`.trim(), "aria-hidden": "true", style: `--ico:url(/assets/iconos/${id}.svg)` });
+
 function anunciar(texto) {
   el.anuncios.textContent = "";
   setTimeout(() => { el.anuncios.textContent = texto; }, 50);
@@ -123,10 +126,11 @@ function pintarFila(p) {
     acciones = crear("div", { class: "prod-acciones" }, selector, crear("div", { class: "cantidad", role: "group", "aria-label": `Cantidad de ${p.nombre}` }, menos, salida, mas), boton);
   }
 
-  const fila = crear("article", { class: `prod${p.foto ? " con-foto" : ""}${p.agotado ? " es-agotado" : ""}`, "data-id": p.id });
-  if (p.foto) {
-    fila.append(crear("div", { class: "prod-foto" }, crear("img", { src: `/api/foto/${p.foto}`, alt: "", loading: "lazy", decoding: "async", width: "88", height: "88" })));
-  }
+  // Miniatura: la foto de la pieza si el carnicero la ha subido; si no, el icono de su categoría.
+  const fila = crear("article", { class: `prod con-foto${p.agotado ? " es-agotado" : ""}`, "data-id": p.id });
+  fila.append(p.foto
+    ? crear("div", { class: "prod-foto" }, crear("img", { src: `/api/foto/${p.foto}`, alt: "", loading: "lazy", decoding: "async", width: "88", height: "88" }))
+    : crear("div", { class: "prod-foto es-icono" }, icono(p.categoria)));
   fila.append(info);
   if (acciones) fila.append(acciones);
   return fila;
@@ -141,29 +145,34 @@ function pintarCatalogo() {
   for (const c of cat.categorias) {
     const lista = cat.productos.filter((p) => p.categoria === c.id);
     if (!lista.length) continue;
-    const titulo = crear("h2", { class: "cat-titulo", id: `cat-${c.id}`, texto: c.nombre });
+    const titulo = crear("h2", { class: "cat-titulo", id: `cat-${c.id}` }, icono(c.id, "en-titulo"), c.nombre);
     const cont = crear("div", { class: "prods" });
     const filas = lista.map((p) => {
       const nodo = pintarFila(p);
       cont.append(nodo);
       return { p, nodo, texto: sinAcentos(`${p.nombre} ${p.descripcion ?? ""} ${p.opciones.join(" ")} ${c.nombre}`) };
     });
-    const seccion = crear("section", { class: "cat-bloque", "aria-labelledby": `cat-${c.id}`, style: `--n:${lista.length}` }, titulo,
+    const foto = crear("div", { class: "cat-foto" },
+      crear("img", { src: `/assets/photos/${c.id}-400.jpg`, srcset: `/assets/photos/${c.id}-400.jpg 400w, /assets/photos/${c.id}.jpg 800w`, sizes: "(max-width: 720px) 100vw, 240px", alt: "", loading: "lazy", decoding: "async", width: "400", height: "400" }),
+      crear("span", { class: "etiqueta-foto", texto: "Foto ilustrativa" }));
+    // Si la foto de la categoría no cargase, la cabecera se queda sin ella y el resto se mantiene
+    foto.querySelector("img").addEventListener("error", () => foto.remove());
+    const cabecera = crear("div", { class: "cat-cab" }, foto, crear("div", { class: "cat-textos" }, titulo,
       c.descripcion ? crear("p", { class: "cat-desc", texto: c.descripcion }) : null,
-      lista.some((p) => p.alcohol) ? crear("p", { class: "cat-aviso-edad", texto: "Venta solo a mayores de 18 años." }) : null,
-      cont);
+      lista.some((p) => p.alcohol) ? crear("p", { class: "cat-aviso-edad", texto: "Venta solo a mayores de 18 años." }) : null));
+    const seccion = crear("section", { class: "cat-bloque", "aria-labelledby": `cat-${c.id}`, style: `--n:${lista.length}` }, cabecera, cont);
     el.productos.append(seccion);
     bloques.push({ id: c.id, nombre: c.nombre, seccion, filas });
   }
 
   el.chips.replaceChildren(
     chip("", "Todo"),
-    ...bloques.map((b) => chip(b.id, b.nombre)),
+    ...bloques.map((b) => chip(b.id, b.nombre, b.id)),
   );
 }
 
-function chip(id, texto) {
-  const b = crear("button", { type: "button", class: "chip", "aria-pressed": String(id === filtroCategoria), "data-cat": id, texto });
+function chip(id, texto, iconoId) {
+  const b = crear("button", { type: "button", class: "chip", "aria-pressed": String(id === filtroCategoria), "data-cat": id }, iconoId ? icono(iconoId) : null, texto);
   b.addEventListener("click", () => {
     filtroCategoria = id;
     for (const c of el.chips.children) c.setAttribute("aria-pressed", String(c.dataset.cat === id));
@@ -178,6 +187,7 @@ function chip(id, texto) {
 // Las categorías lejanas no se pintan hasta acercarse (content-visibility), así que su altura real solo se
 // conoce al llegar: se salta, se deja que se pinte y se corrige la posición.
 function irASeccion(destino, intentos = 8) {
+  destino = destino?.closest(".cat-bloque"); // se salta a la cabecera con su foto, no solo al título
   if (!destino) return;
   destino.scrollIntoView({ block: "start", behavior: "instant" });
   if (intentos > 0) requestAnimationFrame(() => {
@@ -315,6 +325,18 @@ function marcado(nombre) {
   return el.form.querySelector(`input[name="${nombre}"]:checked`);
 }
 
+// Texto de la zona de reparto a partir de lo configurado en el panel (texto libre, códigos postales y/o radio).
+function descripcionZona(rp) {
+  const cps = rp.codigosPostales ?? [];
+  const km = rp.radioKm == null ? null : String(rp.radioKm).replace(".", ",");
+  const partes = [];
+  if (rp.zona) partes.push(`${rp.zona}.`);
+  if (cps.length && km) partes.push(`Repartimos en los códigos postales ${cps.join(", ")} y hasta ${km} km de la tienda.`);
+  else if (cps.length) partes.push(`Repartimos solo en los códigos postales ${cps.join(", ")}.`);
+  else if (km) partes.push(`Repartimos hasta ${km} km de la tienda.`);
+  return partes.join(" ");
+}
+
 function pintarOpcionesEntrega() {
   const t = cat.ajustes.tienda;
   const previo = tipoEntrega();
@@ -327,7 +349,8 @@ function pintarOpcionesEntrega() {
   if (t.recogida.activa) opciones.push(opcion("recogida", "Recoger en tienda", `${cat.ajustes.negocio.calle}, ${cat.ajustes.negocio.localidad}`));
   if (t.reparto.activo) {
     const partes = [];
-    if (t.reparto.zona) partes.push(t.reparto.zona);
+    const zona = descripcionZona(t.reparto).replace(/\.$/, "");
+    if (zona) partes.push(zona);
     if (t.reparto.coste != null) partes.push(t.reparto.coste === 0 ? "envío gratis" : `envío ${formatoEuro(t.reparto.coste)}`);
     if (t.reparto.gratisDesde != null) partes.push(`gratis desde ${formatoEuro(t.reparto.gratisDesde)}`);
     if (t.reparto.minimo != null) partes.push(`mínimo ${formatoEuro(t.reparto.minimo)}`);
@@ -344,7 +367,8 @@ function alCambiarEntrega() {
   el.campoDireccion.hidden = tipo !== "reparto";
   el.direccion.required = tipo === "reparto";
   const t = cat.ajustes.tienda;
-  el.ayudaZona.textContent = t.reparto.zona ? `Repartimos en: ${t.reparto.zona}.` : "";
+  el.ayudaZona.textContent = descripcionZona(t.reparto);
+  el.cp.required = tipo === "reparto";
   pintarDias();
   pintarOpcionesPago();
   if (carrito.length) pintarTotales();
@@ -426,7 +450,7 @@ function pintarOpcionesPago() {
 // ---------- errores ----------
 const CAMPOS = {
   "cliente.nombre": ["nombre", "error-nombre"], "cliente.telefono": ["telefono", "error-telefono"],
-  "entrega.direccion": ["direccion", "error-direccion"], "entrega.dia": ["dia", "error-dia"], "entrega.franja": ["franja", "error-franja"],
+  "entrega.direccion": ["direccion", "error-direccion"], "entrega.cp": ["cp", "error-cp"], "entrega.dia": ["dia", "error-dia"], "entrega.franja": ["franja", "error-franja"],
   "entrega.tipo": ["opciones-entrega", null], pago: ["opciones-pago", "error-pago"], mayorEdad: ["mayor-edad", "error-mayorEdad"],
 };
 
@@ -471,6 +495,13 @@ function validarLocal() {
   const tipo = tipoEntrega();
   if (!tipo) e.push({ campo: "entrega.tipo", mensaje: "Elige recogida o reparto." });
   if (tipo === "reparto" && el.direccion.value.trim().length < 8) e.push({ campo: "entrega.direccion", mensaje: "Escribe la dirección de entrega completa." });
+  if (tipo === "reparto") {
+    const cp = el.cp.value.replace(/\s+/g, "");
+    const rp = cat.ajustes.tienda.reparto;
+    const lista = rp.codigosPostales ?? [];
+    if (!/^\d{5}$/.test(cp)) e.push({ campo: "entrega.cp", mensaje: "Escribe tu código postal (5 cifras)." });
+    else if (lista.length && rp.radioKm == null && !lista.includes(cp)) e.push({ campo: "entrega.cp", mensaje: `Lo sentimos, no repartimos en el código postal ${cp}.` });
+  }
   if (!el.dia.value) e.push({ campo: "entrega.dia", mensaje: "Elige un día." });
   if (!el.franja.value) e.push({ campo: "entrega.franja", mensaje: "Elige una franja horaria." });
   if (!marcado("pago")) e.push({ campo: "pago", mensaje: "Elige cómo vas a pagar." });
@@ -484,7 +515,7 @@ function cuerpoPedido() {
   return {
     lineas: carrito.map((l) => ({ id: l.id, opcion: l.opcion, nota: l.nota.trim(), cantidad: l.cantidad })),
     cliente: { nombre: el.nombre.value.trim(), telefono: el.telefono.value.trim() },
-    entrega: { tipo, direccion: tipo === "reparto" ? el.direccion.value.trim() : "", dia: el.dia.value, franja: el.franja.value },
+    entrega: { tipo, direccion: tipo === "reparto" ? el.direccion.value.trim() : "", cp: tipo === "reparto" ? el.cp.value.replace(/\s+/g, "") : "", dia: el.dia.value, franja: el.franja.value },
     pago: marcado("pago")?.value ?? "",
     comentarios: el.comentarios.value.trim(),
     mayorEdad: el.edad.checked,

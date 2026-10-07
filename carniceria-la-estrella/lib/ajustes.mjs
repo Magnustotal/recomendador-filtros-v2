@@ -3,6 +3,21 @@ import { aMinutos } from "./horario.mjs";
 
 const URL_MAPS = /^https:\/\/(maps\.app\.goo\.gl|www\.google\.com\/maps|goo\.gl\/maps|maps\.google\.com)\//;
 
+// Lista de códigos postales: acepta una lista o un texto con CP separados por comas, espacios o saltos de línea.
+function codigosPostales(valor, campo) {
+  if (valor == null || valor === "") return [];
+  const lista = typeof valor === "string" ? valor.split(/[\s,;]+/).filter(Boolean) : valor;
+  if (!Array.isArray(lista)) throw new ErrorValidacion(campo, "Debe ser una lista de códigos postales.");
+  if (lista.length > 100) throw new ErrorValidacion(campo, "Máximo 100 códigos postales.");
+  const salida = new Set();
+  for (const cp of lista) {
+    const t = typeof cp === "string" ? cp.trim() : "";
+    if (!/^\d{5}$/.test(t)) throw new ErrorValidacion(campo, `«${String(cp).slice(0, 12)}» no es un código postal de 5 cifras.`);
+    salida.add(t);
+  }
+  return [...salida].sort();
+}
+
 // Valida y normaliza los ajustes que llegan del panel. Devuelve {ok, valor} o {ok:false, errores}.
 export function validarAjustes(entrada) {
   return recoger((ctx) => {
@@ -80,6 +95,8 @@ export function validarAjustes(entrada) {
       minimo: ctx.intento(() => numeroOpcional(rp.minimo, { campo: "tienda.reparto.minimo", max: 10000 })),
       coste: ctx.intento(() => numeroOpcional(rp.coste, { campo: "tienda.reparto.coste", max: 1000 })),
       gratisDesde: ctx.intento(() => numeroOpcional(rp.gratisDesde, { campo: "tienda.reparto.gratisDesde", max: 10000 })),
+      codigosPostales: ctx.intento(() => codigosPostales(rp.codigosPostales, "tienda.reparto.codigosPostales")) ?? [],
+      radioKm: ctx.intento(() => numeroOpcional(rp.radioKm, { campo: "tienda.reparto.radioKm", min: 0.5, max: 100, decimales: 1 })),
       dias: ctx.intento(() => diasSemana(rp.dias ?? [], "tienda.reparto.dias")),
       franjas: franjas(rp.franjas ?? [], "tienda.reparto.franjas"),
     };
@@ -89,6 +106,7 @@ export function validarAjustes(entrada) {
       bizumNumero: ctx.intento(() => texto(p.bizumNumero, { max: 30, campo: "tienda.pagos.bizumNumero" })),
       transferenciaDatos: ctx.intento(() => texto(p.transferenciaDatos, { max: 200, campo: "tienda.pagos.transferenciaDatos" })),
     };
+    if (tienda.reparto.radioKm != null && negocio.lat == null) ctx.error("tienda.reparto.radioKm", "Para usar el radio hay que indicar la latitud y la longitud de la tienda (pestaña Negocio).");
     if (tienda.activa) {
       if (!tienda.recogida.activa && !tienda.reparto.activo) ctx.error("tienda", "Activa al menos recogida o reparto.");
       const p2 = tienda.pagos;

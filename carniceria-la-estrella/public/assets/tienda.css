@@ -49,7 +49,7 @@
 .chip[aria-pressed="true"] { background: var(--maroon); color: var(--white); border-color: var(--maroon); }
 
 /* ---------- Productos ---------- */
-.cat-bloque { margin: 0 0 2.2rem; }
+.cat-bloque { margin: 0 0 2.2rem; scroll-margin-top: calc(var(--header-height) + 6rem); }
 .cat-titulo { font-size: clamp(1.4rem, 1.2rem + 1vw, 1.9rem); margin: 0 0 0.3rem; scroll-margin-top: calc(var(--header-height) + 9rem); }
 .cat-desc { margin: 0 0 1rem; color: var(--ink-soft); font-size: 0.96rem; }
 .cat-aviso-edad { margin: 0 0 1rem; font-weight: 700; color: var(--maroon-deep); }
@@ -165,4 +165,36 @@
 html { scroll-padding-bottom: 7rem; }
 
 /* Las categorías fuera de pantalla no se pintan hasta que se acercan (la lista tiene más de 200 productos). */
-.cat-bloque { content-visibility: auto; contain-intrinsic-size: auto calc(var(--n, 5) * 150px); }
+.cat-bloque { content-visibility: auto; contain-intrinsic-size: auto calc(var(--n, 5) * 150px + 260px); }
+
+.etiqueta-cp { margin-top: 0.9rem; }
+.entrada-cp { max-width: 9rem; }
+
+/* ---------- Iconos, fotos de categoría y miniaturas ---------- */
+.icono {
+  display: inline-block; flex: none; width: 1.3em; height: 1.3em; background-color: currentColor; vertical-align: -0.25em;
+  -webkit-mask: var(--ico) center / contain no-repeat; mask: var(--ico) center / contain no-repeat;
+}
+.chip { display: inline-flex; align-items: center; gap: 0.45em; }
+.chip .icono { width: 1.25em; height: 1.25em; vertical-align: 0; }
+
+.cat-cab { display: grid; gap: 0.9rem; margin: 0 0 1.1rem; }
+.cat-foto { position: relative; overflow: hidden; border-radius: var(--radius); background: var(--cream); aspect-ratio: 16 / 7; box-shadow: var(--shadow); }
+.cat-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.etiqueta-foto {
+  position: absolute; right: 0.6rem; bottom: 0.6rem; padding: 0.15em 0.65em; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em;
+  color: var(--white); background: rgba(42, 29, 23, 0.72); border-radius: 999px;
+}
+.cat-titulo { display: flex; align-items: center; gap: 0.55rem; }
+.cat-titulo .icono.en-titulo { width: 1.7em; height: 1.7em; padding: 0.35em; box-sizing: border-box; color: var(--white); background-color: var(--maroon); border-radius: 50%; -webkit-mask: none; mask: none; position: relative; }
+.cat-titulo .icono.en-titulo::before {
+  content: ""; position: absolute; inset: 0.3em; background-color: currentColor;
+  -webkit-mask: var(--ico) center / contain no-repeat; mask: var(--ico) center / contain no-repeat;
+}
+.cat-textos .cat-desc { margin-bottom: 0.4rem; }
+@media (min-width: 720px) {
+  .cat-cab { grid-template-columns: 240px minmax(0, 1fr); align-items: center; }
+  .cat-foto { aspect-ratio: 1 / 1; }
+}
+.prod-foto.es-icono { display: grid; place-items: center; background: linear-gradient(145deg, #f3e3c3, #ead3a8); color: var(--maroon); }
+.prod-foto.es-icono .icono { width: 46%; height: 46%; }

@@ -9,12 +9,12 @@
   var CATEGORIES = [
     "Vacuno", "Cerdo", "Cerdo ibérico", "Pollo", "Pavo", "Conejo", "Caza",
     "Casquería", "Jamones y paletillas", "Embutidos", "Quesos",
-    "Elaborados", "Recova",
+    "Elaborados", "Recova", "Cordero y cabrito", "Despensa y vinos",
   ];
   var PHOTOS = [
     "fachada", "corte-parrilla-4x3", "vacuno", "cerdo", "cerdo-iberico",
     "jamones", "quesos", "pollo", "pavo", "conejo", "embutidos",
-    "elaborados", "casqueria", "caza", "huevos",
+    "elaborados", "casqueria", "caza", "huevos", "cordero", "especias",
   ];
 
   async function headOrGetOk(path) {
@@ -111,7 +111,7 @@
       },
     },
     {
-      name: "Las 11 categorías del catálogo están",
+      name: "Las categorías del catálogo están",
       run: async function (homeText) {
         var doc = new DOMParser().parseFromString(homeText, "text/html");
         var headings = Array.prototype.map.call(doc.querySelectorAll("#catalogo h3"), function (h) { return h.textContent.trim(); });

@@ -84,6 +84,8 @@ export const ajustesPorDefecto = {
     "reparto": {
       "activo": true,
       "zona": "",
+      "codigosPostales": [],
+      "radioKm": null,
       "minimo": null,
       "coste": null,
       "gratisDesde": null,

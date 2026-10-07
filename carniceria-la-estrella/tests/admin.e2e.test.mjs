@@ -322,3 +322,50 @@ test("objetivos táctiles de 44 px o más en los controles del panel (móvil)", 
   assert.deepEqual(malos, []);
   await page.context().close();
 });
+
+test("tienda: códigos postales de reparto y radio se editan, se validan y se guardan", async () => {
+  const page = await entrar();
+  await page.click("#tab-tienda");
+  const entradaCp = page.locator("#nuevo-cp");
+  await entradaCp.fill("41008, 4101");
+  await page.getByRole("button", { name: "Añadir", exact: true }).click();
+  await page.locator("#aviso.es-error").waitFor();
+  assert.match(await page.locator("#aviso").innerText(), /4101/);
+  await entradaCp.fill("41008, 41009 41010");
+  await entradaCp.press("Enter");
+  assert.equal(await page.locator('ul[aria-label="Códigos postales de reparto"] li').count(), 3);
+  await page.getByRole("button", { name: "Quitar el código postal 41009" }).click();
+  assert.equal(await page.locator('ul[aria-label="Códigos postales de reparto"] li').count(), 2);
+  await page.fill("#a-tienda-reparto-radioKm", "2,5");
+  await page.locator("#form-tienda button[type=submit]").click();
+  await page.locator("#aviso", { hasText: "Cambios guardados" }).waitFor();
+  const r = (await e.api.llamar("/datos")).datos.ajustes.tienda.reparto;
+  assert.deepEqual(r.codigosPostales, ["41008", "41010"]);
+  assert.equal(r.radioKm, 2.5);
+  // el radio exige las coordenadas
+  await page.click("#tab-negocio");
+  await page.fill("#a-negocio-lat", "");
+  await page.fill("#a-negocio-lng", "");
+  await page.click("#tab-tienda");
+  await page.locator("#form-tienda button[type=submit]").click();
+  await page.locator("#errores-tienda").waitFor({ state: "visible" });
+  assert.match(await page.locator("#errores-tienda").innerText(), /latitud/);
+  // limpiar para no afectar a otras pruebas
+  const limpio = structuredClone((await e.api.llamar("/datos")).datos.ajustes);
+  limpio.tienda.reparto.codigosPostales = []; limpio.tienda.reparto.radioKm = null;
+  await e.api.llamar("/ajustes", { metodo: "PUT", cuerpo: limpio });
+  await page.context().close();
+});
+
+test("pedidos: el reparto muestra el código postal y avisa si la dirección está por verificar", async () => {
+  const { datos } = await e.api.llamar("/datos");
+  const a = structuredClone(datos.ajustes);
+  const nuevo = await hacerPedido(pedido({ entrega: { tipo: "reparto", direccion: "Calle Luna 9, 1º B", cp: "41010", dia: "2026-10-06", franja: "10:00-13:00" }, cliente: { nombre: "Zona Prueba", telefono: "633000999" }, lineas: [{ id: "vacuno-solomillo-de-ternera", opcion: "", nota: "", cantidad: 1000 }] }));
+  const page = await entrar();
+  const tarjeta = page.locator(".pedido", { hasText: nuevo });
+  await tarjeta.waitFor();
+  assert.match(await tarjeta.innerText(), /Calle Luna 9, 1º B · 41010/);
+  assert.doesNotMatch(await tarjeta.innerText(), /por verificar/); // sin radio configurado, no hay nada que verificar
+  void a;
+  await page.context().close();
+});

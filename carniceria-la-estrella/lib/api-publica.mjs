@@ -2,7 +2,8 @@
 import { json, error, leerJson, ErrorHttp, CABECERAS_SEGURIDAD } from "./http.mjs";
 import { catalogoPublico } from "./productos.mjs";
 import { categorias } from "./datos.generado.mjs";
-import { validarPedido, enlaceWhatsApp } from "./pedido.mjs";
+import { validarPedido, enlaceWhatsApp, consultaGeocodificacion } from "./pedido.mjs";
+import { distanciaKm, redondear1 } from "./geocodificar.mjs";
 import { ahoraEnMadrid } from "./horario.mjs";
 
 const CACHE_CATALOGO = "public, durable, max-age=30, stale-while-revalidate=300";
@@ -16,7 +17,7 @@ export function ajustesPublicos(a) {
     tienda: {
       activa: t.activa, aviso: t.aviso, pedidoMinimo: t.pedidoMinimo, antelacionHoras: t.antelacionHoras, diasMaximos: t.diasMaximos, diasSinServicio: t.diasSinServicio, textoEntrega: t.textoEntrega,
       recogida: t.recogida,
-      reparto: { activo: t.reparto.activo, zona: t.reparto.zona, minimo: t.reparto.minimo, coste: t.reparto.coste, gratisDesde: t.reparto.gratisDesde, dias: t.reparto.dias, franjas: t.reparto.franjas },
+      reparto: { activo: t.reparto.activo, zona: t.reparto.zona, codigosPostales: t.reparto.codigosPostales, radioKm: t.reparto.radioKm, minimo: t.reparto.minimo, coste: t.reparto.coste, gratisDesde: t.reparto.gratisDesde, dias: t.reparto.dias, franjas: t.reparto.franjas },
       pagos: { efectivo: t.pagos.efectivo, tarjetaRecogida: t.pagos.tarjetaRecogida, bizum: t.pagos.bizum, transferencia: t.pagos.transferencia },
     },
   };
@@ -52,7 +53,14 @@ export async function crearPedido(req, deps) {
 
   const [ajustes, productos] = await Promise.all([deps.almacen.leerAjustes(), deps.almacen.leerProductos()]);
   const ahora = ahoraEnMadrid(new Date(deps.ahora()));
-  const v = validarPedido(entrada, { productos, ajustes, ahora });
+  // Radio de reparto: solo si hace falta, se localiza la dirección (servicio externo; si falla, el pedido entra «por verificar»)
+  let geo = null;
+  const consulta = consultaGeocodificacion(entrada, ajustes);
+  if (consulta && deps.geocodificar && ajustes.negocio.lat != null) {
+    const punto = await deps.geocodificar(consulta);
+    if (punto) geo = { distanciaKm: redondear1(distanciaKm(punto, { lat: ajustes.negocio.lat, lng: ajustes.negocio.lng })) };
+  }
+  const v = validarPedido(entrada, { productos, ajustes, ahora, geo });
   if (!v.ok) return json(400, { ok: false, errores: v.errores });
 
   const pedido = await deps.almacen.crearPedido(ahora.fecha, (numero) => ({

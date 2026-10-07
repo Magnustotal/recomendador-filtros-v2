@@ -5,6 +5,17 @@ import { numeroPedido } from "./pedido.mjs";
 
 const REINTENTOS = 8;
 
+// Ajustes guardados con una versión anterior: se completan con los valores por defecto de lo que falte (sin tocar listas).
+function completar(guardado, defecto) {
+  if (guardado == null || typeof guardado !== "object" || Array.isArray(guardado)) return guardado;
+  const salida = { ...guardado };
+  for (const [k, v] of Object.entries(defecto)) {
+    if (!(k in salida)) salida[k] = structuredClone(v);
+    else if (v && typeof v === "object" && !Array.isArray(v)) salida[k] = completar(salida[k], v);
+  }
+  return salida;
+}
+
 export function crearAlmacen(abrir = (nombre) => getStore({ name: nombre, consistency: "strong" })) {
   const config = () => abrir("config");
   const pedidos = () => abrir("pedidos");
@@ -25,7 +36,7 @@ export function crearAlmacen(abrir = (nombre) => getStore({ name: nombre, consis
   }
 
   return {
-    async leerAjustes() { return (await config().get("ajustes", { type: "json" })) ?? structuredClone(ajustesPorDefecto); },
+    async leerAjustes() { return completar(await config().get("ajustes", { type: "json" }), ajustesPorDefecto) ?? structuredClone(ajustesPorDefecto); },
     async guardarAjustes(valor) { await config().setJSON("ajustes", valor); },
 
     async leerProductos() { return (await config().get("productos", { type: "json" })) ?? structuredClone(productosPorDefecto); },

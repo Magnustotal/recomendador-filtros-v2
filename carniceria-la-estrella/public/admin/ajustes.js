@@ -100,6 +100,34 @@ function franjas(ruta, etiqueta) {
   return cont;
 }
 
+// Códigos postales de reparto: se pueden pegar varios de golpe (separados por comas, espacios o líneas).
+function codigosPostales(ruta) {
+  const cont = h("div", {});
+  const pintar = () => {
+    const lista = leer(borrador, ruta) ?? [];
+    const entradaCp = h("input", { type: "text", id: "nuevo-cp", inputmode: "numeric", autocomplete: "off", placeholder: "41008, 41009…", "aria-label": "Añadir códigos postales" });
+    entradaCp.dataset.ruta = ruta;
+    const anadir = h("button", { type: "button", class: "btn-sec", texto: "Añadir" });
+    const incorporar = () => {
+      const nuevos = entradaCp.value.split(/[\s,;]+/).filter(Boolean);
+      const malos = nuevos.filter((c) => !/^\d{5}$/.test(c));
+      if (malos.length) { aviso(`No es un código postal de 5 cifras: ${malos.slice(0, 3).join(", ")}`, { error: true }); return; }
+      if (!nuevos.length) return;
+      escribir(borrador, ruta, [...new Set([...lista, ...nuevos])].sort());
+      pintar();
+      $("nuevo-cp").focus();
+    };
+    anadir.addEventListener("click", incorporar);
+    entradaCp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); incorporar(); } });
+    cont.replaceChildren(
+      h("ul", { class: "etiquetas-lista", "aria-label": "Códigos postales de reparto" }, lista.length ? lista.map((c) => h("li", {}, c,
+        h("button", { type: "button", class: "quitar", "aria-label": `Quitar el código postal ${c}`, texto: "×", onclick: () => { escribir(borrador, ruta, lista.filter((x) => x !== c)); pintar(); } }))) : [h("li", { class: "vacio", texto: "Ninguno" })]),
+      h("div", { class: "nueva-franja" }, entradaCp, anadir));
+  };
+  pintar();
+  return cont;
+}
+
 function aviso_zona(texto) { return h("p", { class: "ayuda", texto }); }
 
 function fecha(ruta) {
@@ -183,7 +211,10 @@ function pintarTienda() {
         aviso_zona("Las franjas de recogida deben caer dentro del horario de la tienda de ese día; las que no, no se ofrecen."))),
     grupo("Reparto a domicilio",
       interruptor("tienda.reparto.activo", "Ofrecer reparto a domicilio"),
-      entrada("tienda.reparto.zona", "Zona de reparto", { max: 200, ayuda: "Por ejemplo: «La Barzola, Los Príncipes y alrededores». El cliente la ve al elegir reparto." }),
+      entrada("tienda.reparto.zona", "Descripción de la zona (opcional)", { max: 200, ayuda: "Texto libre que ve el cliente, por ejemplo «La Barzola, Los Príncipes y alrededores»." }),
+      h("div", { class: "campo" }, h("p", { class: "etiqueta-grupo", texto: "Códigos postales donde repartes" }), codigosPostales("tienda.reparto.codigosPostales"),
+        aviso_zona("Puedes pegar varios a la vez. Si pones solo códigos postales, el cliente tiene que escribir uno de la lista para poder pedir reparto.")),
+      entrada("tienda.reparto.radioKm", "Radio de reparto desde la tienda (km, opcional)", { tipo: "coord", placeholder: "Ej. 3", ayuda: "Distancia en línea recta desde las coordenadas de la tienda (pestaña Negocio). Si pones también códigos postales, vale cualquiera de las dos cosas: los de la lista entran siempre y el resto se comprueba por distancia. Para medirla se localiza la dirección del cliente con OpenStreetMap; si no la encuentra, el pedido entra marcado «dirección por verificar» para que lo mires tú." }),
       entrada("tienda.reparto.minimo", "Pedido mínimo para reparto (€, opcional)", { tipo: "dinero" }),
       entrada("tienda.reparto.coste", "Coste del envío (€, vacío = sin coste)", { tipo: "dinero" }),
       entrada("tienda.reparto.gratisDesde", "Envío gratis a partir de (€, opcional)", { tipo: "dinero" }),

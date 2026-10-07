@@ -120,3 +120,13 @@ test("la tienda (/tienda) se renderiza con SEO propio y sus piezas comunes", () 
   // el único script en línea es el que marca <html class="js">, y la CSP lo autoriza por huella
   assert.match(cspParaHtml(html), /script-src 'self' 'sha256-[A-Za-z0-9+/=]+'/);
 });
+
+test("privacidad: solo menciona OpenStreetMap cuando el reparto usa radio en km", () => {
+  const con = renderizarPagina("privacidad.html", ajustes((x) => { x.tienda.activa = true; x.tienda.reparto.radioKm = 3; return x; }), { ahora: AHORA });
+  const sin = renderizarPagina("privacidad.html", ajustes((x) => { x.tienda.activa = true; return x; }), { ahora: AHORA });
+  const cerrada = renderizarPagina("privacidad.html", ajustes((x) => { x.tienda.reparto.radioKm = 3; return x; }), { ahora: AHORA });
+  assert.match(con, /OpenStreetMap \(Nominatim\)/);
+  assert.doesNotMatch(sin, /OpenStreetMap/);
+  assert.doesNotMatch(cerrada, /OpenStreetMap/);
+  assert.doesNotMatch(con, /\{\{/);
+});

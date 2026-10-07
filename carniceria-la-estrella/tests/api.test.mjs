@@ -260,3 +260,46 @@ test("páginas: la portada, sitemap y robots salen con los datos guardados", asy
   assert.match(rb, /Disallow: \/admin\//);
   assert.equal((await pagina(preq("/nada"), deps())).status, 404);
 });
+
+test("reparto con radio: se localiza la dirección, se rechaza lo lejano y lo no localizable entra «por verificar»", async () => {
+  const d = await (await adm("/datos", { cookie })).json();
+  const a = structuredClone(d.ajustes);
+  a.tienda.activa = true; a.tienda.reparto.activo = true; a.tienda.reparto.radioKm = 3; a.tienda.reparto.codigosPostales = ["41008"];
+  assert.equal((await adm("/ajustes", { metodo: "PUT", cuerpo: a, cookie })).status, 200);
+  const cuerpo = (cp) => ({ ...pedidoOk(), entrega: { tipo: "reparto", dia: "2026-10-07", franja: "10:00-13:00", direccion: "Calle Sol 4, 2º A", cp }, pago: "efectivo" });
+  const consultas = [];
+  const con = (geo) => ({ ...deps(), geocodificar: async (q) => { consultas.push(q); return geo; } });
+  const TIENDA = { lat: a.negocio.lat, lng: a.negocio.lng };
+
+  // CP de la lista: no se consulta a ningún servicio
+  const enLista = await crearPedido(pedidoReq(cuerpo("41008")), con({ lat: 0, lng: 0 }));
+  assert.equal(enLista.status, 201); assert.equal(consultas.length, 0);
+
+  // fuera de la lista y lejos: rechazado
+  const lejos = await crearPedido(pedidoReq(cuerpo("41013")), con({ lat: TIENDA.lat + 0.1, lng: TIENDA.lng })); // ~11 km
+  assert.equal(lejos.status, 400);
+  assert.match((await lejos.json()).errores.find((e) => e.campo === "entrega.direccion").mensaje, /km de la tienda/);
+  assert.match(consultas.at(-1), /^Calle Sol 4, 2º A, 41013 Sevilla, España$/);
+
+  // fuera de la lista pero cerca: aceptado con la distancia guardada
+  const cerca = await crearPedido(pedidoReq(cuerpo("41013")), con({ lat: TIENDA.lat + 0.01, lng: TIENDA.lng })); // ~1,1 km
+  assert.equal(cerca.status, 201);
+  const g = await almacen.leerPedido((await cerca.json()).numero);
+  assert.equal(g.entrega.distanciaKm, 1.1); assert.equal(g.entrega.zonaVerificada, true); assert.equal(g.entrega.cp, "41013");
+
+  // el servicio no localiza la dirección: entra, marcado por verificar
+  const sin = await crearPedido(pedidoReq(cuerpo("41013")), con(null));
+  assert.equal(sin.status, 201);
+  const g2 = await almacen.leerPedido((await sin.json()).numero);
+  assert.equal(g2.entrega.zonaVerificada, false); assert.equal(g2.entrega.distanciaKm, null);
+
+  // el CSV lo refleja
+  const csv = await (await adm("/pedidos.csv", { cookie })).text();
+  assert.match(csv, /"zona_verificada"/); assert.match(csv, /;"41013";"1,1";"sí";/); assert.match(csv, /;"41013";"";"NO";/);
+
+  // ajustes antiguos sin los campos nuevos siguen funcionando
+  const viejo = structuredClone(a); delete viejo.tienda.reparto.codigosPostales; delete viejo.tienda.reparto.radioKm;
+  await almacen.guardarAjustes(viejo);
+  assert.deepEqual((await almacen.leerAjustes()).tienda.reparto.codigosPostales, []);
+  assert.equal((await catalogo(deps()).then((r) => r.json())).ajustes.tienda.reparto.radioKm, null);
+});

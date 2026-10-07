@@ -45,7 +45,7 @@ function pintarFiltros() {
 function pintar() {
   pintarFiltros();
   const lista = pedidos.filter((p) => (!filtro || p.estado === filtro)
-    && (!texto || sinAcentos(`${p.numero} ${p.cliente.nombre} ${p.cliente.telefono} ${p.entrega.direccion}`).includes(texto)));
+    && (!texto || sinAcentos(`${p.numero} ${p.cliente.nombre} ${p.cliente.telefono} ${p.entrega.direccion} ${p.entrega.cp ?? ""}`).includes(texto)));
   $("pedidos-vacio").hidden = lista.length > 0;
   $("pedidos-vacio").textContent = pedidos.length ? "No hay pedidos con ese filtro." : "Todavía no ha entrado ningún pedido.";
   $("pedidos-lista").replaceChildren(...lista.map(tarjeta));
@@ -99,7 +99,9 @@ function tarjeta(p) {
       h("a", { href: `tel:+34${telefono}`, texto: telefono.replace(/(\d{3})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4") }), " · ",
       h("a", { href: `https://wa.me/34${telefono}`, target: "_blank", rel: "noopener", texto: "WhatsApp" })),
     h("p", { class: "pedido-entrega" }, h("strong", { texto: en.tipo === "recogida" ? "Recogida en tienda" : "Reparto a domicilio" }),
-      ` · ${fechaLarga(en.dia)} · ${en.franja.replace("-", " a ")}`, en.direccion ? h("br") : null, en.direccion ? `📍 ${en.direccion}` : null),
+      ` · ${fechaLarga(en.dia)} · ${en.franja.replace("-", " a ")}`, en.direccion ? h("br") : null, en.direccion ? `📍 ${en.direccion}${en.cp ? ` · ${en.cp}` : ""}` : null,
+      en.distanciaKm != null ? ` · a ${String(en.distanciaKm).replace(".", ",")} km de la tienda` : null,
+      en.tipo === "reparto" && en.zonaVerificada === false ? h("span", { class: "pendiente", texto: " · ⚠ Dirección por verificar: no se pudo comprobar si está dentro de tu radio de reparto" }) : null),
     h("ul", { class: "pedido-lineas" }, lineas),
     h("p", { class: "pedido-total" }, totales.join(" · "), p.consultar ? h("span", { class: "pendiente", texto: ` · ${p.consultar} producto${p.consultar === 1 ? "" : "s"} por consultar` }) : null),
     h("p", { class: "pedido-pago", texto: `Pago: ${NOMBRE_PAGO[p.pago] ?? p.pago}${p.mayorEdad ? " · Mayor de 18 confirmado" : ""}` }),

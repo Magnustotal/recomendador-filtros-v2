@@ -14,7 +14,11 @@ export function textosLegales(ajustes, escapar) {
       tu encargo. No usamos esos datos para enviarte publicidad ni los cedemos a terceros salvo obligación legal.
     </p>`;
 
+  const radio = activa && ajustes.tienda.reparto.activo && ajustes.tienda.reparto.radioKm != null;
   const t = {
+    geocodificacion: radio
+      ? `      <li><strong>OpenStreetMap (Nominatim)</strong>: si pides reparto a domicilio y tu código postal no está en la lista de la zona, tu dirección de entrega se envía a este servicio para calcular la distancia a la tienda. Solo se usa para eso.</li>`
+      : "",
     razonSocial: pendiente(n.razonSocial, "razón social"),
     nif: pendiente(n.nif, "NIF"),
   };

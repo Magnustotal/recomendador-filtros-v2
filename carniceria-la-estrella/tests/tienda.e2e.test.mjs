@@ -33,7 +33,7 @@ test("los chips de categoría llevan a la sección aunque esté lejos (content-v
     await page.waitForTimeout(1200); // fin del desplazamiento suave
     const id = await page.locator("#chips .chip[aria-pressed=true]").getAttribute("data-cat");
     const caja = await page.locator(`#cat-${id}`).boundingBox();
-    assert.ok(caja.y >= 0 && caja.y < 400, `${nombre}: el título quedó en y=${Math.round(caja.y)}`);
+    assert.ok(caja.y >= 0 && caja.y < 560, `${nombre}: el título quedó en y=${Math.round(caja.y)}`);
   }
   await page.context().close();
 });
@@ -222,4 +222,49 @@ test("objetivos táctiles de al menos 44 px en botones de cantidad, chips y boto
   });
   assert.deepEqual(pequenos, []);
   await page.context().close();
+});
+
+test("zona de reparto por códigos postales: se explica, se rechaza lo que queda fuera y se acepta lo de la lista", async () => {
+  const { datos } = await e.api.llamar("/datos");
+  const original = structuredClone(datos.ajustes);
+  const a = structuredClone(original);
+  a.tienda.reparto.codigosPostales = ["41008", "41009"];
+  assert.equal((await e.api.llamar("/ajustes", { metodo: "PUT", cuerpo: a })).estado, 200);
+  try {
+    const page = await abrir();
+    assert.match(await page.locator("#opciones-entrega").innerText(), /códigos postales 41008, 41009/);
+    await fila(page, "Solomillo de ternera").getByRole("button", { name: /Añadir/ }).click();
+    for (let i = 0; i < 2; i++) await page.locator(".linea").getByRole("button", { name: /Más Solomillo/ }).click(); // 750 g = 22,43 € (mínimo de reparto: 15 €)
+    await page.fill("#nombre", "Rosa");
+    await page.fill("#telefono", "622334455");
+    await page.check("input[name=entrega][value=reparto]");
+    assert.match(await page.locator("#ayuda-zona").innerText(), /solo en los códigos postales 41008, 41009/);
+    await page.fill("#direccion", "Calle Sol 4, 2º A");
+    await page.selectOption("#dia", { index: 2 });
+    await page.selectOption("#franja", { index: 1 });
+    await page.check("input[name=pago][value=efectivo]");
+
+    await page.fill("#cp", "41013");
+    await page.click("#enviar");
+    await page.locator("#error-cp").waitFor({ state: "visible" });
+    assert.match(await page.locator("#error-cp").innerText(), /no repartimos en el código postal 41013/);
+    assert.equal(await page.locator("#cp").getAttribute("aria-invalid"), "true");
+    assert.equal(await page.locator("#confirmacion").isVisible(), false);
+
+    // El servidor también lo rechaza si alguien se salta el navegador
+    const mal = await fetch(e.url + "/api/pedido", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({
+      lineas: [{ id: "vacuno-solomillo-de-ternera", opcion: "", nota: "", cantidad: 1000 }], cliente: { nombre: "Rosa", telefono: "622334455" },
+      entrega: { tipo: "reparto", direccion: "Calle Sol 4, 2º A", cp: "41013", dia: "2026-10-06", franja: "10:00-13:00" }, pago: "efectivo", web: "" }) });
+    assert.equal(mal.status, 400);
+    assert.ok((await mal.json()).errores.some((x) => x.campo === "entrega.cp"));
+
+    await page.fill("#cp", "41008");
+    await page.click("#enviar");
+    await page.locator("#confirmacion").waitFor({ state: "visible" });
+    const href = await page.locator("#confirmacion a.btn").getAttribute("href");
+    assert.match(decodeURIComponent(href), /Dirección: Calle Sol 4, 2º A \(41008\)/);
+    await page.context().close();
+  } finally {
+    await e.api.llamar("/ajustes", { metodo: "PUT", cuerpo: original });
+  }
 });

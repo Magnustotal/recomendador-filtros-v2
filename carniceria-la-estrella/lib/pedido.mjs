@@ -8,7 +8,22 @@ import { diaSemanaDeFecha, sumarDias, aMinutos, franjaDentroDeHorario } from "./
 const MAX_LINEAS = 60;
 const FORMAS_PAGO = ["efectivo", "tarjeta", "bizum", "transferencia"];
 
-export function validarPedido(entrada, { productos, ajustes, ahora }) {
+const RE_CP = /^\d{5}$/;
+const limpiarCp = (v) => String(v ?? "").replace(/\s+/g, "");
+
+// ¿Hay que localizar la dirección para saber si cae dentro del radio de reparto? Devuelve el texto a buscar o null.
+export function consultaGeocodificacion(entrada, ajustes) {
+  const en = entrada?.entrega ?? {};
+  const rp = ajustes.tienda.reparto;
+  if (en.tipo !== "reparto" || !rp.activo || rp.radioKm == null) return null;
+  const cp = limpiarCp(en.cp);
+  const direccion = typeof en.direccion === "string" ? en.direccion.trim() : "";
+  if (!RE_CP.test(cp) || direccion.length < 8 || direccion.length > 200 || (rp.codigosPostales ?? []).includes(cp)) return null;
+  return `${direccion}, ${cp} ${ajustes.negocio.localidad}, España`;
+}
+
+// `geo` = { distanciaKm } cuando se ha podido localizar la dirección; null si no hacía falta o no se localizó.
+export function validarPedido(entrada, { productos, ajustes, ahora, geo = null }) {
   return recoger((ctx) => {
     const e = entrada ?? {};
     const t = ajustes.tienda;
@@ -48,13 +63,28 @@ export function validarPedido(entrada, { productos, ajustes, ahora }) {
     // ---- entrega ----
     const en = e.entrega ?? {};
     const tipo = en.tipo;
-    let direccion = "", dia, franja;
+    let direccion = "", cp = "", dia, franja, distanciaKm = null, zonaVerificada = true;
     if (tipo !== "recogida" && tipo !== "reparto") ctx.error("entrega.tipo", "Elige recogida o reparto.");
     else {
       const cfg = tipo === "recogida" ? t.recogida : t.reparto;
       if (!(tipo === "recogida" ? cfg.activa : cfg.activo)) ctx.error("entrega.tipo", tipo === "recogida" ? "La recogida en tienda no está disponible." : "El reparto a domicilio no está disponible.");
       else {
-        if (tipo === "reparto") direccion = ctx.intento(() => texto(en.direccion, { min: 8, max: 200, campo: "entrega.direccion" })) ?? "";
+        if (tipo === "reparto") {
+          direccion = ctx.intento(() => texto(en.direccion, { min: 8, max: 200, campo: "entrega.direccion" })) ?? "";
+          cp = limpiarCp(en.cp);
+          if (!RE_CP.test(cp)) { ctx.error("entrega.cp", "Código postal de 5 cifras."); cp = ""; }
+          else {
+            const lista = cfg.codigosPostales ?? [];
+            const radio = cfg.radioKm ?? null;
+            if ((lista.length || radio != null) && !lista.includes(cp)) {
+              if (radio == null) ctx.error("entrega.cp", `Lo sentimos, no repartimos en el código postal ${cp}.`);
+              else if (geo?.distanciaKm != null) {
+                distanciaKm = geo.distanciaKm;
+                if (distanciaKm > radio) ctx.error("entrega.direccion", `Esa dirección queda a unos ${String(distanciaKm).replace(".", ",")} km de la tienda y repartimos hasta ${String(radio).replace(".", ",")} km. Si crees que es un error, escríbenos por WhatsApp.`);
+              } else zonaVerificada = false; // no se pudo localizar: entra el pedido y se avisa al negocio
+            }
+          }
+        }
         dia = ctx.intento(() => fechaISO(en.dia, "entrega.dia"));
         franja = typeof en.franja === "string" && cfg.franjas.includes(en.franja) ? en.franja : (ctx.error("entrega.franja", "Elige una franja horaria de la lista."), undefined);
         if (dia) {
@@ -106,7 +136,7 @@ export function validarPedido(entrada, { productos, ajustes, ahora }) {
 
     return {
       cliente: { nombre, telefono },
-      entrega: { tipo, direccion, dia, franja },
+      entrega: { tipo, direccion, cp, dia, franja, distanciaKm, zonaVerificada },
       pago, comentarios, mayorEdad,
       lineas: lineas.map(({ alcohol, ...l }) => l),
       subtotalCent, consultar, envioCent, totalCent: subtotalCent + envioCent,
@@ -137,7 +167,7 @@ export function mensajeWhatsApp(pedido, numero, { completo = true } = {}) {
   l.push("");
   const en = pedido.entrega;
   l.push(en.tipo === "recogida" ? `Recogida en tienda: ${etiquetaDia(en.dia)}, ${en.franja}` : `Reparto a domicilio: ${etiquetaDia(en.dia)}, ${en.franja}`);
-  if (en.tipo === "reparto") l.push(`Dirección: ${en.direccion}`);
+  if (en.tipo === "reparto") l.push(`Dirección: ${en.direccion}${en.cp ? ` (${en.cp})` : ""}`);
   l.push(`Pago: ${NOMBRE_PAGO[pedido.pago]}`);
   if (pedido.subtotalCent > 0 || pedido.consultar === 0) {
     const total = formatoEuro(pedido.totalCent / 100);

@@ -1,4 +1,4 @@
-# Carnicería La Estrella — web y tienda online (v5.0.0)
+# Carnicería La Estrella — web y tienda online (v5.1.0)
 
 Web del negocio (portada, aviso legal, privacidad) **más una tienda online con panel de administración**:
 el cliente elige productos (casi todo al peso, de 250 en 250 g), indica si recoge o quiere reparto, día y franja,
@@ -169,8 +169,26 @@ sitio publicado**. Quedan por confirmar al desplegar:
 - Las fotos de **producto** se suben desde el panel (se reducen a ≤ 900 px y ≤ 680 KB en el navegador).
 - El estado «sin conexión» de la PWA muestra la web visitada, pero **pedir exige conexión** (el carrito se conserva).
 
+## Zona de reparto (v5.1.0)
+
+En **Tienda → Reparto a domicilio** se puede definir la zona de tres maneras (combinables):
+
+- **Códigos postales:** lista de CP donde se reparte (se pueden pegar varios de golpe).
+- **Radio en km desde la tienda:** en línea recta desde las coordenadas del negocio (pestaña Negocio).
+- **Descripción libre:** texto que ve el cliente.
+
+Reglas: el cliente siempre escribe su código postal al pedir reparto. Si solo hay lista de CP, tiene que estar en la lista. Si hay radio, los CP de la lista entran siempre y el resto se comprueba por distancia: el servidor localiza la dirección con **OpenStreetMap (Nominatim)**, un servicio gratuito externo (máx. 1 petición/s y `User-Agent` identificado, como exige su política de uso). Si queda fuera del radio se rechaza con un mensaje que remite a WhatsApp; si el servicio no la localiza, el pedido **entra marcado «dirección por verificar»** (se ve en el panel y en el CSV). La política de privacidad menciona OpenStreetMap solo cuando el radio está activo. La distancia es en línea recta y la localización por dirección puede fallar o equivocarse en calles poco conocidas: el radio es una ayuda, no una garantía.
+
+## Imágenes de la tienda (v5.1.0)
+
+- **Iconos de categoría y de pieza:** 14 de [Lucide](https://lucide.dev) (licencia ISC, `lucide-static` 1.52.0) y 4 dibujados a mano en el mismo estilo (cerdo, embutidos, quesos, cordero). Están en `public/assets/iconos/<categoría>.svg`; se pintan con máscara CSS (toman el color del texto).
+- **Foto en la cabecera de cada categoría** (`public/assets/photos/<categoría>.jpg` y `-400.jpg`), etiquetada «Foto ilustrativa»: 13 que ya tenía la web (Pexels/Pixabay) y 5 nuevas de **Pexels** (licencia Pexels: uso comercial libre, sin atribución obligatoria): cordero (id 17988080), especias (6397651), vino (8473122), avíos (15505487) y salsas (5604824). Son fotos genéricas, no producto real de la tienda.
+- **Cada pieza** muestra su foto si el carnicero la sube desde el panel; si no, el icono de su categoría.
+- Los 225 productos **no tienen una foto propia por defecto**: no tengo fuentes con licencia verificada para fotografiar cada corte. Se suben desde el panel (Productos → Editar → Subir foto).
+
 ## Historial
 
+- **v5.1.0** — Zona de reparto por códigos postales y/o radio en km (con localización de la dirección, pedidos «por verificar» y CP en pedidos y CSV); iconos y fotos por categoría en la tienda; miniatura con icono en cada pieza; fichas de «Cordero y cabrito» y «Despensa y vinos» en la portada.
 - **v5.0.0** — Tienda online, panel de administración, funciones de Netlify y almacén Blobs; páginas generadas desde los
   ajustes; catálogo de 225 productos; textos legales dependientes del estado de la tienda; servidor local y pruebas de
   navegador.

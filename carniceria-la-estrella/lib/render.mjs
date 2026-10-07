@@ -119,8 +119,8 @@ export function contexto(ajustes, { origen = "", ahora = new Date() } = {}) {
       externo: activa ? "" : ' target="_blank" rel="noopener"',
       aviso: ajustes.tienda.aviso,
       catalogoExtra: activa
-        ? "Cordero y cabrito, avíos del puchero, especias, salsas, vinos y mucho más. En la tienda online están todos los productos, con sus cortes, y puedes hacer el pedido para recoger o recibir en casa."
-        : "También tenemos cordero y cabrito, avíos del puchero, especias, salsas y vinos. Pregúntanos por ellos por WhatsApp o en la tienda.",
+        ? "En la tienda online están todos los productos, con sus cortes y opciones, y puedes hacer el pedido para recoger en tienda o recibir en casa."
+        : "¿No ves lo que buscas? Pregúntanos por WhatsApp o en la tienda: si no está en la lista, a lo mejor lo tenemos.",
     },
     horario: { filasHtml: tablaHorario(ajustes.horario) },
     faq: { html: faqHtml(preguntas) },

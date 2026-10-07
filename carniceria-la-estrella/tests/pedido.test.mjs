@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { validarPedido, numeroPedido, mensajeWhatsApp, enlaceWhatsApp } from "../lib/pedido.mjs";
+import { validarPedido, numeroPedido, mensajeWhatsApp, enlaceWhatsApp, consultaGeocodificacion } from "../lib/pedido.mjs";
 
 const leer = (f) => JSON.parse(readFileSync(new URL(`../data/${f}`, import.meta.url), "utf8"));
 const productos = leer("productos.default.json");
@@ -101,6 +101,8 @@ test("reparto exige dirección y respeta mínimo, coste y envío gratis", () => 
   const e = pedidoOk(); e.entrega = { tipo: "reparto", dia: "2026-10-07", franja: "10:00-13:00" };
   assert.equal(validar(e, a).ok, false); // sin dirección
   e.entrega.direccion = "Calle Gálena 2, 2º B";
+  assert.ok(validar(e, a).errores.some((x) => x.campo === "entrega.cp")); // sin código postal
+  e.entrega.cp = "41008";
   const bajo = validar(e, a); assert.equal(bajo.ok, false); // 29,45 < 30
   e.lineas[1].cantidad = 3; // 25,5 + 12,45 = 37,95
   const ok = validar(e, a); assert.equal(ok.ok, true, JSON.stringify(ok.errores));
@@ -113,7 +115,7 @@ test("reparto exige dirección y respeta mínimo, coste y envío gratis", () => 
 test("tarjeta solo con recogida; formas de pago desactivadas se rechazan", () => {
   const e = pedidoOk(); e.pago = "tarjeta";
   assert.equal(validar(e).ok, true);
-  const r = pedidoOk(); r.entrega = { tipo: "reparto", dia: "2026-10-07", franja: "10:00-13:00", direccion: "Calle Gálena 2, 2º B" }; r.pago = "tarjeta";
+  const r = pedidoOk(); r.entrega = { tipo: "reparto", dia: "2026-10-07", franja: "10:00-13:00", direccion: "Calle Gálena 2, 2º B", cp: "41008" }; r.pago = "tarjeta";
   assert.equal(validar(r).ok, false);
   const a = clone(ajustes); a.tienda.pagos.bizum = false; const b = pedidoOk(); b.pago = "bizum";
   assert.equal(validar(b, a).ok, false);
@@ -150,4 +152,58 @@ test("mensaje de WhatsApp: legible, con número, y se acorta si es larguísimo",
   const e2 = enlaceWhatsApp(grande, n, "34601006290");
   assert.equal(e2.resumido, true);
   assert.ok(e2.url.length <= 1800);
+});
+
+// ---------- zona de reparto ----------
+const reparto = (zona) => { const a = clone(ajustes); a.tienda.reparto = { ...a.tienda.reparto, activo: true, ...zona }; return a; };
+const pedidoReparto = (cp = "41008") => { const e = pedidoOk(); e.entrega = { tipo: "reparto", dia: "2026-10-07", franja: "10:00-13:00", direccion: "Calle Gálena 2, 2º B", cp }; return e; };
+const conGeo = (e, a, geo) => validarPedido(e, { productos, ajustes: a, ahora: AHORA, geo });
+
+test("zona por códigos postales: solo se reparte en los de la lista", () => {
+  const a = reparto({ codigosPostales: ["41008", "41009"] });
+  assert.equal(validar(pedidoReparto("41008"), a).ok, true);
+  assert.equal(validar(pedidoReparto("41 009"), a).ok, true, "admite espacios");
+  const fuera = validar(pedidoReparto("41013"), a);
+  assert.equal(fuera.ok, false);
+  assert.match(fuera.errores.find((x) => x.campo === "entrega.cp").mensaje, /no repartimos en el código postal 41013/);
+  assert.equal(validar(pedidoReparto("abc"), a).ok, false);
+});
+
+test("sin zona definida se reparte en cualquier código postal válido (pero el CP es obligatorio)", () => {
+  assert.equal(validar(pedidoReparto("28001"), reparto({})).ok, true);
+  assert.equal(validar(pedidoReparto("2800"), reparto({})).ok, false);
+});
+
+test("radio en km: dentro se acepta, fuera se rechaza con la distancia, y sin localizar entra «por verificar»", () => {
+  const a = reparto({ radioKm: 3 });
+  const dentro = conGeo(pedidoReparto("41010"), a, { distanciaKm: 1.4 });
+  assert.equal(dentro.ok, true); assert.equal(dentro.valor.entrega.distanciaKm, 1.4); assert.equal(dentro.valor.entrega.zonaVerificada, true);
+  const fuera = conGeo(pedidoReparto("41010"), a, { distanciaKm: 7.2 });
+  assert.equal(fuera.ok, false);
+  assert.match(fuera.errores.find((x) => x.campo === "entrega.direccion").mensaje, /7,2 km.*hasta 3 km/);
+  const sinLocalizar = conGeo(pedidoReparto("41010"), a, null);
+  assert.equal(sinLocalizar.ok, true); assert.equal(sinLocalizar.valor.entrega.zonaVerificada, false); assert.equal(sinLocalizar.valor.entrega.distanciaKm, null);
+});
+
+test("radio + lista: un CP de la lista entra sin comprobar distancia", () => {
+  const a = reparto({ radioKm: 2, codigosPostales: ["41008"] });
+  const r = conGeo(pedidoReparto("41008"), a, { distanciaKm: 9 }); // aunque la distancia sea mayor
+  assert.equal(r.ok, true); assert.equal(r.valor.entrega.zonaVerificada, true);
+  assert.equal(conGeo(pedidoReparto("41020"), a, { distanciaKm: 9 }).ok, false);
+});
+
+test("consultaGeocodificacion: solo cuando hace falta localizar la dirección", () => {
+  const a = reparto({ radioKm: 3, codigosPostales: ["41008"] });
+  assert.match(consultaGeocodificacion(pedidoReparto("41010"), a), /^Calle Gálena 2, 2º B, 41010 Sevilla, España$/);
+  assert.equal(consultaGeocodificacion(pedidoReparto("41008"), a), null, "CP de la lista");
+  assert.equal(consultaGeocodificacion(pedidoReparto("41010"), reparto({})), null, "sin radio");
+  assert.equal(consultaGeocodificacion(pedidoOk(), a), null, "recogida");
+  const corto = pedidoReparto("41010"); corto.entrega.direccion = "x";
+  assert.equal(consultaGeocodificacion(corto, a), null);
+});
+
+test("el pedido de reparto guarda CP y el mensaje de WhatsApp lo incluye", () => {
+  const r = validar(pedidoReparto("41008"), reparto({}));
+  assert.equal(r.valor.entrega.cp, "41008");
+  assert.match(mensajeWhatsApp(r.valor, "LE-2610-0001"), /Dirección: Calle Gálena 2, 2º B \(41008\)/);
 });
