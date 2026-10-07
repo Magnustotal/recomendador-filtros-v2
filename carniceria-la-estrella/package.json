@@ -1,6 +1,6 @@
 {
   "name": "carniceria-la-estrella-web",
-  "version": "5.5.0",
+  "version": "5.5.1",
   "private": true,
   "type": "module",
   "description": "Carnicería La Estrella: web, tienda de pedidos por WhatsApp y panel de administración (Netlify Functions + Blobs).",
@@ -16,7 +16,7 @@
     "@netlify/functions": "^6.0.2"
   },
   "devDependencies": {
-    "netlify-cli": "*",
+    "netlify-cli": "^27.11.2",
     "playwright-core": "^1.56.1"
   }
 }

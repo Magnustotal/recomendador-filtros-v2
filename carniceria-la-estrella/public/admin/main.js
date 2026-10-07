@@ -100,7 +100,7 @@ for (const cual of ["tienda", "negocio"]) {
 window.addEventListener("beforeunload", (e) => { if (sinGuardar) { e.preventDefault(); e.returnValue = ""; } });
 
 iniciarPedidos({ cuandoCambienNuevos: marcarNuevos });
-iniciarMercado({ alCambiar: (m) => { fijarMercado(m); pintarEstado(); } });
+iniciarMercado({ alCambiar: (m) => { fijarMercado(m); pintarEstado(); }, recargar: () => recargarProductos() });
 
 iniciarProductos({
   redondeoActual: () => guardado?.tienda.redondeo ?? null,

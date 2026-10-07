@@ -13,9 +13,16 @@
   "categories": ["food", "shopping"],
   "shortcuts": [
     {
+      "name": "Hacer un pedido",
+      "short_name": "Pedido",
+      "description": "Hacer un pedido en la tienda online de Carnicería La Estrella",
+      "url": "/tienda",
+      "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192" }]
+    },
+    {
       "name": "Llamar",
       "short_name": "Llamar",
-      "description": "Llamar a Carnicería La Estrella",
+      "description": "Teléfono y horario de Carnicería La Estrella",
       "url": "/#visitanos",
       "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192" }]
     },

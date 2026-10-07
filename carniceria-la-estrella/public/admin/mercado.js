@@ -18,8 +18,7 @@ export function cargarMercado({ mercado: m, productos: lista, hoy: h0 }) {
   if (lista) productos = lista;
   if (h0) hoy = h0;
   if (!mercado.fuentes.some((f) => f.id === fuenteElegida)) fuenteElegida = mercado.fuentes[0]?.id ?? "";
-  borrador = new Map();
-  pintar();
+  pintar(); // lo escrito y sin guardar (borrador) se conserva aunque se recarguen los datos
 }
 export function resumenMercado() {
   const conPrecios = Object.values(mercado.precios ?? {}).some((p) => Object.keys(p).length > 0);
@@ -31,8 +30,8 @@ const num = (t) => { const n = Number(String(t).trim().replace(",", ".")); retur
 const eur = (n) => `${Number(n).toFixed(2).replace(".", ",")} €`;
 
 async function guardar(nuevo, mensaje) {
-  const r = await api("/mercado", { metodo: "PUT", cuerpo: { fuentes: nuevo.fuentes, precios: nuevo.precios } });
-  if (!r.ok) { aviso(textoErrores(r.errores), { error: true }); return false; }
+  const r = await api("/mercado", { metodo: "PUT", cuerpo: { version: mercado.version ?? 0, fuentes: nuevo.fuentes, precios: nuevo.precios } });
+  if (!r.ok) { aviso(textoErrores(r.errores), { error: true }); if (r.estado === 409) contexto.recargar?.(); return false; }
   mercado = structuredClone(r.datos.mercado);
   borrador = new Map();
   if (mensaje) aviso(mensaje);

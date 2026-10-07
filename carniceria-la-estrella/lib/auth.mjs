@@ -78,6 +78,9 @@ export function registrarFallo(estado, ahoraMs) {
   const desde = estado && ahoraMs - estado.desde < BLOQUEO_MS ? estado.desde : ahoraMs;
   return n >= MAX_INTENTOS ? { n, desde, hasta: ahoraMs + BLOQUEO_MS } : { n, desde };
 }
-export function huellaIp(ip) {
-  return createHash("sha256").update(String(ip ?? "desconocida")).digest("hex").slice(0, 32);
+// Huella de la IP para contar intentos fallidos. Con clave (HMAC): un SHA-256 simple de una IPv4 se deshace
+// probando las 4.000 millones de direcciones, así que no se guarda sin clave.
+export const claveHuella = (secreto) => createHmac("sha256", secreto).update("huella-ip").digest(); // clave propia, distinta de la de las cookies
+export function huellaIp(ip, clave = "") {
+  return createHmac("sha256", clave).update(String(ip ?? "desconocida")).digest("hex").slice(0, 32);
 }

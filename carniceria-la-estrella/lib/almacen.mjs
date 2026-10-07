@@ -55,9 +55,10 @@ export function crearAlmacen(abrir = (nombre) => getStore({ name: nombre, consis
     // Precios de referencia de otras fuentes (uso interno del carnicero): { fuentes, precios }.
     async leerMercado() {
       const m = await config().get("mercado", { type: "json" });
-      return m ?? { fuentes: structuredClone(mercadoPorDefecto.fuentes), precios: {} };
+      return { version: 0, ...(m ?? { fuentes: structuredClone(mercadoPorDefecto.fuentes), precios: {} }) };
     },
-    async guardarMercado(valor) { await config().setJSON("mercado", valor); },
+    // Con control de ediciones simultáneas (ETag), igual que los productos. `version` sube con cada cambio.
+    actualizarMercado(transformar) { return actualizarJson(config(), "mercado", { version: 0, fuentes: mercadoPorDefecto.fuentes, precios: {} }, transformar); },
 
     async leerProductos() { return (await config().get("productos", { type: "json" })) ?? structuredClone(productosPorDefecto); },
     actualizarProductos(transformar) { return actualizarJson(config(), "productos", productosPorDefecto, transformar); },

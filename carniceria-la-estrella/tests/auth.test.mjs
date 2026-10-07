@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { configuracionAuth, compararPassword, crearSesion, verificarSesion, leerCookie, cookieSesion, peticionDeMismoOrigen, evaluarIntentos, registrarFallo, MAX_INTENTOS, BLOQUEO_MS } from "../lib/auth.mjs";
+import { configuracionAuth, compararPassword, crearSesion, verificarSesion, leerCookie, cookieSesion, peticionDeMismoOrigen, evaluarIntentos, registrarFallo, huellaIp, MAX_INTENTOS, BLOQUEO_MS } from "../lib/auth.mjs";
 
 const SECRETO = "s".repeat(40);
 
@@ -52,4 +52,13 @@ test("límite de intentos: bloquea tras 5 fallos y se libera después", () => {
   e = registrarFallo(e, t0 + 10);
   assert.equal(evaluarIntentos(e, t0 + 11).bloqueado, true);
   assert.equal(evaluarIntentos(e, t0 + 10 + BLOQUEO_MS + 1).bloqueado, false);
+});
+
+test("huella de IP: estable, distinta por IP y por clave, y no es el SHA-256 simple de la IP", async () => {
+  const { createHash } = await import("node:crypto");
+  assert.equal(huellaIp("1.2.3.4", "clave"), huellaIp("1.2.3.4", "clave"));
+  assert.notEqual(huellaIp("1.2.3.4", "clave"), huellaIp("1.2.3.5", "clave"));
+  assert.notEqual(huellaIp("1.2.3.4", "clave"), huellaIp("1.2.3.4", "otra"));
+  assert.notEqual(huellaIp("1.2.3.4", "clave"), createHash("sha256").update("1.2.3.4").digest("hex").slice(0, 32));
+  assert.match(huellaIp(undefined, "clave"), /^[0-9a-f]{32}$/);
 });

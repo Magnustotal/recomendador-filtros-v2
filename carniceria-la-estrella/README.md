@@ -1,4 +1,4 @@
-# Carnicería La Estrella — web y tienda online (v5.5.0)
+# Carnicería La Estrella — web y tienda online (v5.5.1)
 
 Web del negocio (portada, aviso legal, privacidad) **más una tienda online con panel de administración**:
 el cliente elige productos (casi todo al peso, de 250 en 250 g), indica si recoge o quiere reparto, día y franja,
@@ -166,7 +166,7 @@ sitio publicado**. Quedan por confirmar al desplegar:
   contra bots; si ocurre, se borran desde el panel).
 - Las fotos de categorías de la portada son las de siempre (banco de imágenes, marcadas «Foto ilustrativa»); no hay fotos
   para cordero ni despensa, por eso la portada las menciona en un bloque de texto («Y además…») en vez de con ficha.
-- Las fotos de **producto** se suben desde el panel: solo **JPG, PNG o WebP**; el navegador las deja entre **400 y 1000 px** por el lado largo (reduce las grandes, amplía las pequeñas; por debajo de 120 px se rechazan), las recomprime como JPG de ≤ 680 KB y así elimina los datos ocultos (GPS, modelo del móvil). El servidor lo vuelve a comprobar: tipo real por cabecera, ≤ 700 KB y 400–1600 px por el lado largo (415/422 si no).
+- Las fotos de **producto** se suben desde el panel: solo **JPG, PNG o WebP**; el navegador las deja entre **400 y 1000 px** por el lado largo (reduce las grandes, amplía las pequeñas; por debajo de 120 px se rechazan), las recomprime como JPG de ≤ 680 KB y así elimina los datos ocultos (GPS, modelo del móvil). El servidor lo vuelve a comprobar: tipo real por cabecera, ≤ 700 KB y 400–1600 px por el lado largo **según lo que declara la cabecera de la imagen** (415/422 si no); no decodifica la foto, así que el límite de peso es la garantía real frente a archivos manipulados.
 - El estado «sin conexión» de la PWA muestra la web visitada, pero **pedir exige conexión** (el carrito se conserva).
 
 ## Versión, fechas de actualización y productos por categorías (v5.3.0)
@@ -227,6 +227,7 @@ Reglas: el cliente siempre escribe su código postal al pedir reparto. Si solo h
 
 ## Historial
 
+- **v5.5.1** — Revisión de seguridad, código, accesibilidad y PWA (ver «Revisión de calidad»). Mercado: control de ediciones simultáneas, limpieza al borrar un producto, fecha de Madrid; huella de IP con clave; accesibilidad (nombres accesibles, región del panel); la tienda se puede ver sin conexión con el último catálogo.
 - **v5.5.0** — Pestaña «Mercado»: fuentes de precios de otras tiendas (8 supermercados de partida, más las que se añadan), precios anotados a mano con fecha, semáforo por mediana de las fuentes recientes y avisos de atraso.
 - **v5.4.0** — Fotos de producto: solo JPG/PNG/WebP, ajuste automático a 400–1000 px (cualquier resolución de origen), JPG ligero sin metadatos y comprobación de medidas en el servidor.
 - **v5.3.0** — Pie con la fecha de actualización y la versión de la web; fecha de «precios actualizados» visible en la tienda (automática, más botón «Los precios están al día»); rangos de mercado con su origen y fecha; productos del panel agrupados por categorías plegables con navegación por botones.
@@ -241,3 +242,13 @@ Reglas: el cliente siempre escribe su código postal al pedir reparto. Si solo h
 ## Crédito
 
 Diseño y desarrollo: [Javier B. V.](https://www.linkedin.com/in/javier-barrero-vazquez-/)
+
+## Revisión de calidad (v5.5.1)
+
+Hecha el 7 de octubre de 2026 con revisión de seguridad, revisión de código del trabajo de v5.4–5.5, accesibilidad y PWA.
+
+- **Seguridad.** Se arregló: la huella de IP de los intentos de acceso ya no es un SHA-256 simple (se deshace probando todas las IPv4) sino un HMAC con una clave derivada de `SESSION_SECRET`; `netlify-cli` (solo desarrollo) deja de estar en `"*"`. Revisado y sin cambios: contraseña con comparación en tiempo constante, cookie `HttpOnly; Secure; SameSite=Strict`, protección CSRF (origen + cabecera propia), bloqueo tras 5 fallos, límites de tamaño, textos del cliente siempre como texto (sin XSS), CSV sin fórmulas, tipo real de las fotos, CSP y demás cabeceras, `npm audit --omit=dev` sin vulnerabilidades. **Aceptado y documentado:** la sesión es una cookie firmada sin lista en el servidor, así que «Salir» la borra del navegador pero un token copiado seguiría valiendo hasta las 8 horas (cambiar `SESSION_SECRET` invalida todas); el bloqueo de intentos no es atómico (con el límite de 120 peticiones/min de Netlify y una contraseña larga no es explotable en la práctica); los 16 avisos de `npm audit` (completo) son de herramientas de desarrollo (`netlify-cli` y sus dependencias), que no se empaquetan en las funciones; los pedidos no se borran solos (la política de privacidad lo dice).
+- **Revisión de código.** Corregido: precios de mercado huérfanos al borrar un producto (bloqueaban todo guardado), fecha inválida que daba 500 en vez de 400, `in` sobre objetos (admitía `constructor`), ediciones simultáneas de Mercado que se pisaban (ahora `version` + 409), borrador de precios perdido al recargar, aviso de «poco fiable» perdido con una sola fuente, fecha «de hoy» en UTC en vez de Madrid. Precisado: el servidor lee las medidas de la **cabecera** de la foto; no la decodifica.
+- **Accesibilidad.** Pasado axe-core (WCAG 2.0/2.1/2.2 A y AA + buenas prácticas) en portada, tienda con productos en el carrito, privacidad, acceso y las 6 pestañas del panel, en móvil y escritorio: tras los arreglos, 0 violaciones en las 20 pantallas. Corregido: el botón «Pedir» de la cabecera y «Añadir/✓ Añadido» tenían un nombre accesible que no contenía su texto visible (WCAG 2.5.3), y las pestañas del panel quedaban fuera de toda región. Contrastes de la paleta calculados a mano: todos ≥ 7,6:1 salvo `--terracotta` (3,1:1), que no se usa para texto. axe no puede decidir el contraste sobre fondos con imagen o transparencia; eso queda por revisar a ojo. No sustituye una revisión con lector de pantalla.
+- **PWA.** Ya cumplía lo esencial (manifest completo con iconos, capturas y accesos directos, service worker con precarga, limpieza de cachés y página sin conexión, HTTPS, HSTS, CSP). Mejorado: la tienda abre sin conexión con el último catálogo (única parte de `/api/` que se cachea; probado que pedidos, panel y fotos no) y se añade el acceso directo «Hacer un pedido». **No hecho, a propósito:** pantallas de inicio de iOS (`apple-touch-startup-image`), botón propio de instalación, notificaciones push y sincronización en segundo plano: no aportan a una carnicería de barrio. **Por comprobar:** los iconos «maskable» son el mismo archivo que los normales; si no tienen margen de seguridad, Android puede recortarlos al instalar. No he calculado la puntuación de 192 puntos de la auditoría.
+

@@ -3,13 +3,14 @@
 import { json, error, leerJson, leerBytes, ErrorHttp, esHttps, tipoImagen, dimensionesImagen, FOTO_LADO_MINIMO, FOTO_LADO_MAXIMO } from "./http.mjs";
 import {
   configuracionAuth, compararPassword, crearSesion, verificarSesion, leerCookie, cookieSesion, cookieBorrar,
-  NOMBRE_COOKIE, peticionDeMismoOrigen, evaluarIntentos, registrarFallo, huellaIp,
+  NOMBRE_COOKIE, peticionDeMismoOrigen, evaluarIntentos, registrarFallo, huellaIp, claveHuella,
 } from "./auth.mjs";
 import { validarAjustes } from "./ajustes.mjs";
 import { validarProducto, aplicarRedondeoATodos } from "./productos.mjs";
 import { categorias, preciosOrientativos, mercadoPorDefecto } from "./datos.generado.mjs";
 import { redondear } from "./dinero.mjs";
 import { validarMercado } from "./mercado.mjs";
+import { ahoraEnMadrid } from "./horario.mjs";
 import { randomUUID } from "node:crypto";
 
 const IDS_CATEGORIA = categorias.map((c) => c.id);
@@ -42,8 +43,8 @@ export async function manejarAdmin(req, deps) {
     if (ruta === "/datos" && metodo === "GET") {
       const [ajustes, productos] = await Promise.all([deps.almacen.leerAjustes(), deps.almacen.leerProductos()]);
       const meta = await deps.almacen.leerMeta().catch(() => ({}));
-      const mercado = { ...(await deps.almacen.leerMercado().catch(() => ({ fuentes: mercadoPorDefecto.fuentes, precios: {} }))), anclas: mercadoPorDefecto.anclas };
-      return json(200, { ok: true, ajustes, productos, categorias, orientativos: preciosOrientativos, meta, mercado, hoy: new Date(deps.ahora()).toISOString().slice(0, 10) });
+      const mercado = { ...(await deps.almacen.leerMercado().catch(() => ({ version: 0, fuentes: mercadoPorDefecto.fuentes, precios: {} }))), anclas: mercadoPorDefecto.anclas };
+      return json(200, { ok: true, ajustes, productos, categorias, orientativos: preciosOrientativos, meta, mercado, hoy: ahoraEnMadrid(new Date(deps.ahora())).fecha });
     }
 
     if (ruta === "/ajustes" && metodo === "PUT") {
@@ -57,11 +58,20 @@ export async function manejarAdmin(req, deps) {
 
     // Precios de referencia de otras fuentes: solo para el semáforo del panel; no cambian nada de lo público.
     if (ruta === "/mercado" && metodo === "PUT") {
-      const productos = await deps.almacen.leerProductos();
-      const v = validarMercado(await leerJson(req, 256 * 1024), { idsProductos: productos.map((p) => p.id), hoy: new Date(deps.ahora()).toISOString().slice(0, 10) });
+      const entrada = await leerJson(req, 256 * 1024);
+      const [productos, actual] = await Promise.all([deps.almacen.leerProductos(), deps.almacen.leerMercado()]);
+      const ids = productos.map((p) => p.id);
+      // Precios que quedaron de un producto ya eliminado: se descartan (lo desconocido que llegue de fuera sigue rechazándose)
+      if (entrada?.precios && typeof entrada.precios === "object" && !Array.isArray(entrada.precios)) {
+        entrada.precios = Object.fromEntries(Object.entries(entrada.precios).filter(([id]) => ids.includes(id) || !Object.hasOwn(actual.precios ?? {}, id)));
+      }
+      const v = validarMercado(entrada, { idsProductos: ids, hoy: ahoraEnMadrid(new Date(deps.ahora())).fecha });
       if (!v.ok) return json(400, { ok: false, errores: v.errores });
-      await deps.almacen.guardarMercado(v.valor);
-      return json(200, { ok: true, mercado: { ...v.valor, anclas: mercadoPorDefecto.anclas } });
+      const guardado = await deps.almacen.actualizarMercado((base) => {
+        if (!Number.isInteger(entrada.version) || entrada.version !== (base.version ?? 0)) throw new ErrorHttp(409, "Esto ha cambiado desde otro dispositivo o pestaña mientras lo editabas. Se han vuelto a cargar los datos: revisa y repite el cambio.");
+        return { ...v.valor, version: (base.version ?? 0) + 1 };
+      });
+      return json(200, { ok: true, mercado: { ...guardado, anclas: mercadoPorDefecto.anclas } });
     }
 
     if (ruta === "/producto" && metodo === "PUT") {
@@ -94,6 +104,8 @@ export async function manejarAdmin(req, deps) {
       });
       if (!existia) return error(404, "Producto no encontrado.");
       if (foto) await deps.almacen.borrarFoto(foto);
+      // Sus precios de mercado ya no sirven para nada. Es limpieza: si falla, no debe impedir el borrado.
+      try { await deps.almacen.actualizarMercado((m) => { if (!Object.hasOwn(m.precios ?? {}, id)) return m; const { [id]: _quitado, ...resto } = m.precios; return { ...m, precios: resto, version: (m.version ?? 0) + 1 }; }); } catch (e) { console.warn("No se pudieron limpiar los precios de mercado del producto borrado:", e?.message ?? e); }
       await deps.almacen.tocarMeta({ contenido: true }, new Date(deps.ahora()));
       await deps.purgar(["catalogo", "paginas"]);
       return json(200, { ok: true });
@@ -181,7 +193,7 @@ export async function manejarAdmin(req, deps) {
 
 async function acceder(req, deps, auth, seguro) {
   if (!peticionDeMismoOrigen(req)) return error(403, "Petición no permitida.");
-  const huella = huellaIp(deps.ip);
+  const huella = huellaIp(deps.ip, claveHuella(auth.secreto));
   const ahora = deps.ahora();
   const estado = await deps.almacen.leerIntentos(huella);
   const ev = evaluarIntentos(estado, ahora);

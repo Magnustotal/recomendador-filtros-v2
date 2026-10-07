@@ -152,3 +152,12 @@ test("pie: «Web actualizada el … · versión X» usa la fecha de publicación
     assert.match(html, /Web actualizada el <time datetime="2099-03-05">5 de marzo de 2099<\/time> · versión \d+\.\d+\.\d+/, pagina);
   }
 });
+
+test("accesibilidad: el nombre accesible del botón «Pedir» de la cabecera empieza por su texto visible (WCAG 2.5.3)", () => {
+  const visible = (html) => html.match(/<a class="btn btn-green"[^>]*aria-label="([^"]+)"[^>]*>[\s\S]*?<span class="btn-label-full">([^<]+)<\/span>/).slice(1);
+  for (const [pagina, activa] of [["index.html", true], ["index.html", false], ["tienda.html", true]]) {
+    const html = renderizarPagina(pagina, ajustes((x) => { x.tienda.activa = activa; return x; }), { ahora: AHORA });
+    const [nombre, texto] = visible(html);
+    assert.ok(nombre.toLowerCase().startsWith(texto.toLowerCase()), `${pagina} activa=${activa}: «${nombre}» no empieza por «${texto}»`);
+  }
+});

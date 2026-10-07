@@ -127,6 +127,7 @@ export function contexto(ajustes, { origen = "", ahora = new Date(), meta = null
       enlacePedir: activa ? "/tienda" : wa(`¡Hola! Quiero hacer un pedido en ${n.nombre}.`),
       etiquetaPedir: activa ? "Hacer pedido online" : "Pedir por WhatsApp",
       etiquetaCorta: activa ? "Pedir" : "Pedir",
+      etiquetaAria: activa ? "Pedir online" : "Pedir por WhatsApp", // empieza por el texto visible del botón («Pedir»)
       externo: activa ? "" : ' target="_blank" rel="noopener"',
       aviso: ajustes.tienda.aviso,
       catalogoExtra: activa
@@ -162,9 +163,9 @@ export function aplicarPlantilla(texto, ctx, { estricto = true } = {}) {
 // Datos que cambian según la página que usa las piezas comunes (cabecera, pie y barra móvil).
 function datosDePagina(nombre, ctx) {
   if (nombre === "tienda.html") {
-    return { p: "/", inicio: "/", enlacePedir: "#pedido", externo: "", etiquetaPedir: "Ver mi pedido", etiquetaCorta: "Mi pedido" };
+    return { p: "/", inicio: "/", enlacePedir: "#pedido", externo: "", etiquetaPedir: "Ver mi pedido", etiquetaCorta: "Mi pedido", etiquetaAria: "Pedir: ver mi pedido" };
   }
-  return { p: "", inicio: "#inicio", enlacePedir: ctx.tienda.enlacePedir, externo: ctx.tienda.externo, etiquetaPedir: ctx.tienda.etiquetaPedir, etiquetaCorta: "Pedir" };
+  return { p: "", inicio: "#inicio", enlacePedir: ctx.tienda.enlacePedir, externo: ctx.tienda.externo, etiquetaPedir: ctx.tienda.etiquetaPedir, etiquetaCorta: "Pedir", etiquetaAria: ctx.tienda.etiquetaAria };
 }
 
 export function renderizarPagina(nombre, ajustes, opciones = {}) {

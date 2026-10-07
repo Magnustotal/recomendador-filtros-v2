@@ -6,6 +6,7 @@ import { ajustesPorDefecto } from "../lib/datos.generado.mjs";
 import { manejarAdmin, csvPedidos } from "../lib/api-admin.mjs";
 import { catalogo, foto, crearPedido } from "../lib/api-publica.mjs";
 import { pagina } from "../lib/api-pagina.mjs";
+import { ahoraEnMadrid } from "../lib/horario.mjs";
 import { jpegCon, pngCon, webpLossy } from "./ayuda/imagenes.mjs";
 
 const ORIGEN = "https://tienda.test";
@@ -419,14 +420,16 @@ test("fechas de actualización: el contenido, los precios y la confirmación «a
 test("mercado: /datos trae las fuentes de partida y los 30 productos de referencia; PUT valida y guarda; sin cambios públicos", async () => {
   cookie ??= await entrar();
   const { mercado, hoy } = await (await adm("/datos", { cookie })).json();
-  assert.equal(hoy, new Date(reloj).toISOString().slice(0, 10), "la fecha de hoy la pone el servidor");
+  assert.equal(hoy, ahoraEnMadrid(new Date(reloj)).fecha, "la fecha de hoy es la de Madrid");
   assert.equal(mercado.anclas.length, 30);
+  assert.equal(mercado.version, 0);
   assert.ok(mercado.fuentes.length >= 8 && mercado.fuentes.every((f) => f.tipo === "supermercado"));
   assert.deepEqual(mercado.precios, {});
 
   const antes = purgas.length;
-  const ok = await adm("/mercado", { metodo: "PUT", cookie, cuerpo: { fuentes: mercado.fuentes, precios: { "pollo-pechuga-de-pollo": { mercadona: { precio: "7,95", fecha: "2026-10-04" } } } } });
+  const ok = await adm("/mercado", { metodo: "PUT", cookie, cuerpo: { version: 0, fuentes: mercado.fuentes, precios: { "pollo-pechuga-de-pollo": { mercadona: { precio: "7,95", fecha: "2026-10-04" } } } } });
   assert.equal(ok.status, 200);
+  assert.equal((await ok.json()).mercado.version, 1);
   assert.equal(purgas.length, antes, "es interno: no purga la web pública");
   const otra = await (await adm("/datos", { cookie })).json();
   assert.deepEqual(otra.mercado.precios, { "pollo-pechuga-de-pollo": { mercadona: { precio: 7.95, fecha: "2026-10-04" } } });
@@ -436,12 +439,55 @@ test("mercado: /datos trae las fuentes de partida y los 30 productos de referenc
   const cat = await (await catalogo(deps())).text();
   assert.ok(!/mercadona|mediana/i.test(cat));
 
-  // validación
-  for (const cuerpo of [{ fuentes: mercado.fuentes, precios: { "no-existe": {} } }, { fuentes: mercado.fuentes, precios: { "pollo-pechuga-de-pollo": { mercadona: { precio: 0, fecha: "2026-10-04" } } } }, { fuentes: "x", precios: {} }]) {
+  // validación (nunca 500)
+  const base = { version: 1, fuentes: mercado.fuentes };
+  const p = (dato) => ({ ...base, precios: { "pollo-pechuga-de-pollo": { mercadona: dato } } });
+  for (const cuerpo of [
+    { ...base, precios: { "no-existe": {} } },
+    p({ precio: 0, fecha: "2026-10-04" }),
+    p({ precio: 5, fecha: "2025-13-45" }),
+    p({ precio: 5 }),
+    p(null),
+    { ...base, fuentes: [{ ...mercado.fuentes[0], frecuencia: "constructor" }], precios: {} },
+    { ...base, fuentes: [{ ...mercado.fuentes[0], tipo: "__proto__" }], precios: {} },
+    { ...base, fuentes: "x", precios: {} },
+  ]) {
     const r = await adm("/mercado", { metodo: "PUT", cookie, cuerpo });
-    assert.equal(r.status, 400);
+    assert.equal(r.status, 400, JSON.stringify(cuerpo).slice(0, 120));
     assert.ok((await r.json()).errores.length);
   }
   assert.equal((await adm("/mercado", { metodo: "PUT", cookie, cuerpo: { fuentes: [], precios: {} }, origen: "https://evil.test" })).status, 403);
   assert.equal((await adm("/mercado", { metodo: "PUT", cookie, raw: "x".repeat(300 * 1024), cabeceras: { "content-type": "application/json" } })).status, 413);
+});
+
+test("mercado: editar con datos viejos (otro dispositivo) da 409 y no pisa lo guardado", async () => {
+  cookie ??= await entrar();
+  const { mercado } = await (await adm("/datos", { cookie })).json();
+  assert.equal(mercado.version, 1);
+  const precios = { ...mercado.precios, "pollo-muslo-de-pollo": { lidl: { precio: 4.5, fecha: "2026-10-04" } } };
+  assert.equal((await adm("/mercado", { metodo: "PUT", cookie, cuerpo: { version: 1, fuentes: mercado.fuentes, precios } })).status, 200); // otro dispositivo: ahora es la versión 2
+  const viejo = await adm("/mercado", { metodo: "PUT", cookie, cuerpo: { version: 1, fuentes: mercado.fuentes, precios: mercado.precios } });
+  assert.equal(viejo.status, 409);
+  assert.match((await viejo.json()).errores[0].mensaje, /ha cambiado desde otro dispositivo/);
+  assert.equal((await adm("/mercado", { metodo: "PUT", cookie, cuerpo: { fuentes: mercado.fuentes, precios } })).status, 409, "sin versión tampoco");
+  const ahora = (await (await adm("/datos", { cookie })).json()).mercado;
+  assert.ok(ahora.precios["pollo-muslo-de-pollo"], "lo del otro dispositivo sigue ahí");
+});
+
+test("mercado: al borrar un producto se limpian sus precios y los guardados de uno ya borrado no bloquean el panel", async () => {
+  cookie ??= await entrar();
+  const lista = await almacen.leerProductos();
+  const muslo = lista.find((x) => x.id === "pollo-muslo-de-pollo");
+  assert.equal((await adm("/producto?id=pollo-muslo-de-pollo", { metodo: "DELETE", cookie })).status, 200);
+  let { mercado } = await (await adm("/datos", { cookie })).json();
+  assert.equal(mercado.precios["pollo-muslo-de-pollo"], undefined, "limpiado al borrar");
+  assert.equal(mercado.version, 3);
+
+  // un huérfano que ya estuviera guardado (versión anterior a la limpieza) tampoco impide guardar
+  await almacen.actualizarMercado((m) => ({ ...m, precios: { ...m.precios, fantasma: { lidl: { precio: 3, fecha: "2026-10-04" } } } }));
+  mercado = (await (await adm("/datos", { cookie })).json()).mercado;
+  const r = await adm("/mercado", { metodo: "PUT", cookie, cuerpo: { version: mercado.version, fuentes: mercado.fuentes, precios: mercado.precios } });
+  assert.equal(r.status, 200, JSON.stringify(await r.clone().json()));
+  assert.equal((await r.json()).mercado.precios.fantasma, undefined);
+  await almacen.actualizarProductos((l) => [...l, muslo]); // se deja el catálogo como estaba
 });

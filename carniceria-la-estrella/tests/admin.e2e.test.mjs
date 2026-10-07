@@ -730,3 +730,23 @@ test("mercado: fuentes de partida, anotar precios de varias tiendas y el semáfo
   assert.deepEqual(errores(page), []);
   await page.context().close();
 });
+
+test("mercado: si otro dispositivo ha cambiado los datos, el panel avisa, recarga y conserva lo escrito sin guardar", async () => {
+  const page = await entrar();
+  await page.click("#tab-mercado");
+  await page.selectOption("#merc-fuente", { label: "Mercadona" });
+  await page.fill("#merc-p-pollo-alitas-de-pollo", "4,20");
+  // «otro dispositivo» guarda algo en medio
+  const { datos } = await e.api.llamar("/datos");
+  const m = datos.mercado;
+  const r = await e.api.llamar("/mercado", { metodo: "PUT", cuerpo: { version: m.version, fuentes: m.fuentes, precios: m.precios } });
+  assert.equal(r.estado, 200);
+  await page.click("#merc-guardar");
+  await page.locator("#aviso", { hasText: "ha cambiado desde otro dispositivo" }).waitFor();
+  await page.waitForFunction(() => document.querySelector("#merc-p-pollo-alitas-de-pollo")?.value === "4,20");
+  // reintentar ya con los datos nuevos funciona
+  await page.click("#merc-guardar");
+  await page.locator("#aviso", { hasText: "Guardados 1 precios de Mercadona" }).waitFor();
+  assert.equal((await e.api.llamar("/datos")).datos.mercado.precios["pollo-alitas-de-pollo"].mercadona.precio, 4.2);
+  await page.context().close();
+});

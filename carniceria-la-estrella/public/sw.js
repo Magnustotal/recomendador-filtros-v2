@@ -2,7 +2,7 @@
 // fallback a caché. Prototipo sencillo: no pretende ser una PWA
 // offline-first completa.
 
-const CACHE_NAME = "la-estrella-v24";
+const CACHE_NAME = "la-estrella-v25";
 const PRECACHE_URLS = [
   "/",
   "/tienda",
@@ -77,8 +77,9 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   // La API y el panel nunca se guardan en la caché del navegador (llevan datos de pedidos y de acceso).
+  // Única excepción: el catálogo público (productos y precios, sin datos personales), para poder ver la tienda sin conexión.
   const ruta = new URL(request.url).pathname;
-  if (ruta.startsWith("/api/") || ruta.startsWith("/admin")) return;
+  if ((ruta.startsWith("/api/") && ruta !== "/api/catalogo") || ruta.startsWith("/admin")) return;
 
   event.respondWith(
     fetch(request)

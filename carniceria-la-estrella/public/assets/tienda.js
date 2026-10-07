@@ -120,8 +120,9 @@ function pintarFila(p) {
       anadir(p, selector ? selector.value : "", cantidad);
       // Confirmación visible (además del aviso para lectores de pantalla)
       boton.textContent = "✓ Añadido";
+      boton.setAttribute("aria-label", `Añadido ${p.nombre} al pedido`); // el nombre accesible contiene el texto visible
       clearTimeout(temporizador);
-      temporizador = setTimeout(() => { boton.textContent = "Añadir"; }, 1600);
+      temporizador = setTimeout(() => { boton.textContent = "Añadir"; boton.setAttribute("aria-label", `Añadir ${p.nombre} al pedido`); }, 1600);
     });
     acciones = crear("div", { class: "prod-acciones" }, selector, crear("div", { class: "cantidad", role: "group", "aria-label": `Cantidad de ${p.nombre}` }, menos, salida, mas), boton);
   }

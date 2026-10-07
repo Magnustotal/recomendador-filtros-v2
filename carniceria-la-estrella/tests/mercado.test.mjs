@@ -50,7 +50,8 @@ test("rango de mercado: fiabilidad según el número de fuentes y texto de orige
   assert.equal(r(3).fiabilidad, "a");
   assert.deepEqual([r(3).min, r(3).max], [8.8, 11.2]);
   assert.match(r(3).origen, /mediana de 3 fuentes \(la más antigua es de hace 3 días\)/);
-  assert.match(r(1).origen, /mediana de 1 fuente \(el dato es de hace 3 días\)/);
+  assert.match(r(1).origen, /mediana de 1 fuente \(el dato es de hace 3 días\)\. Con una sola fuente es poco fiable\./);
+  assert.ok(!/poco fiable/.test(r(2).origen));
   assert.match(rangoDesdeMercado({ n: 2, mediana: 10, masAntigua: 0 }).origen, /de hoy/);
 });
 
@@ -83,6 +84,11 @@ test("validar: rechaza lo que no cuadra", () => {
   malo({ fuentes, precios: { p1: { mercadona: { precio: "abc", fecha: HOY } } } }, /Precio no válido/);
   malo({ fuentes, precios: { p1: { mercadona: { precio: 5, fecha: "2026-02-30" } } } }, /Fecha no válida/);
   malo({ fuentes, precios: { p1: { mercadona: { precio: 5, fecha: "2026-11-01" } } } }, /futuro/);
+  malo({ fuentes, precios: { p1: { mercadona: { precio: 5, fecha: "2025-13-45" } } } }, /Fecha no válida/); // no debe lanzar
+  malo({ fuentes, precios: { p1: { mercadona: { precio: 5 } } } }, /Fecha no válida/);
+  malo({ fuentes, precios: { p1: { mercadona: null } } }, /Precio no válido/);
+  malo({ fuentes: [{ ...fuentes[0], frecuencia: "constructor" }], precios: {} }, /Frecuencia/);
+  malo({ fuentes: [{ ...fuentes[0], tipo: "toString" }], precios: {} }, /Tipo/);
   malo({ fuentes: [{ ...fuentes[0], url: "javascript:alert(1)" }], precios: {} }, /http/);
   malo({ fuentes: [{ ...fuentes[0], tipo: "otro" }], precios: {} }, /Tipo/);
   malo({ fuentes: [{ ...fuentes[0], frecuencia: "cada hora" }], precios: {} }, /Frecuencia/);

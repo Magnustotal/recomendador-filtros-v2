@@ -11,6 +11,7 @@ export const VIGENCIA_DIAS = { diaria: 14, semanal: 45, manual: 45 };
 export const AVISO_SEMANAL_DIAS = 7;
 
 const RE_FECHA = /^\d{4}-\d{2}-\d{2}$/;
+const fechaReal = (f) => { const d = new Date(`${f}T00:00:00Z`); return typeof f === "string" && RE_FECHA.test(f) && !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === f; };
 const esNumero = (n) => typeof n === "number" && Number.isFinite(n);
 const DIA_MS = 86_400_000;
 
@@ -35,7 +36,7 @@ export function referenciaMercado(precios, fuentes, hoy) {
     const e = precios?.[f.id];
     if (!e || !esNumero(e.precio) || e.precio <= 0 || !RE_FECHA.test(e.fecha ?? "")) continue;
     const dias = diasEntre(e.fecha, hoy);
-    if (dias > (VIGENCIA_DIAS[f.frecuencia] ?? VIGENCIA_DIAS.manual)) { descartadas++; continue; }
+    if (dias > (Object.hasOwn(VIGENCIA_DIAS, f.frecuencia) ? VIGENCIA_DIAS[f.frecuencia] : VIGENCIA_DIAS.manual)) { descartadas++; continue; }
     usadas.push({ id: f.id, nombre: f.nombre, precio: e.precio, dias });
   }
   if (!usadas.length) return descartadas ? { n: 0, descartadas } : null;
@@ -54,7 +55,7 @@ export function rangoDesdeMercado(ref) {
   if (!ref || !ref.n) return null;
   const fiabilidad = ref.n >= 3 ? "a" : ref.n === 2 ? "m" : "b";
   const antigua = ref.n === 1 ? `el dato es ${haceDias(ref.masAntigua)}` : `la más antigua es ${haceDias(ref.masAntigua)}`;
-  return { precio: ref.mediana, fiabilidad, ...rangoOrientativo(ref.mediana, fiabilidad), origen: `Referencia de mercado: mediana de ${plural(ref.n, "fuente", "fuentes")} (${antigua}).`, n: ref.n, masAntigua: ref.masAntigua };
+  return { precio: ref.mediana, fiabilidad, ...rangoOrientativo(ref.mediana, fiabilidad), origen: `Referencia de mercado: mediana de ${plural(ref.n, "fuente", "fuentes")} (${antigua}).${ref.n === 1 ? " Con una sola fuente es poco fiable." : ""}`, n: ref.n, masAntigua: ref.masAntigua };
 }
 
 // ---- validación de lo que llega del panel ----
@@ -85,8 +86,8 @@ export function validarMercado(entrada, { idsProductos, hoy }) {
       if (nombre.length > 60) return error(campo, "Nombre demasiado largo (máximo 60).");
       if (!RE_ID_FUENTE.test(f.id ?? "")) return error(campo, "Identificador no válido.");
       if (ids.has(f.id) || nombres.has(nombre.toLowerCase())) return error(campo, "Fuente repetida.");
-      if (!(f.tipo in TIPOS_FUENTE)) return error(campo, "Tipo de fuente no válido.");
-      if (!(f.frecuencia in FRECUENCIAS)) return error(campo, "Frecuencia no válida.");
+      if (!Object.hasOwn(TIPOS_FUENTE, f.tipo)) return error(campo, "Tipo de fuente no válido.");
+      if (!Object.hasOwn(FRECUENCIAS, f.frecuencia)) return error(campo, "Frecuencia no válida.");
       let url = "";
       if (f.url != null && f.url !== "") {
         url = limpiarTexto(f.url, 200);
@@ -112,7 +113,7 @@ export function validarMercado(entrada, { idsProductos, hoy }) {
         if (!idsFuente.has(fid)) { error("precios", `Fuente desconocida en ${pid}: ${limpiarTexto(fid, 30)}.`); continue; }
         const p = typeof dato?.precio === "string" ? Number(dato.precio.replace(",", ".")) : dato?.precio;
         if (!esNumero(p) || p <= 0 || p > PRECIO_MAX) { error("precios", `Precio no válido en ${pid} (${fid}): entre 0,01 y ${PRECIO_MAX} €.`); continue; }
-        if (!RE_FECHA.test(dato.fecha ?? "") || new Date(`${dato.fecha}T00:00:00Z`).toISOString().slice(0, 10) !== dato.fecha) { error("precios", `Fecha no válida en ${pid} (${fid}).`); continue; }
+        if (!fechaReal(dato?.fecha)) { error("precios", `Fecha no válida en ${pid} (${fid}).`); continue; }
         if (Date.parse(`${dato.fecha}T00:00:00Z`) > limite) { error("precios", `La fecha de ${pid} (${fid}) está en el futuro.`); continue; }
         (precios[pid] ??= {})[fid] = { precio: Math.round(p * 100) / 100, fecha: dato.fecha };
       }
