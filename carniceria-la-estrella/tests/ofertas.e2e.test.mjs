@@ -309,3 +309,33 @@ test("textos legales: la tienda y el aviso legal avisan de los errores de precio
   assert.match(legal, /<strong>Errores de precio\.<\/strong> Si detectamos un error evidente/);
   assert.match(legal, /el precio anterior, que es el más bajo que hayamos aplicado al mismo producto en los 30 días previos/);
 });
+
+test("venta con pérdida: al crear una oferta por debajo del coste (con IVA) el panel avisa, sin impedirla", async () => {
+  const SOL = "vacuno-solomillo-de-ternera";
+  await enFecha("2026-08-01", async () => assert.equal((await e.api.llamar("/producto", { metodo: "PUT", cuerpo: { ...(await producto(SOL)), precio: 29.95, coste: 25 } })).estado, 200));
+  const page = await entrar();
+  await page.click("#tab-ofertas");
+  const dlg = page.locator("#dlg-oferta");
+  await page.click("#of-nueva");
+  await dlg.locator("#f-of-buscar").fill("Solomillo de ternera");
+  await dlg.locator("#f-of-producto").selectOption(SOL);
+  await dlg.locator("#f-of-precio").fill("24,95");
+  const texto = await dlg.innerText();
+  assert.match(texto, /vendes por debajo de lo que te cuesta \(27,50\s€ con IVA/);
+  assert.match(texto, /art\. 14 de la Ley 7\/1996/);
+  await dlg.locator("#f-of-precio").fill("27,95");
+  assert.doesNotMatch(await dlg.innerText(), /por debajo de lo que te cuesta/);
+  assert.deepEqual(errores(page), []);
+  await page.context().close();
+});
+
+test("tienda: el botón del pedido dice «con obligación de pago» y se avisa de la zona de reparto y del pago al empezar", async () => {
+  const page = await e.nuevaPagina();
+  await page.goto(e.url + "/tienda", { waitUntil: "networkidle" });
+  assert.equal((await page.locator("#enviar").innerText()).trim(), "Enviar pedido con obligación de pago");
+  const intro = await page.locator(".shop-intro").innerText();
+  assert.match(intro, /precios son finales, con el IVA incluido/);
+  assert.match(intro, /reparto a domicilio solo llega a la zona/i);
+  assert.match(intro, /pago se hace al recoger o al recibir/);
+  await page.context().close();
+});

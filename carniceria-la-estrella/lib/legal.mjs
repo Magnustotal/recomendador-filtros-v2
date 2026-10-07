@@ -21,6 +21,7 @@ export function textosLegales(ajustes, escapar) {
       : "",
     razonSocial: pendiente(n.razonSocial, "razón social"),
     nif: pendiente(n.nif, "NIF"),
+    email: pendiente(n.email, "correo electrónico"),
   };
 
   if (!activa) {
@@ -81,17 +82,30 @@ export function textosLegales(ajustes, escapar) {
       la web: se abona al recoger o al recibir el pedido, o por Bizum o transferencia, según las formas de
       pago que se indican al hacer el pedido.
     </p>`,
-    condicionesPedido: `    <h2>7. Condiciones de los pedidos online</h2>
+    condicionesPedido: `    <h2 id="condiciones-pedidos">7. Condiciones de los pedidos online</h2>
     <ul>
       <li><strong>Precios.</strong> Los precios mostrados son precios finales para el consumidor, con los impuestos incluidos. Los productos sin precio se confirman por WhatsApp o teléfono.</li>
       <li><strong>Errores de precio.</strong> Si detectamos un error evidente en un precio (por ejemplo, una errata al escribirlo), te lo comunicaremos antes de preparar el pedido y podrás mantenerlo con el precio correcto o cancelarlo sin ningún coste.</li>
-      <li><strong>Ofertas.</strong> Cada oferta indica hasta cuándo es válida y sus condiciones. Cuando se anuncia una rebaja, junto al precio rebajado se muestra el precio anterior, que es el más bajo que hayamos aplicado al mismo producto en los 30 días previos.</li>
-      <li><strong>Peso y importe.</strong> Muchos productos se venden al peso. El peso real puede variar ligeramente al prepararlos y el importe definitivo se confirma al preparar el pedido.</li>
-      <li><strong>Confirmación.</strong> Un pedido enviado por la web no queda confirmado hasta que ${nombre} lo confirma por WhatsApp o teléfono. Podemos no aceptarlo, por ejemplo, si un producto no está disponible; en ese caso te avisaremos.</li>
-      <li><strong>Desistimiento.</strong> Se trata de alimentos frescos que pueden deteriorarse con rapidez y de productos cortados o preparados a medida, por lo que no se aplica el derecho de desistimiento (art. 103 del texto refundido de la Ley General para la Defensa de los Consumidores y Usuarios). Si hay algún problema con tu pedido, avísanos y lo solucionamos.</li>
+      <li><strong>Ofertas y regalos.</strong> Cada oferta o regalo por compra indica hasta cuándo es válido y sus condiciones. Cuando se anuncia una rebaja, junto al precio rebajado se muestra el precio anterior, que es el más bajo que hayamos aplicado al mismo producto en los 30 días previos. Los regalos se entregan junto con el pedido.</li>
+      <li><strong>Peso y importe.</strong> Muchos productos se venden al peso. El peso real puede variar ligeramente al prepararlos y el importe definitivo se confirma al preparar el pedido. Si el importe final fuese bastante superior al estimado, te lo diremos antes de cobrarlo para que puedas decidir.</li>
+      <li><strong>Confirmación.</strong> Un pedido enviado por la web no queda confirmado hasta que ${nombre} lo confirma por WhatsApp o teléfono. Te lo confirmaremos, o te diremos que no podemos aceptarlo (por ejemplo, si un producto no está disponible), antes del día y la franja que elegiste; si para entonces no lo hemos confirmado, no se considera aceptado y no tienes que pagar nada.</li>
+      <li><strong>Pago.</strong> El pedido implica la obligación de pagarlo al recogerlo o al recibirlo (o por Bizum o transferencia, según lo que elijas al pedir), una vez confirmado.</li>
+      <li><strong>Desistimiento.</strong> No hay derecho de desistimiento en los alimentos que pueden deteriorarse o caducar con rapidez (carne y aves frescas, casquería, elaborados frescos) ni en los productos cortados, picados o preparados según tus indicaciones (art. 103, letras c y d, del texto refundido de la Ley General para la Defensa de los Consumidores y Usuarios). En los demás productos (por ejemplo, vino, conservas, salsas o especias envasadas) sí puedes desistir del contrato, sin dar motivo, en el plazo de <strong>14 días naturales</strong> desde que los recibes o los recoges. Para ello comunícanoslo de forma clara: por correo electrónico a ${t.email}, por escrito en ${escapar(n.calle)} (${escapar(n.cp)} ${escapar(n.localidad)}) o con el modelo de formulario de abajo. Te devolveremos lo que hayas pagado en un máximo de 14 días desde que nos avises, y podemos esperar a recibir los productos o a que acredites que los has devuelto; los costes directos de la devolución son por tu cuenta. Si dudas de si un producto tiene este derecho, pregúntanoslo antes de pedir.</li>
+      <li><strong>Garantía.</strong> Los productos que compras tienen la garantía legal de conformidad que la ley reconoce a los consumidores. Si hay algún problema con tu pedido, avísanos y lo solucionamos.</li>
       <li><strong>Bebidas alcohólicas.</strong> No se venden a menores de 18 años. Al pedirlas debes confirmar que eres mayor de edad y podemos pedirte que lo acredites en la entrega.</li>
       <li><strong>Alergias e intolerancias.</strong> Si tienes alguna alergia o intolerancia, indícalo en los comentarios del pedido o consúltanos antes de pedir.</li>
     </ul>
+    <h3>Modelo de formulario de desistimiento</h3>
+    <p>(Solo si quieres desistir del contrato. Puedes copiarlo y enviarlo; su uso no es obligatorio.)</p>
+    <p>
+      A la atención de ${t.razonSocial}, ${escapar(n.calle)}, ${escapar(n.cp)} ${escapar(n.localidad)}, correo electrónico ${t.email}:<br>
+      Por la presente le comunico que desisto de mi contrato de venta del siguiente bien: …<br>
+      Pedido el / recibido el: …<br>
+      Nombre del consumidor y usuario: …<br>
+      Domicilio del consumidor y usuario: …<br>
+      Firma del consumidor y usuario (solo si este formulario se presenta en papel): …<br>
+      Fecha: …
+    </p>
 `,
     numLegislacion: "8",
   };

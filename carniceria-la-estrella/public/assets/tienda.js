@@ -355,7 +355,7 @@ function pintarTotales() {
     if (r.cantidad > 0) filas.push(crear("p", { class: "regalo-linea", texto: `Regalo por tu compra: ${r.cantidad > 1 ? `${r.cantidad} × ` : ""}${r.texto}` }));
     if (r.faltaCent != null && x.consultar === 0) filas.push(crear("p", { class: "nota", texto: `Te faltan ${euros(r.faltaCent)} para ${r.cantidad > 0 ? "otro regalo igual" : `tu regalo: ${r.texto}`}.` }));
   }
-  filas.push(crear("p", { class: "nota", texto: "Importe orientativo: el peso y el precio finales se confirman al prepararlo." }));
+  filas.push(crear("p", { class: "nota", texto: "Importe orientativo: el peso y el importe finales se confirman al prepararlo." }));
   el.totales.replaceChildren(...filas);
 }
 
@@ -599,7 +599,7 @@ async function enviarPedido(ev) {
   } finally {
     enviando = false;
     el.enviar.disabled = false;
-    el.enviar.textContent = "Enviar pedido";
+    el.enviar.textContent = "Enviar pedido con obligación de pago";
   }
 }
 

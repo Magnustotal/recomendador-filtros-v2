@@ -103,6 +103,7 @@ window.addEventListener("beforeunload", (e) => { if (sinGuardar) { e.preventDefa
 iniciarPedidos({ cuandoCambienNuevos: marcarNuevos });
 iniciarOfertas({
   recargar: () => recargarProductos(),
+  preciosCfg: () => guardado?.tienda.precios ?? { margenDefecto: 30, iva: {} },
   // Los regalos son un ajuste de la tienda: se guardan con el resto de ajustes ya guardados, sin tocar lo que haya a medias en la pestaña Tienda
   async guardarRegalos(lista) {
     const base = structuredClone(guardado);
@@ -151,6 +152,7 @@ function comprobaciones() {
   const lista = [];
   const punto = (ok, texto, ir) => lista.push({ ok, texto, ir });
   punto(!!(a.negocio.razonSocial && a.negocio.nif), "Razón social y NIF rellenos (aparecen en el aviso legal y la política de privacidad).", "negocio");
+  punto(!!a.negocio.email, "Correo electrónico del negocio indicado (la ley lo pide para vender a distancia; sale en el aviso legal y en la información de devoluciones).", "negocio");
   punto(!!a.seo.dominio, "Dirección de la web indicada (para el mapa del sitio y los datos de Google).", "negocio");
   punto(productosConPrecio() > 0, `Hay ${productosConPrecio()} productos con precio (${productosSinPrecio()} se verán como «Consultar»).`, "productos");
   punto(t.recogida.activa ? t.recogida.franjas.length > 0 : true, "La recogida tiene franjas horarias.", "tienda");

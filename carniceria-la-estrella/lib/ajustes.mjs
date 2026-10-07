@@ -51,6 +51,7 @@ export function validarAjustes(entrada) {
       nombre: ctx.intento(() => texto(n.nombre, { min: 1, max: 80, campo: "negocio.nombre" })),
       razonSocial: ctx.intento(() => texto(n.razonSocial, { max: 120, campo: "negocio.razonSocial" })),
       nif: ctx.intento(() => texto(n.nif, { max: 20, campo: "negocio.nif" })),
+      email: ctx.intento(() => { const t = texto(n.email, { max: 120, campo: "negocio.email" }); if (t && !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]{2,}$/.test(t)) throw new ErrorValidacion("negocio.email", "Correo electrónico no válido."); return t; }),
       calle: ctx.intento(() => texto(n.calle, { min: 1, max: 120, campo: "negocio.calle" })),
       cp: ctx.intento(() => { const t = texto(n.cp, { min: 1, max: 5, campo: "negocio.cp" }); if (!/^\d{5}$/.test(t)) throw new ErrorValidacion("negocio.cp", "Código postal de 5 cifras."); return t; }),
       localidad: ctx.intento(() => texto(n.localidad, { min: 1, max: 80, campo: "negocio.localidad" })),

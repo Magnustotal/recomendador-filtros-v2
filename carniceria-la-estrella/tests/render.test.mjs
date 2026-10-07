@@ -104,6 +104,20 @@ test("páginas legales: el texto cambia según la tienda esté abierta o cerrada
   for (const html of [pCerrada, pAbierta, lCerrada, lAbierta]) assert.match(html, /<link rel="canonical" href="https:\/\/carnicerialaestrella\.netlify\.app\/(privacidad|aviso-legal)\.html">/);
 });
 
+test("aviso legal con tienda: desistimiento acotado a lo que dice la ley, modelo de formulario, correo y garantía", () => {
+  const sin = renderizarPagina("aviso-legal.html", ajustes((x) => { x.tienda.activa = true; return x; }), { ahora: AHORA });
+  assert.match(sin, /\[correo electrónico a completar\]/, "sin correo se marca como pendiente");
+  const con = renderizarPagina("aviso-legal.html", ajustes((x) => { x.tienda.activa = true; x.negocio.email = "pedidos@example.es"; return x; }), { ahora: AHORA });
+  assert.match(con, /pedidos@example\.es/);
+  assert.match(con, /14 días naturales/);
+  assert.match(con, /art\. 103, letras c y d/);
+  assert.doesNotMatch(con, /por lo que no se aplica el derecho de desistimiento/, "ya no se niega el desistimiento en todos los productos");
+  assert.match(con, /Modelo de formulario de desistimiento/);
+  assert.match(con, /garantía legal de conformidad/);
+  assert.match(con, /id="condiciones-pedidos"/);
+  assert.match(con, /no se considera aceptado y no tienes que pagar nada/);
+});
+
 test("páginas legales: el nombre del negocio se escapa", () => {
   const html = renderizarPagina("aviso-legal.html", ajustes((x) => { x.negocio.nombre = 'Carne <img src=x onerror=alert(1)>'; x.tienda.activa = true; return x; }), { ahora: AHORA });
   assert.doesNotMatch(html, /<img src=x/);

@@ -80,3 +80,18 @@ test("el radio exige las coordenadas de la tienda", () => {
   assert.equal(r.ok, false);
   assert.ok(r.errores.some((x) => x.campo === "tienda.reparto.radioKm" && /latitud/.test(x.mensaje)));
 });
+
+test("el correo del negocio es opcional y, si se pone, tiene que parecer un correo", () => {
+  const a = base(); a.negocio.email = "";
+  assert.equal(validarAjustes(a).ok, true);
+  a.negocio.email = " pedidos@example.es ";
+  const r = validarAjustes(a);
+  assert.equal(r.ok, true);
+  assert.equal(r.valor.negocio.email, "pedidos@example.es");
+  for (const malo of ["sin-arroba", "a@b", "a b@c.es", "<x>@c.es"]) {
+    a.negocio.email = malo;
+    const q = validarAjustes(a);
+    assert.equal(q.ok, false, malo);
+    assert.ok(q.errores.some((e) => e.campo === "negocio.email"), malo);
+  }
+});

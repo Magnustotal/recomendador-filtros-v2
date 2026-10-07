@@ -9,7 +9,7 @@ let productos = [];
 let categorias = [];
 let regalos = []; // copia de trabajo de los regalos (se guardan con su propio botón)
 let hoy = new Date().toISOString().slice(0, 10);
-let contexto = { recargar() {}, guardarRegalos: async () => ({ ok: false, errores: [] }) };
+let contexto = { recargar() {}, guardarRegalos: async () => ({ ok: false, errores: [] }), preciosCfg: () => ({ iva: {} }) };
 let filtro = "";
 
 export function iniciarOfertas(ctx) {
@@ -54,6 +54,16 @@ function resumenTxt(p, o) {
   }
   const base = p.unidad === "kg" ? " kg" : " ud";
   return `${nombreOferta(o)}: se llevan ${o.lleva}${base} y se pagan ${o.paga}${base}`;
+}
+
+// Venta con pérdida (Ley 7/1996, art. 14): por debajo de lo que costó el producto, con el IVA, puede ser desleal en ciertos casos.
+// Aviso orientativo, no bloquea nada: el coste es el que tú has apuntado (sin IVA) y no cuenta la merma.
+function avisoPerdida(p, precioPorUnidad) {
+  if (p.coste == null || !(precioPorUnidad > 0)) return "";
+  const iva = contexto.preciosCfg()?.iva?.[p.categoria] ?? 10;
+  const minimo = Math.round(p.coste * (1 + iva / 100) * 100) / 100;
+  if (precioPorUnidad >= minimo) return "";
+  return ` ⚠ Ojo: a ${eurosTxt(precioPorUnidad)} por ${unidadDe(p)} vendes por debajo de lo que te cuesta (${eurosTxt(minimo)} con IVA, según el coste que apuntaste). Vender con pérdida puede ser desleal en algunos casos (art. 14 de la Ley 7/1996); pregúntalo a tu gestoría antes de publicarla.`;
 }
 
 // Qué va a pasar con una rebaja según la regla de los 30 días (Ley 7/1996, art. 20): el tachado es el menor precio aplicado antes
@@ -188,10 +198,12 @@ function abrirDialogo(edicion = null) {
     if (p?.precio != null && n != null && n > 0) {
       if (n >= p.precio) ayudaPrecio.textContent = `Tiene que ser más barato que el precio habitual (${eurosTxt(p.precio)}).`;
       else if (!/^\d{4}-\d{2}-\d{2}$/.test(desde.value)) ayudaPrecio.textContent = "Pon la fecha de inicio para comprobar el precio anterior.";
-      else ayudaPrecio.textContent = textoRebaja(p, { tipo: "precio", desde: desde.value, hasta: hasta.value, precio: n }, n, edicion?.o);
+      else ayudaPrecio.textContent = textoRebaja(p, { tipo: "precio", desde: desde.value, hasta: hasta.value, precio: n }, n, edicion?.o) + avisoPerdida(p, n);
     } else ayudaPrecio.textContent = "Se enseña el precio anterior tachado y este.";
     const l = num(lleva), g = num(paga), u = p ? (p.unidad === "kg" ? "kg" : "ud") : "";
-    ayudaCantidad.textContent = l && g && g < l ? `Con ${l} ${u} se pagan ${g} ${u}; se regala de cada tramo completo (con ${l * 2} ${u}, el doble).` : "Se paga menos de lo que se lleva (por ejemplo, lleva 3 y paga 2).";
+    ayudaCantidad.textContent = l && g && g < l
+      ? `Con ${l} ${u} se pagan ${g} ${u}; se regala de cada tramo completo (con ${l * 2} ${u}, el doble).${p?.precio != null ? avisoPerdida(p, Math.round((p.precio * g / l) * 100) / 100) : ""}`
+      : "Se paga menos de lo que se lleva (por ejemplo, lleva 3 y paga 2).";
   }
   for (const el of [tipoPrecio, tipoCantidad, precio, lleva, paga, desde, hasta]) el.addEventListener("input", refrescar);
   buscar.addEventListener("input", () => pintarProductos(selProd.value));
