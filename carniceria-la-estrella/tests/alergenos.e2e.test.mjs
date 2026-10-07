@@ -62,3 +62,47 @@ test("panel: los botones de la lista oficial rellenan el campo, «revisado» se 
   assert.deepEqual(errores(page), []);
   await page.context().close();
 });
+
+test("precio por litro: se pone el contenido en la ficha y la tienda enseña «75 cl · 8,00 €/l» junto al precio; sin contenido no sale nada", async () => {
+  const page = await e.nuevaPagina();
+  await page.goto(e.url + "/admin/", { waitUntil: "networkidle" });
+  await page.fill("#password", PASSWORD);
+  await page.click("#acceso-enviar");
+  await page.locator("#panel").waitFor();
+  await page.waitForLoadState("networkidle");
+  await page.click("#tab-estado");
+  await page.locator("#lista-comprobacion li").first().waitFor();
+  assert.match(await page.locator("#lista-comprobacion").innerText(), /26 productos envasados \(especias, salsas, vino\) sin contenido indicado/);
+
+  await page.click("#tab-productos");
+  await page.fill("#prod-buscar", "Vino blanco");
+  await page.locator(".prod-fila").first().getByRole("button", { name: /Editar/ }).click();
+  const dlg = page.locator("#dlg-producto");
+  await dlg.locator("#f-precio").fill("6");
+  assert.equal(await dlg.locator("#f-contenido-medida").inputValue(), "cl", "en el vino la medida por defecto son cl");
+  await dlg.locator("#f-contenido").fill("75");
+  assert.match(await dlg.innerText(), /La tienda enseñará: 8,00 €\/litro junto al precio/);
+  await dlg.getByRole("button", { name: "Guardar", exact: true }).click();
+  await dlg.waitFor({ state: "hidden" });
+  assert.deepEqual((await producto("vino-vino-blanco")).contenido, { cantidad: 75, medida: "cl" });
+
+  await page.fill("#prod-buscar", "Fino");
+  await page.locator(".prod-fila").first().getByRole("button", { name: /Editar/ }).click();
+  await dlg.locator("#f-precio-exento").check();
+  await dlg.getByRole("button", { name: "Guardar", exact: true }).click();
+  await dlg.waitFor({ state: "hidden" });
+  assert.equal((await producto("vino-fino")).precioUnidadExento, true);
+
+  const tienda = await e.nuevaPagina();
+  await tienda.goto(e.url + "/tienda", { waitUntil: "networkidle" });
+  await tienda.locator("#app").waitFor();
+  assert.equal((await fila(tienda, "Vino blanco").locator(".prod-contenido").textContent()).trim().replace(/\s/g, " "), "75 cl · 8,00 €/l");
+  assert.equal(await fila(tienda, "Vino rosado").locator(".prod-contenido").count(), 0);
+  assert.deepEqual(errores(tienda), []);
+  await tienda.context().close();
+  await page.click("#tab-estado");
+  await page.locator("#lista-comprobacion li").first().waitFor();
+  assert.match(await page.locator("#lista-comprobacion").innerText(), /24 productos envasados/);
+  assert.deepEqual(errores(page), []);
+  await page.context().close();
+});

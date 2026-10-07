@@ -4,7 +4,7 @@ import { h, $, aviso } from "./util.js";
 import { iniciarPedidos, cargar as cargarPedidos, vigilar } from "./pedidos.js";
 import { iniciarMercado, cargarMercado, resumenMercado } from "./mercado.js";
 import { iniciarOfertas, cargarOfertas, buscarEnOfertas } from "./ofertas.js";
-import { iniciarProductos, cargarProductos, fijarMercado, productosConPrecio, productosSinPrecio, alergenosPorRevisar, orientativosPendientes, datosPrecios } from "./productos.js";
+import { iniciarProductos, cargarProductos, fijarMercado, productosConPrecio, productosSinPrecio, alergenosPorRevisar, contenidoPorRevisar, orientativosPendientes, datosPrecios } from "./productos.js";
 import { iniciarAjustes, cargarAjustes, enviar, ajustesBorrador, refrescarTienda, fijarCategorias } from "./ajustes.js";
 
 const TITULO = "Panel · La Estrella";
@@ -152,10 +152,11 @@ function comprobaciones() {
   const lista = [];
   const punto = (ok, texto, ir) => lista.push({ ok, texto, ir });
   punto(!!(a.negocio.razonSocial && a.negocio.nif), "Razón social y NIF rellenos (aparecen en el aviso legal y la política de privacidad).", "negocio");
-  punto(!!a.negocio.email, "Correo electrónico del negocio indicado (la ley lo pide para vender a distancia; sale en el aviso legal y en la información de devoluciones).", "negocio");
+  punto(!!a.negocio.email, "Correo electrónico del negocio indicado (la ley lo pide para vender a distancia y sale en el aviso legal).", "negocio");
   punto(!!a.seo.dominio, "Dirección de la web indicada (para el mapa del sitio y los datos de Google).", "negocio");
   punto(productosConPrecio() > 0, `Hay ${productosConPrecio()} productos con precio (${productosSinPrecio()} se verán como «Consultar»).`, "productos");
-  punto(alergenosPorRevisar() === 0, alergenosPorRevisar() === 0 ? "Alérgenos revisados en elaborados, embutidos, jamones, quesos, salsas, especias y vino." : `${alergenosPorRevisar()} productos (elaborados, embutidos, quesos, salsas, vino…) sin alérgenos revisados: en la tienda dicen «consúltanos antes de pedir». La ley pide que se vean antes de comprar.`, "productos");
+  punto(alergenosPorRevisar() === 0, alergenosPorRevisar() === 0 ? "Alérgenos revisados en elaborados, embutidos, jamones, quesos, salsas, especias y vino." : `${alergenosPorRevisar()} productos (elaborados, embutidos, quesos, salsas, vino…) sin alérgenos revisados. En la tienda dicen «consúltanos antes de pedir».`, "productos");
+  punto(contenidoPorRevisar() === 0, contenidoPorRevisar() === 0 ? "Contenido (para el precio por kilo o litro) revisado en especias, salsas y vino." : `${contenidoPorRevisar()} productos envasados (especias, salsas, vino) sin contenido indicado: hay que enseñar su precio por kilo o litro. Pon el contenido, o marca que no hace falta (por ejemplo, vino con denominación de origen).`, "productos");
   punto(t.recogida.activa ? t.recogida.franjas.length > 0 : true, "La recogida tiene franjas horarias.", "tienda");
   punto(t.reparto.activo ? !!t.reparto.zona && t.reparto.franjas.length > 0 : true, "El reparto tiene zona y franjas horarias.", "tienda");
   punto(!t.pagos.bizum || !!t.pagos.bizumNumero, "Bizum activado con su número.", "tienda");

@@ -2,6 +2,7 @@
 // Lo usan la portada y la tienda. Solo pinta: lo que se cobra lo calcula el servidor al hacer el pedido.
 import { destacadas, tituloDestacadas, condicionRegalo, fechaCorta, nombreOferta } from "/assets/compartido/ofertas.js";
 import { formatoEuro, formatoCantidad } from "/assets/compartido/dinero.js";
+import { lineaContenido } from "/assets/compartido/contenido.js";
 
 function crear(tag, atributos = {}, ...hijos) {
   const n = document.createElement(tag);
@@ -40,6 +41,7 @@ function tarjetaProducto(t, ir) {
       crear("p", { class: "of-etiqueta", texto: nombreOferta(oferta) }),
       crear("h3", { class: "of-nombre", texto: p.nombre }),
       precio,
+      lineaContenido(t.precio, p.contenido, p.unidad, formatoEuro) ? crear("p", { class: "of-detalle", texto: lineaContenido(t.precio, p.contenido, p.unidad, formatoEuro) }) : null,
       oferta.tipo === "cantidad" ? crear("p", { class: "of-detalle", texto: `Llévate ${formatoCantidad(oferta.lleva * base, p.unidad)} y paga ${formatoCantidad(oferta.paga * base, p.unidad)}` }) : null,
       crear("p", { class: "of-hasta", texto: `Hasta el ${fechaCorta(t.hasta)}` }),
       ir.producto(p)));

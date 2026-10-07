@@ -111,11 +111,12 @@ test("aviso legal con tienda: desistimiento acotado a lo que dice la ley, modelo
   assert.match(con, /pedidos@example\.es/);
   assert.match(con, /14 días naturales/);
   assert.match(con, /art\. 103, letras c y d/);
-  assert.doesNotMatch(con, /por lo que no se aplica el derecho de desistimiento/, "ya no se niega el desistimiento en todos los productos");
+  assert.doesNotMatch(con, /no se aplica el derecho de desistimiento/, "ya no se niega el desistimiento en todos los productos");
   assert.match(con, /Modelo de formulario de desistimiento/);
   assert.match(con, /garantía legal de conformidad/);
+  assert.match(con, /No puedes desistir de los alimentos que se estropean o caducan rápido/);
   assert.match(con, /id="condiciones-pedidos"/);
-  assert.match(con, /no se considera aceptado y no tienes que pagar nada/);
+  assert.match(con, /el pedido no cuenta y no tienes que pagar nada/);
 });
 
 test("quejas y reclamaciones (anexo II de la Orden de 24/04/2026): en el aviso legal y en la tienda, con los datos del negocio", () => {
@@ -130,7 +131,7 @@ test("quejas y reclamaciones (anexo II de la Orden de 24/04/2026): en el aviso l
   }
   const sin = renderizarPagina("tienda.html", ajustes((x) => { x.tienda.activa = true; return x; }), { ahora: AHORA });
   assert.match(sin, /\[razón social a completar\]/);
-  assert.match(renderizarPagina("aviso-legal.html", a, { ahora: AHORA }), /Cada producto indica los alérgenos que contiene/);
+  assert.match(renderizarPagina("aviso-legal.html", a, { ahora: AHORA }), /Cada producto indica los alérgenos que lleva/);
 });
 
 test("páginas legales: el nombre del negocio se escapa", () => {

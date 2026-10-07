@@ -1,5 +1,6 @@
 import { texto, numeroOpcional, entero, booleano, listaTextos, recoger, ErrorValidacion } from "./validar.mjs";
 import { redondear } from "./dinero.mjs";
+import { MEDIDAS } from "./contenido.mjs";
 import { estaVigente, fechaReal, hayRangosSolapados, precioAnterior, MAX_OFERTAS_POR_PRODUCTO } from "./ofertas.mjs";
 
 const euros = (n) => `${n.toFixed(2).replace(".", ",")} €`;
@@ -71,6 +72,14 @@ export function validarProducto(entrada, { categorias, redondeo = null }) {
     const merma = ctx.intento(() => numeroOpcional(e.merma, { campo: "merma", min: 0, max: 60, decimales: 1 }));
     const margen = ctx.intento(() => numeroOpcional(e.margen, { campo: "margen", min: 0, max: 300, decimales: 1 }));
     const ofertas = validarOfertas(e.ofertas, ctx, precio ?? null);
+    // Contenido neto de lo envasado (para el precio por kilo o litro). Solo tiene sentido si se vende por unidad.
+    let contenido = null;
+    const cn = e.contenido;
+    if (unidad === "ud" && cn && typeof cn === "object" && cn.cantidad != null && cn.cantidad !== "") {
+      const cantidad = ctx.intento(() => numeroOpcional(cn.cantidad, { campo: "contenido", min: 0.001, max: 100000, decimales: 3 }));
+      if (!Object.hasOwn(MEDIDAS, cn.medida)) ctx.error("contenido", "Elige la medida: g, kg, ml, cl o l.");
+      else if (cantidad != null) contenido = { cantidad, medida: cn.medida };
+    }
     const opciones = ctx.intento(() => listaTextos(e.opciones, { max: 12, maxLong: 40, campo: "opciones" }));
     const alergenos = ctx.intento(() => listaTextos(e.alergenos, { max: 14, maxLong: 30, campo: "alergenos" }));
     let foto = null;
@@ -79,7 +88,7 @@ export function validarProducto(entrada, { categorias, redondeo = null }) {
     return {
       id, categoria, nombre, descripcion, unidad, paso, minimo: minimo ?? null, maximo: maximo ?? null, precio: precio ?? null,
       coste: coste ?? null, merma: merma ?? null, margen: margen ?? null, ofertas,
-      agotado: booleano(e.agotado), oculto: booleano(e.oculto), opciones: opciones ?? [], foto, alcohol: booleano(e.alcohol), alergenos: alergenos ?? [], alergenosRevisados: booleano(e.alergenosRevisados), orden,
+      agotado: booleano(e.agotado), oculto: booleano(e.oculto), opciones: opciones ?? [], foto, alcohol: booleano(e.alcohol), alergenos: alergenos ?? [], alergenosRevisados: booleano(e.alergenosRevisados), contenido, precioUnidadExento: booleano(e.precioUnidadExento), orden,
     };
   });
 }

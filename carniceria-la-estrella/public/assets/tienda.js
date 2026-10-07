@@ -3,6 +3,7 @@
 // los precios y los totales que se ven aquí son orientativos: los decide el servidor.
 import { importeLinea, aCentimos, formatoEuro, formatoCantidad, cantidadValida } from "/assets/compartido/dinero.js";
 import { infoAlergenos } from "/assets/compartido/alergenos.js";
+import { lineaContenido } from "/assets/compartido/contenido.js";
 import { calcularLineas, precioEfectivo, nombreOferta, regalosDelPedido, fechaCorta } from "/assets/compartido/ofertas.js";
 import { pintarDestacadas } from "/assets/destacadas.js";
 import { ahoraEnMadrid, diaSemanaDeFecha, sumarDias, aMinutos, franjaDentroDeHorario } from "/assets/compartido/horario.js";
@@ -120,6 +121,7 @@ function pintarFila(p) {
     crear("h3", { texto: p.nombre }),
     p.descripcion ? crear("p", { class: "prod-desc", texto: p.descripcion }) : null,
     lineaPrecio,
+    contenidoLinea(p, ef.precio),
     alergenosLinea(p),
     textoOferta ? crear("p", { class: "prod-oferta", texto: `${textoOferta} · hasta el ${fechaCorta(ef.oferta.hasta)}` }) : null,
     p.agotado ? crear("p", { class: "prod-agotado", texto: "Agotado por ahora" }) : null,
@@ -382,6 +384,12 @@ function marcado(nombre) {
 }
 
 // Texto de la zona de reparto a partir de lo configurado en el panel (texto libre, códigos postales y/o radio).
+// Contenido y precio por kilo o litro de lo envasado (RD 3423/2000: a la vista, junto al precio). Sin contenido, no sale nada.
+function contenidoLinea(p, precio) {
+  const t = lineaContenido(precio, p.contenido, p.unidad, formatoEuro);
+  return t ? crear("p", { class: "prod-contenido", texto: t }) : null;
+}
+
 // Alérgenos del producto (la ley pide que se vean antes de comprar). Sin nada que decir, no sale nada.
 function alergenosLinea(p) {
   const a = infoAlergenos(p);

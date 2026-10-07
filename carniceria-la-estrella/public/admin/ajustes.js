@@ -247,7 +247,7 @@ function pintarNegocio() {
       entrada("negocio.nombre", "Nombre comercial", { max: 80 }),
       entrada("negocio.razonSocial", "Razón social (para los textos legales)", { max: 120, ayuda: "Nombre legal del titular. Aparece en el aviso legal y la política de privacidad." }),
       entrada("negocio.nif", "NIF / CIF", { max: 20 }),
-      entrada("negocio.email", "Correo electrónico", { max: 120, ayuda: "Aparece en el aviso legal y en la información sobre devoluciones: la ley lo pide a quien vende a distancia." }),
+      entrada("negocio.email", "Correo electrónico", { max: 120, ayuda: "Sale en el aviso legal y en la información sobre devoluciones. La ley lo pide a quien vende a distancia." }),
       entrada("negocio.telefono", "Teléfono (también es el WhatsApp)", { max: 20, ayuda: "9 cifras, de España." })),
     grupo("Dirección y mapa",
       entrada("negocio.calle", "Calle y número", { max: 120 }),

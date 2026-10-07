@@ -7,6 +7,7 @@ import { redondear } from "/assets/compartido/dinero.js";
 import { referenciaMercado, rangoDesdeMercado } from "/assets/compartido/mercado.js";
 import { ofertaVigente, nombreOferta } from "/assets/compartido/ofertas.js";
 import { ALERGENOS_UE, alergenosPendientes } from "/assets/compartido/alergenos.js";
+import { MEDIDAS, contenidoPendiente, precioPorMedida } from "/assets/compartido/contenido.js";
 
 let productos = [];
 let categorias = [];
@@ -76,6 +77,7 @@ export function cargarProductos({ productos: lista, categorias: cats, orientativ
 export const productosSinPrecio = () => productos.filter((p) => !p.oculto && p.precio == null).length;
 export const productosConPrecio = () => productos.filter((p) => p.precio != null).length;
 export const alergenosPorRevisar = () => alergenosPendientes(productos);
+export const contenidoPorRevisar = () => contenidoPendiente(productos);
 
 // ---------- precios orientativos y semáforo ----------
 const cfgPrecios = () => contexto.preciosCfg();
@@ -299,6 +301,15 @@ function abrirEditor(original) {
     pintar();
     return chip;
   }));
+  const contenidoCant = h("input", { id: "f-contenido", type: "text", inputmode: "decimal", autocomplete: "off", value: p.contenido ? String(p.contenido.cantidad).replace(".", ",") : "", placeholder: "75" });
+  const contenidoMed = h("select", { id: "f-contenido-medida", "aria-label": "Medida del contenido" }, ...Object.keys(MEDIDAS).map((m) => h("option", { value: m, selected: (p.contenido?.medida ?? (p.categoria === "vino" ? "cl" : "g")) === m }, m)));
+  const cExento = h("label", { class: "check", for: "f-precio-exento" }, h("input", { id: "f-precio-exento", type: "checkbox", checked: !!p.precioUnidadExento }), h("span", { texto: "No hace falta precio por kilo o litro (vino con denominación de origen, o no va envasado)" }));
+  const ayudaContenido = h("p", { class: "ayuda", role: "status" });
+  const refrescarContenido = () => {
+    const n = Number(contenidoCant.value.trim().replace(",", "."));
+    const pm = Number.isFinite(n) && n > 0 && numero(precio) != null ? precioPorMedida(numero(precio), { cantidad: n, medida: contenidoMed.value }, unidad.value) : null;
+    ayudaContenido.textContent = pm ? `La tienda enseñará: ${importeEs(pm.precio)} €/${pm.por === "kg" ? "kilo" : "litro"} junto al precio.` : "Solo para lo que se vende por unidad y viene envasado: un bote de 250 g, una botella de 75 cl.";
+  };
   const chk = (id, etiqueta, marcado) => h("label", { class: "check", for: id }, h("input", { id, type: "checkbox", checked: marcado }), h("span", { texto: etiqueta }));
   const cAgotado = chk("f-agotado", "Agotado (se ve pero no se puede pedir)", p.agotado);
   const cOculto = chk("f-oculto", "Oculto (no aparece en la tienda)", p.oculto);
@@ -457,6 +468,8 @@ function abrirEditor(original) {
     h("div", { class: "modos", role: "radiogroup", "aria-label": "Cómo quieres poner el precio" }, radios),
     panelDirecto, panelCoste, panelAjuste, semPildora, barra, semDetalle, semFuente);
   precio.addEventListener("input", () => { trabajo = numero(precio); refrescarSem(); refrescarAjuste(); });
+  for (const el of [precio, contenidoCant, contenidoMed, unidad]) el.addEventListener("input", refrescarContenido);
+  refrescarContenido();
   for (const el of [costeIn, mermaIn, margenIn]) el.addEventListener("input", () => { refrescarCoste(); refrescarSem(); });
   categoria.addEventListener("change", () => { refrescarCoste(); refrescarSem(); });
   unidad.addEventListener("change", () => { refrescarCoste(); refrescarSem(); refrescarAjuste(); calculadora.querySelector('label[for="f-coste"]').textContent = `Coste de compra (€/${porUnidad()}, sin IVA)`; });
@@ -484,9 +497,12 @@ function abrirEditor(original) {
     ofertasGrupo,
     h("div", { class: "fila-tres" }, campo("f-paso", "Paso", paso), campo("f-minimo", "Mínimo (opcional)", minimo), campo("f-maximo", "Máximo (opcional)", maximo)),
     campo("f-opciones", "Opciones al pedir (opcional)", opciones, "Por ejemplo cómo cortarlo. Si hay opciones, el cliente elige una."),
-    campo("f-alergenos", "Alérgenos", alergenos, "Pulsa los que lleve o escríbelos separados por comas. La ley pide que el cliente los vea antes de comprar: se enseñan en la tienda."),
+    campo("f-alergenos", "Alérgenos", alergenos, "Pulsa los que lleve o escríbelos separados por comas. El cliente los ve en la tienda antes de comprar, que es lo que pide la ley."),
     chipsAlergenos,
     cAlergenosRev,
+    h("fieldset", { class: "campo-grupo" }, h("legend", { texto: "Contenido de lo envasado (precio por kilo o litro)" }),
+      h("div", { class: "fila-dos" }, campo("f-contenido", "Cantidad", contenidoCant), campo("f-contenido-medida", "Medida", contenidoMed)),
+      ayudaContenido, cExento),
     h("fieldset", { class: "campo-grupo" }, h("legend", { texto: "Foto" }), vista,
       h("div", { class: "acciones" }, h("label", { class: "btn-sec", for: "f-foto", texto: p.foto ? "Cambiar foto" : "Subir foto" }), quitar), archivo,
       h("p", { class: "ayuda", id: "reglas-foto", texto: `Formatos JPG, PNG o WebP, de cualquier tamaño: se ajusta sola a entre ${LADO_MINIMO} y ${LADO_MAXIMO} px por el lado largo y se guarda como JPG ligero (sin ubicación ni datos ocultos).` }), estadoFoto),
@@ -506,6 +522,7 @@ function abrirEditor(original) {
       paso: num(paso), minimo: num(minimo), maximo: num(maximo), precio: precio.value.trim() === "" ? null : precio.value,
       coste: costeIn.value.trim() === "" ? null : costeIn.value, merma: mermaIn.value.trim() === "" ? null : mermaIn.value, margen: margenIn.value.trim() === "" ? null : margenIn.value,
       opciones: opciones.value.split("\n").map((x) => x.trim()).filter(Boolean), alergenos: lista(alergenos.value), alergenosRevisados: cAlergenosRev.querySelector("input").checked,
+      contenido: contenidoCant.value.trim() === "" ? null : { cantidad: contenidoCant.value, medida: contenidoMed.value }, precioUnidadExento: cExento.querySelector("input").checked,
       ofertas: p.ofertas ?? [], // se cambian en la pestaña «Ofertas»; aquí se conservan tal cual
       agotado: cAgotado.querySelector("input").checked, oculto: cOculto.querySelector("input").checked, alcohol: cAlcohol.querySelector("input").checked, foto: p.foto,
     };

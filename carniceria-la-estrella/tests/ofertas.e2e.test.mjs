@@ -306,8 +306,8 @@ test("textos legales: la tienda y el aviso legal avisan de los errores de precio
   const tienda = await (await fetch(e.url + "/tienda")).text();
   assert.match(tienda, /Si detectamos un error evidente en algún precio, te lo comunicaremos antes de preparar tu pedido y podrás mantenerlo con el precio correcto o cancelarlo sin coste\./);
   const legal = await (await fetch(e.url + "/aviso-legal.html")).text();
-  assert.match(legal, /<strong>Errores de precio\.<\/strong> Si detectamos un error evidente/);
-  assert.match(legal, /el precio anterior, que es el más bajo que hayamos aplicado al mismo producto en los 30 días previos/);
+  assert.match(legal, /<strong>Errores de precio\.<\/strong> Si vemos un error evidente/);
+  assert.match(legal, /el precio anterior: el más bajo que hayamos cobrado por ese producto en los 30 días previos/);
 });
 
 test("venta con pérdida: al crear una oferta por debajo del coste (con IVA) el panel avisa, sin impedirla", async () => {
