@@ -1,6 +1,6 @@
 // API del panel de administración. Todo menos el acceso exige sesión; todo lo que modifica
 // datos exige además mismo origen y la cabecera propia del panel (defensa frente a CSRF).
-import { json, error, leerJson, leerBytes, ErrorHttp, esHttps, tipoImagen } from "./http.mjs";
+import { json, error, leerJson, leerBytes, ErrorHttp, esHttps, tipoImagen, dimensionesImagen, FOTO_LADO_MINIMO, FOTO_LADO_MAXIMO } from "./http.mjs";
 import {
   configuracionAuth, compararPassword, crearSesion, verificarSesion, leerCookie, cookieSesion, cookieBorrar,
   NOMBRE_COOKIE, peticionDeMismoOrigen, evaluarIntentos, registrarFallo, huellaIp,
@@ -127,6 +127,10 @@ export async function manejarAdmin(req, deps) {
       const bytes = await leerBytes(req, MAX_FOTO);
       const tipo = tipoImagen(bytes);
       if (!tipo) return error(415, "Solo se admiten fotos JPG, PNG o WebP.");
+      const medidas = dimensionesImagen(bytes, tipo);
+      if (!medidas) return error(415, "No se ha podido leer la foto. Prueba con otra.");
+      const largo = Math.max(medidas.ancho, medidas.alto);
+      if (largo < FOTO_LADO_MINIMO || largo > FOTO_LADO_MAXIMO) return error(422, `La foto mide ${medidas.ancho}×${medidas.alto} px y debe medir entre ${FOTO_LADO_MINIMO} y ${FOTO_LADO_MAXIMO} px por el lado largo.`);
       const id = randomUUID();
       await deps.almacen.guardarFoto(id, bytes, tipo);
       return json(201, { ok: true, id });

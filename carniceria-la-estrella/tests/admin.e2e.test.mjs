@@ -3,6 +3,7 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { arrancarEntorno, PASSWORD } from "./ayuda/entorno.mjs";
 import { pngRuido } from "./ayuda/png.mjs";
+import { dimensionesImagen } from "../lib/http.mjs";
 
 let e;
 before(async () => { e = await arrancarEntorno({ modificar: (a) => { a.tienda.redondeo = 90; } }); });
@@ -148,6 +149,7 @@ test("productos: crear con foto pesada (se reduce), ver la foto en la tienda y b
   assert.ok(png.length > 4_000_000, "la foto de prueba debe ser pesada");
   await dlg.locator("#f-foto").setInputFiles({ name: "grande.png", mimeType: "image/png", buffer: png });
   await dlg.getByText("Foto subida").waitFor();
+  assert.match(await dlg.locator("#reglas-foto ~ p[role=status]").innerText(), /reducida de 1600×1200 px .* a 1000×750 px/);
   await dlg.getByRole("button", { name: "Guardar", exact: true }).click();
   await page.locator("#aviso", { hasText: "añadido" }).waitFor();
   const { datos } = await e.api.llamar("/datos");
@@ -158,8 +160,10 @@ test("productos: crear con foto pesada (se reduce), ver la foto en la tienda y b
   assert.ok(p.foto);
   const f = await fetch(`${e.url}/api/foto/${p.foto}`);
   assert.equal(f.headers.get("content-type"), "image/jpeg");
-  const bytes = (await f.arrayBuffer()).byteLength;
+  const cuerpo = new Uint8Array(await f.arrayBuffer());
+  const bytes = cuerpo.byteLength;
   assert.ok(bytes < 700 * 1024 && bytes > 5_000, `foto de ${bytes} bytes`);
+  assert.deepEqual(dimensionesImagen(cuerpo), { ancho: 1000, alto: 750 }, "1600×1200 se reduce a 1000 px de lado largo");
 
   // se ve en la tienda con su foto
   const tienda = await e.nuevaPagina();
@@ -184,6 +188,39 @@ test("productos: crear con foto pesada (se reduce), ver la foto en la tienda y b
   await page.locator("#aviso", { hasText: "eliminado" }).waitFor();
   assert.ok(!(await e.api.llamar("/datos")).datos.productos.some((x) => x.nombre === "Hamburguesa de la casa"));
   assert.deepEqual(errores(page), []);
+  await page.context().close();
+});
+
+test("fotos: solo JPG/PNG/WebP; una pequeña se amplía al mínimo y una diminuta se rechaza", async () => {
+  const page = await entrar();
+  await page.click("#tab-productos");
+  await page.click("#prod-nuevo");
+  const dlg = page.locator("#dlg-producto");
+  const entrada = dlg.locator("#f-foto");
+  const estado = dlg.locator("#reglas-foto ~ p[role=status]");
+  assert.equal(await entrada.getAttribute("accept"), "image/jpeg,image/png,image/webp");
+  assert.match(await dlg.locator("#reglas-foto").innerText(), /JPG, PNG o WebP.*entre 400 y 1000 px/);
+
+  // otro formato: se rechaza sin subir nada
+  const subidas = [];
+  page.on("request", (r) => { if (r.url().includes("/api/admin/foto")) subidas.push(r.url()); });
+  await entrada.setInputFiles({ name: "animada.gif", mimeType: "image/gif", buffer: Buffer.from("GIF89a") });
+  await estado.filter({ hasText: "Solo se admiten fotos JPG, PNG o WebP" }).waitFor();
+
+  // diminuta: sin foto aprovechable
+  await entrada.setInputFiles({ name: "minima.png", mimeType: "image/png", buffer: pngRuido(60, 40) });
+  await estado.filter({ hasText: "demasiado pequeña (60×40 px)" }).waitFor();
+  assert.deepEqual(subidas, [], "ni el GIF ni la diminuta llegan al servidor");
+
+  // pequeña: se amplía hasta 400 px por el lado largo
+  await entrada.setInputFiles({ name: "pequena.png", mimeType: "image/png", buffer: pngRuido(200, 150) });
+  await estado.filter({ hasText: "Foto subida: ampliada" }).waitFor();
+  assert.match(await estado.innerText(), /de 200×150 px .* a 400×300 px/);
+  const id = (await dlg.locator(".foto-vista img").getAttribute("src")).split("/").pop();
+  const f = await fetch(`${e.url}/api/foto/${id}`);
+  assert.deepEqual(dimensionesImagen(new Uint8Array(await f.arrayBuffer())), { ancho: 400, alto: 300 });
+  assert.equal(subidas.length, 1);
+  await page.keyboard.press("Escape");
   await page.context().close();
 });
 

@@ -1,4 +1,4 @@
-# Carnicería La Estrella — web y tienda online (v5.3.0)
+# Carnicería La Estrella — web y tienda online (v5.4.0)
 
 Web del negocio (portada, aviso legal, privacidad) **más una tienda online con panel de administración**:
 el cliente elige productos (casi todo al peso, de 250 en 250 g), indica si recoge o quiere reparto, día y franja,
@@ -166,12 +166,12 @@ sitio publicado**. Quedan por confirmar al desplegar:
   contra bots; si ocurre, se borran desde el panel).
 - Las fotos de categorías de la portada son las de siempre (banco de imágenes, marcadas «Foto ilustrativa»); no hay fotos
   para cordero ni despensa, por eso la portada las menciona en un bloque de texto («Y además…») en vez de con ficha.
-- Las fotos de **producto** se suben desde el panel (se reducen a ≤ 900 px y ≤ 680 KB en el navegador).
+- Las fotos de **producto** se suben desde el panel: solo **JPG, PNG o WebP**; el navegador las deja entre **400 y 1000 px** por el lado largo (reduce las grandes, amplía las pequeñas; por debajo de 120 px se rechazan), las recomprime como JPG de ≤ 680 KB y así elimina los datos ocultos (GPS, modelo del móvil). El servidor lo vuelve a comprobar: tipo real por cabecera, ≤ 700 KB y 400–1600 px por el lado largo (415/422 si no).
 - El estado «sin conexión» de la PWA muestra la web visitada, pero **pedir exige conexión** (el carrito se conserva).
 
 ## Versión, fechas de actualización y productos por categorías (v5.3.0)
 
-- **Pie de página** (portada y tienda): «Web actualizada el 7 de octubre de 2026 · versión 5.3.0». La fecha es la más reciente entre la de publicación de esa versión (`public/VERSION`, que `scripts/empaquetar.mjs` incrusta en la web) y el último cambio hecho desde el panel. La versión sale de `public/VERSION` y debe coincidir con `package.json` (hay una prueba).
+- **Pie de página** (portada y tienda): «Web actualizada el 7 de octubre de 2026 · versión 5.4.0». La fecha es la más reciente entre la de publicación de esa versión (`public/VERSION`, que `scripts/empaquetar.mjs` incrusta en la web) y el último cambio hecho desde el panel. La versión sale de `public/VERSION` y debe coincidir con `package.json` (hay una prueba).
 - **Fecha de los precios** (en la tienda, bajo el título: «Precios actualizados por última vez el … Los precios pueden variar a diario; procuramos mantenerlos lo más al día posible»). Se actualiza **sola** cuando el carnicero cambia un precio (a mano, con «Aceptar» o con el redondeo masivo si cambia algo) y con el botón **«Los precios están al día (hoy)»** (Productos → Herramientas de precios) para cuando los repasa sin tocar ninguno. **Aceptar de golpe los orientativos no la actualiza**, porque son estimaciones sin revisar. Mientras no haya fecha, la tienda muestra solo la frase general.
 - **Panel → Productos por categorías**: plegables como `<details>`, con su icono, número de productos y cuántos faltan por precio; botones de categoría fijos arriba (como en la tienda) que abren y llevan a la categoría; «Abrir todas / Cerrar todas»; el buscador abre solo las categorías con coincidencias. Un producto nuevo nace en la categoría en la que se estaba trabajando. Las herramientas de precios (redondeo, orientativos, fecha) van plegadas en el móvil.
 - **Aviso sobre los rangos de mercado:** el semáforo dice de dónde salen (estimación propia de octubre de 2026, no oficial, que no se actualiza sola) y el panel avisa cuando tienen más de dos meses. No hay hoy ninguna fuente que los actualice automáticamente (ver abajo).
@@ -218,6 +218,7 @@ Reglas: el cliente siempre escribe su código postal al pedir reparto. Si solo h
 
 ## Historial
 
+- **v5.4.0** — Fotos de producto: solo JPG/PNG/WebP, ajuste automático a 400–1000 px (cualquier resolución de origen), JPG ligero sin metadatos y comprobación de medidas en el servidor.
 - **v5.3.0** — Pie con la fecha de actualización y la versión de la web; fecha de «precios actualizados» visible en la tienda (automática, más botón «Los precios están al día»); rangos de mercado con su origen y fecha; productos del panel agrupados por categorías plegables con navegación por botones.
 - **v5.2.0** — Precios orientativos para los 225 productos (se aceptan desde el panel; hasta entonces, «Consultar»), calculadora de precio (desde el coste, con merma, recargo e IVA, o ajustando el orientativo), semáforo de precio en la lista y en el editor, recargo habitual e IVA por categoría en los ajustes, y coste/merma/recargo privados por producto.
 - **v5.1.0** — Zona de reparto por códigos postales y/o radio en km (con localización de la dirección, pedidos «por verificar» y CP en pedidos y CSV); iconos y fotos por categoría en la tienda; miniatura con icono en cada pieza; fichas de «Cordero y cabrito» y «Despensa y vinos» en la portada.

@@ -6,6 +6,7 @@ import { ajustesPorDefecto } from "../lib/datos.generado.mjs";
 import { manejarAdmin, csvPedidos } from "../lib/api-admin.mjs";
 import { catalogo, foto, crearPedido } from "../lib/api-publica.mjs";
 import { pagina } from "../lib/api-pagina.mjs";
+import { jpegCon, pngCon, webpLossy } from "./ayuda/imagenes.mjs";
 
 const ORIGEN = "https://tienda.test";
 const ENV = { ADMIN_PASSWORD: "clave-de-prueba-larga", SESSION_SECRET: "s".repeat(48) };
@@ -140,19 +141,41 @@ test("redondeo masivo a ,95 solo toca precios existentes", async () => {
   assert.equal((await adm("/redondeo", { metodo: "POST", cuerpo: { final: 80 }, cookie })).status, 400);
 });
 
-test("fotos: solo imágenes reales y de tamaño razonable", async () => {
-  const jpg = new Uint8Array(40); jpg.set([0xff, 0xd8, 0xff, 0xe0]);
-  const ok = await adm("/foto", { metodo: "POST", raw: jpg, cabeceras: { "content-type": "image/jpeg" }, cookie });
+test("fotos: solo imágenes reales, de tamaño razonable y con medidas dentro de lo permitido", async () => {
+  const subir = (bytes, tipo = "image/jpeg") => adm("/foto", { metodo: "POST", raw: bytes, cabeceras: { "content-type": tipo }, cookie });
+  const ok = await subir(jpegCon(800, 600));
   assert.equal(ok.status, 201);
   const { id } = await ok.json();
   const pub = await foto(id, deps());
   assert.equal(pub.status, 200);
   assert.equal(pub.headers.get("content-type"), "image/jpeg");
   assert.match(pub.headers.get("cache-control"), /immutable/);
+  assert.equal((await subir(pngCon(1000, 1000), "image/png")).status, 201);
+  assert.equal((await subir(webpLossy(900, 700), "image/webp")).status, 201);
+  assert.equal((await subir(jpegCon(400, 300))).status, 201, "justo el mínimo");
+  assert.equal((await subir(jpegCon(1600, 1200))).status, 201, "justo el máximo");
+  assert.equal((await subir(jpegCon(300, 400))).status, 201, "vertical: cuenta el lado largo");
+
+  // medidas fuera de rango
+  for (const [w, h] of [[399, 399], [200, 150], [10, 10], [1601, 1000], [4032, 3024], [100, 6000]]) {
+    const r = await subir(jpegCon(w, h));
+    assert.equal(r.status, 422, `${w}x${h}`);
+    assert.match((await r.json()).errores[0].mensaje, /debe medir entre 400 y 1600/);
+  }
+  // tipos no admitidos y cabeceras ilegibles
   const html = new TextEncoder().encode("<script>alert(1)</script>");
-  assert.equal((await adm("/foto", { metodo: "POST", raw: html, cabeceras: { "content-type": "image/jpeg" }, cookie })).status, 415);
-  const grande = new Uint8Array(800 * 1024); grande.set([0xff, 0xd8, 0xff, 0xe0]);
-  assert.equal((await adm("/foto", { metodo: "POST", raw: grande, cabeceras: { "content-type": "image/jpeg" }, cookie })).status, 413);
+  assert.equal((await subir(html)).status, 415);
+  const gif = new TextEncoder().encode("GIF89a" + "x".repeat(60));
+  assert.equal((await subir(gif, "image/gif")).status, 415);
+  const svg = new TextEncoder().encode("<svg xmlns='http://www.w3.org/2000/svg' width='800' height='800'></svg>");
+  assert.equal((await subir(svg, "image/svg+xml")).status, 415);
+  const sinMedidas = new Uint8Array(40); sinMedidas.set([0xff, 0xd8, 0xff, 0xe0]);
+  const ilegible = await subir(sinMedidas);
+  assert.equal(ilegible.status, 415);
+  assert.match((await ilegible.json()).errores[0].mensaje, /No se ha podido leer la foto/);
+  // peso
+  const grande = new Uint8Array(800 * 1024); grande.set(jpegCon(800, 600));
+  assert.equal((await subir(grande)).status, 413);
   assert.equal((await foto("../../etc/passwd", deps())).status, 404);
   assert.equal((await foto("00000000-0000-0000-0000-000000000000", deps())).status, 404);
 });

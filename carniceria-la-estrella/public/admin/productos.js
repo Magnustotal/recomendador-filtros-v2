@@ -1,7 +1,7 @@
 // Pestaña "Productos": lista con precio y "agotado" editables en el momento, y un editor completo.
 import { api, textoErrores } from "./api.js";
 import { h, $, importeEs, aviso, sinAcentos, describirError, fechaConAnio } from "./util.js";
-import { prepararFoto } from "./fotos.js";
+import { prepararFoto, pesoLegible, LADO_MAXIMO, LADO_MINIMO } from "./fotos.js";
 import { semaforo, rangoOrientativo, precioDesdeCoste, ajustarPorcentaje, MARGEN_POR_DEFECTO, NOMBRE_FIABILIDAD } from "/assets/compartido/precios.js";
 import { redondear } from "/assets/compartido/dinero.js";
 
@@ -265,7 +265,7 @@ function abrirEditor(original) {
   // Foto
   const vista = h("div", { class: "foto-vista" });
   const estadoFoto = h("p", { class: "ayuda", role: "status" });
-  const archivo = h("input", { id: "f-foto", type: "file", accept: "image/*", class: "sr-only" });
+  const archivo = h("input", { id: "f-foto", type: "file", accept: "image/jpeg,image/png,image/webp", class: "sr-only" });
   const quitar = h("button", { type: "button", class: "btn-sec", texto: "Quitar foto" });
   const pintarFoto = () => {
     vista.replaceChildren(p.foto ? h("img", { src: `/api/foto/${p.foto}`, alt: `Foto de ${p.nombre || "este producto"}`, width: "120", height: "120" }) : h("span", { class: "sin-foto", texto: "Sin foto" }));
@@ -276,12 +276,13 @@ function abrirEditor(original) {
     if (!f) return;
     estadoFoto.textContent = "Preparando la foto…";
     try {
-      const blob = await prepararFoto(f);
+      const { blob, ancho, alto, origen, ampliada, reducida } = await prepararFoto(f);
       estadoFoto.textContent = "Subiendo la foto…";
       const r = await api("/foto", { metodo: "POST", bytes: blob, tipo: "image/jpeg" });
       if (!r.ok) throw new Error(textoErrores(r.errores));
       p.foto = r.datos.id;
-      estadoFoto.textContent = "Foto subida. Pulsa «Guardar» para aplicarla al producto.";
+      const cambio = reducida ? "reducida" : ampliada ? "ampliada (era pequeña y puede verse algo borrosa)" : "ajustada";
+      estadoFoto.textContent = `Foto subida: ${cambio} de ${origen.ancho}×${origen.alto} px (${pesoLegible(origen.bytes)}) a ${ancho}×${alto} px (${pesoLegible(blob.size)}). Pulsa «Guardar» para aplicarla al producto.`;
       pintarFoto();
     } catch (e) { estadoFoto.textContent = e.message; }
     archivo.value = "";
@@ -421,7 +422,8 @@ function abrirEditor(original) {
     campo("f-opciones", "Opciones al pedir (opcional)", opciones, "Por ejemplo cómo cortarlo. Si hay opciones, el cliente elige una."),
     campo("f-alergenos", "Alérgenos (opcional)", alergenos, "Separados por comas."),
     h("fieldset", { class: "campo-grupo" }, h("legend", { texto: "Foto" }), vista,
-      h("div", { class: "acciones" }, h("label", { class: "btn-sec", for: "f-foto", texto: p.foto ? "Cambiar foto" : "Subir foto" }), quitar), archivo, estadoFoto),
+      h("div", { class: "acciones" }, h("label", { class: "btn-sec", for: "f-foto", texto: p.foto ? "Cambiar foto" : "Subir foto" }), quitar), archivo,
+      h("p", { class: "ayuda", id: "reglas-foto", texto: `Formatos JPG, PNG o WebP, de cualquier tamaño: se ajusta sola a entre ${LADO_MINIMO} y ${LADO_MAXIMO} px por el lado largo y se guarda como JPG ligero (sin ubicación ni datos ocultos).` }), estadoFoto),
     h("div", { class: "checks" }, cAgotado, cOculto, cAlcohol),
     h("div", { class: "dlg-acciones" }, guardarBtn, cancelar, eliminar));
 

@@ -27,7 +27,7 @@ En el móvil funciona igual que en el ordenador. Arriba tienes cinco pestañas.
 - **Redondeo del precio por kilo:** si eliges «Terminar en ,90» (o ,95), cada precio por kilo que guardes se sube al siguiente que acabe así (14,31 → 14,90). No se aplica a lo que se vende por unidades. El botón *Aplicar ahora a todos* cambia todos los precios que ya hay.
 - **Editar** abre la ficha completa: nombre, categoría, descripción, si se vende al peso o por unidades, de cuánto en cuánto se puede pedir (250 g por defecto), opciones al pedir (por ejemplo «En filetes», «Picada»), foto, y si es **Oculto** (no aparece en la tienda) o bebida alcohólica (el cliente tendrá que confirmar que es mayor de 18).
 - **Fotos por defecto:** cada categoría ya trae su foto y cada pieza muestra el icono de su categoría hasta que subas la suya.
-- **Foto:** pulsa *Subir foto* y elige una del móvil o del ordenador; se reduce sola. Luego pulsa **Guardar**.
+- **Foto:** pulsa *Subir foto* y elige una del móvil o del ordenador (formatos **JPG, PNG o WebP**, del tamaño que sea). Se ajusta sola: si es enorme se reduce y si es muy pequeña se amplía (puede verse algo borrosa); si es diminuta (menos de 120 px) te dirá que uses otra. Además se le quitan los datos ocultos, como la ubicación. Luego pulsa **Guardar**.
 - **Añadir producto** crea uno nuevo. Para dejar de ofrecer algo un tiempo, mejor *Oculto* o *Agotado* que *Eliminar*.
 
 ## Tienda
