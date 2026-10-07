@@ -117,6 +117,7 @@ La versión vive en `public/version.js` (se muestra en **Ajustes**) y en `packag
 
 | Versión | Cambios |
 |---|---|
+| 2.1.1 | Revisión de pantallas: leyenda del editor de platos sin solaparse, selector de formato de WhatsApp más ajustado, barra de filtros de Platos contenida en escritorio, menú de plato con iconos y títulos de diálogo con menos interlínea; se quita un import sin uso y se añade una prueba de que el service worker precachea todos los módulos |
 | 2.1.0 | Iconos SVG de Lucide en la navegación y los botones (con `THIRD-PARTY-NOTICES.txt`), ilustraciones propias en los estados vacíos, esqueleto de carga para la IA y pulsación más táctil en los botones |
 | 2.0.0 | Gran actualización: días con nota/fuera de casa/comensales, mover/copiar/arrastrar, plantillas, vista de mes, grupos de alimentos y reglas de equilibrio, favoritos/tiempo/receta/ingredientes/congelados con filtros, estadísticas, formatos de WhatsApp, imagen y `.ics`, traspaso por código, avisos (copia, congelados, versión nueva), platos de ejemplo, pdf.js precargado, pruebas con axe-core |
 | 1.7.1 | Revisión: la entrada animada ya no se repite al añadir o quitar platos; `theme_color` del manifiesto alineado con el fondo; texto de «Borrar todo» sin referencias a la clave |

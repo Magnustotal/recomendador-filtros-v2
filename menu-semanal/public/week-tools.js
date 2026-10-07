@@ -85,15 +85,15 @@ export function createWeekTools(ctx) {
   function openItemMenu(date, meal, id) {
     const dish = ctx.state().dishes[id];
     if (!dish) return;
-    const row = (label, onclick, cls = 'tonal') => h('button', { class: `btn ${cls} wide`, type: 'button', onclick }, label);
+    const row = (ico, label, onclick, cls = 'tonal') => h('button', { class: `btn ${cls} wide`, type: 'button', onclick }, ico && icon(ico), label);
     openDialog(
       h('div', { class: 'dlg' },
         dialogHead(dish.name, `${MEAL_LABEL[meal]} del ${dayLabel(date).toLowerCase()}`),
         h('div', { class: 'menu-list' },
-          row('↔️ Mover a otro hueco', () => openMoveDialog(date, meal, id, false)),
-          row('📄 Copiar a otro hueco', () => openMoveDialog(date, meal, id, true)),
-          row('🍳 Ver o editar el plato', () => ctx.openDishEditor(id)),
-          row('Quitar de aquí', () => {
+          row('move', 'Mover a otro hueco', () => openMoveDialog(date, meal, id, false)),
+          row('copy', 'Copiar a otro hueco', () => openMoveDialog(date, meal, id, true)),
+          row('edit', 'Ver o editar el plato', () => ctx.openDishEditor(id)),
+          row('trash', 'Quitar de aquí', () => {
             const prev = ctx.state();
             ctx.close();
             ctx.setFocus(`add:${date}:${meal}`);

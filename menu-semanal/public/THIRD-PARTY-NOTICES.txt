@@ -2,7 +2,7 @@ AVISOS DE TERCEROS · Menú semanal
 
 1) Lucide (https://lucide.dev), iconos en public/icons.js
    Fuente: https://github.com/lucide-icons/lucide (archivo LICENSE).
-   Se usan: calendar-days, cooking-pot, chart-column, settings, plus, x, chevron-left, chevron-right, pencil, trash, ellipsis, layout-template, calendar, message-circle, image-down, calendar-plus.
+   Se usan: calendar-days, cooking-pot, chart-column, settings, plus, x, chevron-left, chevron-right, pencil, trash, ellipsis, layout-template, calendar, message-circle, image-down, calendar-plus, arrow-left-right, copy.
    Algunos de esos iconos derivan de Feather y se rigen por la licencia MIT incluida abajo.
 
 ----- LICENCIA DE LUCIDE (copia literal) -----

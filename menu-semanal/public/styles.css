@@ -556,3 +556,17 @@ ol.bars, ul.bars { margin: 0; padding: 0; list-style: none; display: grid; gap: 
 
 @media (prefers-reduced-motion: reduce) { .art .art-steam, .skeleton { animation: none !important; } }
 @media (forced-colors: active) { .art * { stroke: CanvasText; fill: none; } .skeleton { border: 1px solid CanvasText; } }
+
+/* ---------- Ajustes finos (2.1.1) ---------- */
+fieldset.groups legend { padding: 0; margin: 0 0 8px; }
+.seg span { padding: 0 6px; font-size: clamp(0.8125rem, 3.7vw, 0.9375rem); overflow-wrap: anywhere; }
+.two .field-label { margin-bottom: 4px; }
+.dlg h2 { line-height: 1.2; }
+.two .field { padding-inline: 14px; }
+@media (min-width: 720px) {
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .toolbar > input.field { flex: 1 1 260px; min-width: 0; }
+  .toolbar > div:has(.seg) { flex: 0 1 420px; }
+  .toolbar > select.field { flex: 0 1 260px; }
+  .toolbar > div:has(> .btn) { flex: none; }
+}

@@ -1,6 +1,6 @@
 {
   "name": "menu-semanal",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "private": true,
   "type": "module",
   "description": "PWA para planificar el menú semanal. Sin dependencias ni build.",

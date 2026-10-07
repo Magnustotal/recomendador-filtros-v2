@@ -75,8 +75,7 @@ const day = (p, d) => p.locator(`.day[data-date="${d}"]`);
   await p.locator('#dlg button', { hasText: 'Guardar' }).click();
   const txt = await day(p, '2026-10-07').innerText();
   check(txt.includes('Cumple de Ana') && txt.includes('Comemos fuera') && txt.includes('4 pers.'), 'día: nota, «fuera de casa» y comensales visibles en la tarjeta');
-  await p.locator('[data-fk=idea]').count(); // la idea no se propone en un día fuera de casa
-  await p.locator('#fab').click();
+    await p.locator('#fab').click();
   const msg = await p.locator('#share-text').inputValue();
   check(msg.includes('📝 Cumple de Ana') && msg.includes('🚫 Comemos fuera'), 'día: el mensaje de WhatsApp incluye la nota y el aviso');
   await p.locator('#dlg .seg label', { hasText: 'Corto' }).click();
@@ -146,7 +145,6 @@ const day = (p, d) => p.locator(`.day[data-date="${d}"]`);
 {
   const { ctx, p } = await open();
   await p.locator('.nav-item[data-view=settings]').click();
-  await p.selectOption('input[name=regla-min] >> xpath=../../select', 'pescado').catch(() => {});
   await p.selectOption('select[name=regla-grupo]', 'pescado');
   await p.fill('input[name=regla-min]', '2');
   await p.locator('button', { hasText: 'Añadir regla' }).click();
@@ -164,7 +162,7 @@ const day = (p, d) => p.locator(`.day[data-date="${d}"]`);
   await axe(p, 'el editor de platos');
   await p.locator('#dlg button[type=submit]').click();
   const row = await p.locator('.row', { hasText: 'Pollo asado' }).innerText();
-  check(row.includes('25 min') && row.includes('Favorito') || row.includes('⭐'), 'platos: tiempo y favorito se muestran');
+  check(row.includes('25 min') && row.includes('⭐'), 'platos: tiempo y favorito se muestran');
   check(await p.locator('.row a', { hasText: 'Ver receta' }).getAttribute('href') === 'https://example.com/pollo', 'platos: enlace a la receta');
   await p.selectOption('select[name=filtro]', 'quick');
   check(await p.locator('.row').count() === 2, 'filtro «rápidos»: platos de hasta 30 min');
@@ -180,7 +178,7 @@ const day = (p, d) => p.locator(`.day[data-date="${d}"]`);
   check(await p.locator('#dlg input[name=grupo][value=pescado]').isChecked(), 'editor: deduce el grupo «pescado» por el nombre');
   await p.locator('#dlg input[name=grupo][value=verdura]').check();
   await p.fill('#dlg input[name=nombre]', 'Salmón al horno con algo');
-  check(!(await p.locator('#dlg input[name=grupo][value=pescado]').isChecked()) === false, 'editor: tras tocar los grupos a mano ya no se cambian solos');
+  check(await p.locator('#dlg input[name=grupo][value=pescado]').isChecked(), 'editor: tras tocar los grupos a mano ya no se cambian solos');
   await p.keyboard.press('Escape');
 
   // el plato congelado previsto para mañana avisa hoy

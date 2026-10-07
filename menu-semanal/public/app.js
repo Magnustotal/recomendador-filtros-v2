@@ -1,5 +1,5 @@
 import {
-  MEALS, MEAL_LABEL, MEAL_EMOJI, TAGS, TAG_IDS, LEVELS, ruleText, OFF_LABEL, WA_FORMATS, backupDue, recipeLink,
+  MEALS, MEAL_LABEL, MEAL_EMOJI, TAGS, TAG_IDS, LEVELS, ruleText, OFF_LABEL, WA_FORMATS, recipeLink,
   addDays, addToSlot, cleanName, copyWeek, daysBetween, dayName, deleteDish, dishEmoji, dishStats,
   emptyState, findDishByName, firstEmptySlot, formatWhatsApp, guessEmoji, guessTags, normalizeName, relativeDays,
   removeFromSlot, sanitizeState, shortDate, slotIds, suggest, todayISO, updateDish, upsertDishByName,
