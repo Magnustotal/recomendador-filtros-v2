@@ -2,7 +2,8 @@
 import { api, cuandoCaduque, textoErrores } from "./api.js";
 import { h, $, aviso } from "./util.js";
 import { iniciarPedidos, cargar as cargarPedidos, vigilar } from "./pedidos.js";
-import { iniciarProductos, cargarProductos, productosConPrecio, productosSinPrecio, orientativosPendientes, datosPrecios } from "./productos.js";
+import { iniciarMercado, cargarMercado, resumenMercado } from "./mercado.js";
+import { iniciarProductos, cargarProductos, fijarMercado, productosConPrecio, productosSinPrecio, orientativosPendientes, datosPrecios } from "./productos.js";
 import { iniciarAjustes, cargarAjustes, enviar, ajustesBorrador, refrescarTienda, fijarCategorias } from "./ajustes.js";
 
 const TITULO = "Panel · La Estrella";
@@ -46,7 +47,7 @@ $("salir").addEventListener("click", async () => {
 });
 
 // ---------- pestañas ----------
-const PESTANAS = ["pedidos", "productos", "tienda", "negocio", "estado"];
+const PESTANAS = ["pedidos", "productos", "mercado", "tienda", "negocio", "estado"];
 function irA(nombre, { enfocar = false } = {}) {
   for (const p of PESTANAS) {
     const boton = $(`tab-${p}`);
@@ -99,6 +100,7 @@ for (const cual of ["tienda", "negocio"]) {
 window.addEventListener("beforeunload", (e) => { if (sinGuardar) { e.preventDefault(); e.returnValue = ""; } });
 
 iniciarPedidos({ cuandoCambienNuevos: marcarNuevos });
+iniciarMercado({ alCambiar: (m) => { fijarMercado(m); pintarEstado(); } });
 
 iniciarProductos({
   redondeoActual: () => guardado?.tienda.redondeo ?? null,
@@ -120,7 +122,8 @@ iniciarProductos({
 async function recargarProductos() {
   const r = await api("/datos");
   if (!r.ok) { aviso(textoErrores(r.errores), { error: true }); return; }
-  cargarProductos({ productos: r.datos.productos, categorias: r.datos.categorias, orientativos: r.datos.orientativos, meta: r.datos.meta });
+  cargarProductos({ productos: r.datos.productos, categorias: r.datos.categorias, orientativos: r.datos.orientativos, meta: r.datos.meta, mercado: r.datos.mercado, hoy: r.datos.hoy });
+  cargarMercado({ mercado: r.datos.mercado, productos: r.datos.productos, hoy: r.datos.hoy });
 }
 
 // ---------- estado y lista de comprobación ----------
@@ -141,6 +144,11 @@ function comprobaciones() {
   const dias = (iso) => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)); // sin negativos aunque el reloj del navegador vaya algo atrasado
   punto(fechaPrecios != null && dias(fechaPrecios) <= 7, fechaPrecios ? `Los precios se actualizaron hace ${dias(fechaPrecios)} día${dias(fechaPrecios) === 1 ? "" : "s"}${dias(fechaPrecios) > 7 ? ": conviene repasarlos (los precios cambian a menudo)" : ""}.` : "Todavía no hay fecha de actualización de precios (se pone sola al cambiar un precio, o con «Los precios están al día»).", "productos");
   punto(fechaReferencia != null && dias(`${fechaReferencia}-28`) <= 75, fechaReferencia && dias(`${fechaReferencia}-28`) > 75 ? `Los rangos de mercado del semáforo son de ${fechaReferencia}: tienen más de dos meses y no se actualizan solos.` : "Los rangos de mercado del semáforo son recientes (estimación propia, no oficial).", "productos");
+  const merc = resumenMercado();
+  punto(merc.conPrecios && merc.atrasadas.length === 0,
+    !merc.conPrecios ? "Todavía no has anotado precios de otras tiendas (pestaña «Mercado»): el semáforo usa mi estimación propia, sin fuentes."
+      : merc.atrasadas.length ? `Precios de mercado atrasados en: ${merc.atrasadas.map((f) => f.nombre).join(", ")}. Anótalos de nuevo en la pestaña «Mercado».`
+        : "Los precios de mercado de las otras tiendas están al día.", "mercado");
   const pend = orientativosPendientes();
   punto(pend === 0, pend ? `Hay ${pend} productos con precio orientativo sin aceptar: en la tienda se ven como «Consultar» hasta que los aceptes o pongas el tuyo.` : "No quedan precios orientativos por revisar.", "productos");
   punto(t.activa, t.activa ? "La tienda está abierta a los clientes." : "La tienda está cerrada: los botones de pedir llevan a WhatsApp.", "tienda");
@@ -180,7 +188,8 @@ async function abrirPanel() {
   guardado = structuredClone(r.datos.ajustes);
   fijarCategorias(r.datos.categorias);
   cargarAjustes(r.datos.ajustes);
-  cargarProductos({ productos: r.datos.productos, categorias: r.datos.categorias, orientativos: r.datos.orientativos, meta: r.datos.meta });
+  cargarProductos({ productos: r.datos.productos, categorias: r.datos.categorias, orientativos: r.datos.orientativos, meta: r.datos.meta, mercado: r.datos.mercado, hoy: r.datos.hoy });
+  cargarMercado({ mercado: r.datos.mercado, productos: r.datos.productos, hoy: r.datos.hoy });
   const inicial = PESTANAS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "pedidos";
   if (inicial !== "pedidos") await cargarPedidos(); // para el contador de nuevos
   irA(inicial); // la pestaña de pedidos carga su lista al abrirse

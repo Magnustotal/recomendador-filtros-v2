@@ -1,0 +1,101 @@
+{
+  "_nota": "Fuentes de partida (las que eligió el dueño). Las direcciones son las webs principales y no se han verificado una a una. No se lee ningún precio automáticamente: los anota el carnicero. Para sumar carnicerías online, usa «Añadir fuente» en el panel.",
+  "fuentes": [
+    {
+      "id": "mercadona",
+      "nombre": "Mercadona",
+      "tipo": "supermercado",
+      "frecuencia": "semanal",
+      "url": "https://www.mercadona.es",
+      "nota": ""
+    },
+    {
+      "id": "carrefour",
+      "nombre": "Carrefour / Hipermercado",
+      "tipo": "supermercado",
+      "frecuencia": "semanal",
+      "url": "https://www.carrefour.es",
+      "nota": ""
+    },
+    {
+      "id": "dia",
+      "nombre": "Dia",
+      "tipo": "supermercado",
+      "frecuencia": "semanal",
+      "url": "https://www.dia.es",
+      "nota": ""
+    },
+    {
+      "id": "alcampo",
+      "nombre": "Alcampo",
+      "tipo": "supermercado",
+      "frecuencia": "semanal",
+      "url": "https://www.alcampo.es",
+      "nota": ""
+    },
+    {
+      "id": "lidl",
+      "nombre": "Lidl",
+      "tipo": "supermercado",
+      "frecuencia": "semanal",
+      "url": "https://www.lidl.es",
+      "nota": ""
+    },
+    {
+      "id": "aldi",
+      "nombre": "Aldi",
+      "tipo": "supermercado",
+      "frecuencia": "semanal",
+      "url": "https://www.aldi.es",
+      "nota": ""
+    },
+    {
+      "id": "eci",
+      "nombre": "El Corte Inglés / Hipercor",
+      "tipo": "supermercado",
+      "frecuencia": "semanal",
+      "url": "https://www.elcorteingles.es",
+      "nota": ""
+    },
+    {
+      "id": "supersol",
+      "nombre": "Supersol",
+      "tipo": "supermercado",
+      "frecuencia": "semanal",
+      "url": "https://www.supersol.es",
+      "nota": ""
+    }
+  ],
+  "anclas": [
+    "vacuno-solomillo-de-ternera",
+    "vacuno-entrecot-de-ternera",
+    "vacuno-morcillo-de-ternera",
+    "vacuno-ternera-para-guisar",
+    "elaborados-carne-picada-de-ternera",
+    "cerdo-solomillo-de-cerdo",
+    "cerdo-chuletas-de-lomo",
+    "cerdo-cinta-de-lomo",
+    "cerdo-magro-de-cerdo",
+    "cerdo-costillas-de-cerdo",
+    "cerdo-panceta-fresca",
+    "cerdo-iberico-secreto-iberico",
+    "cerdo-iberico-presa-iberica",
+    "cordero-pierna-de-cordero-recental",
+    "cordero-paletilla-de-cordero-recental",
+    "cordero-chuletas-de-cordero",
+    "pollo-pollo-troceado-para-guisar",
+    "pollo-pechuga-de-pollo",
+    "pollo-filetes-de-pechuga-de-pollo",
+    "pollo-muslo-de-pollo",
+    "pollo-alitas-de-pollo",
+    "pavo-pechuga-de-pavo",
+    "conejo-conejo-troceado",
+    "embutidos-chorizo-fresco",
+    "embutidos-morcilla",
+    "elaborados-carne-picada-mixta",
+    "elaborados-salchichas-frescas-de-cerdo",
+    "elaborados-albondigas",
+    "quesos-queso-manchego",
+    "jamones-jamon-serrano"
+  ]
+}

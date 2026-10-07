@@ -4,10 +4,13 @@ import { h, $, importeEs, aviso, sinAcentos, describirError, fechaConAnio } from
 import { prepararFoto, pesoLegible, LADO_MAXIMO, LADO_MINIMO } from "./fotos.js";
 import { semaforo, rangoOrientativo, precioDesdeCoste, ajustarPorcentaje, MARGEN_POR_DEFECTO, NOMBRE_FIABILIDAD } from "/assets/compartido/precios.js";
 import { redondear } from "/assets/compartido/dinero.js";
+import { referenciaMercado, rangoDesdeMercado } from "/assets/compartido/mercado.js";
 
 let productos = [];
 let categorias = [];
 let meta = {};
+let mercado = null; // { fuentes, precios, anclas }: precios de otras tiendas que anota el carnicero
+let hoyIso = new Date().toISOString().slice(0, 10);
 let orientativos = null; // { precios: { id: [precio, fiabilidad] }, fecha, nivel, _nota }
 let contexto = null; // { redondeoActual(), guardarRedondeo(valor), recargar(), preciosCfg() }
 let busqueda = "";
@@ -56,8 +59,10 @@ export function iniciarProductos(ctx) {
   });
 }
 
-export function cargarProductos({ productos: lista, categorias: cats, orientativos: orient, meta: m }) {
+export function cargarProductos({ productos: lista, categorias: cats, orientativos: orient, meta: m, mercado: merc, hoy }) {
   if (orient) orientativos = orient;
+  if (merc) mercado = merc;
+  if (hoy) hoyIso = hoy;
   if (m) meta = m;
   productos = lista;
   categorias = cats;
@@ -72,7 +77,15 @@ export const productosConPrecio = () => productos.filter((p) => p.precio != null
 // ---------- precios orientativos y semáforo ----------
 const cfgPrecios = () => contexto.preciosCfg();
 const ivaDe = (categoria) => cfgPrecios().iva?.[categoria] ?? 10;
+// Precios de otras tiendas (pestaña «Mercado»): si hay datos recientes, mandan sobre la estimación propia.
+export function fijarMercado(m, hoy) {
+  mercado = m;
+  if (hoy) hoyIso = hoy;
+  if (productos.length) pintar();
+}
 export function orientativoDe(id) {
+  const delMercado = rangoDesdeMercado(referenciaMercado(mercado?.precios?.[id], mercado?.fuentes, hoyIso));
+  if (delMercado) return { ...delMercado, mercado: true };
   const e = orientativos?.precios?.[id];
   if (!e) return null;
   const [precio, fiabilidad] = e;
@@ -81,6 +94,7 @@ export function orientativoDe(id) {
 // De dónde sale el rango de mercado, dicho con claridad (no es una fuente oficial ni se actualiza solo).
 const NOMBRES_MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 export function referenciaTexto(o) {
+  if (o.mercado) return `${o.origen} Son los precios que anotas en la pestaña «Mercado»; solo los ves tú.`;
   const [a, m] = (orientativos?.fecha ?? "").split("-");
   const cuando = a && m ? `${NOMBRES_MES[Number(m) - 1]} de ${a}` : "fecha desconocida";
   return `Rango de mercado: estimación propia de ${cuando}, con fiabilidad ${NOMBRE_FIABILIDAD[o.fiabilidad]}. No procede de una fuente oficial ni se actualiza sola: tómalo como orientación.`;

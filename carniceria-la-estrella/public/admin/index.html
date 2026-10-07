@@ -41,6 +41,7 @@
   <div class="pestanas" role="tablist" aria-label="Secciones del panel">
     <button id="tab-pedidos" role="tab" aria-selected="true" aria-controls="panel-pedidos" type="button">Pedidos <span id="contador-nuevos" class="contador" hidden></span></button>
     <button id="tab-productos" role="tab" aria-selected="false" aria-controls="panel-productos" tabindex="-1" type="button">Productos</button>
+    <button id="tab-mercado" role="tab" aria-selected="false" aria-controls="panel-mercado" tabindex="-1" type="button">Mercado</button>
     <button id="tab-tienda" role="tab" aria-selected="false" aria-controls="panel-tienda" tabindex="-1" type="button">Tienda</button>
     <button id="tab-negocio" role="tab" aria-selected="false" aria-controls="panel-negocio" tabindex="-1" type="button">Negocio</button>
     <button id="tab-estado" role="tab" aria-selected="false" aria-controls="panel-estado" tabindex="-1" type="button">Estado</button>
@@ -108,6 +109,17 @@
     </section>
 
     <!-- Tienda -->
+    <!-- Mercado -->
+    <section id="panel-mercado" role="tabpanel" aria-labelledby="tab-mercado" hidden>
+      <h2>Precios de otras tiendas</h2>
+      <p class="ayuda">Anota aquí lo que cuestan en otros sitios los productos de referencia. El semáforo de Productos usa la <strong>mediana</strong> de lo anotado (sin contar lo que tenga demasiados días). Solo lo ves tú: el cliente no ve nada de esto. La web <strong>no lee ningún precio sola</strong>: lo apuntas tú, una vez a la semana basta.</p>
+      <div id="merc-avisos" role="status"></div>
+      <div id="merc-anotar" class="tarjeta ancha"></div>
+      <h3>Fuentes</h3>
+      <div id="merc-fuentes" class="merc-fuentes"></div>
+      <form id="merc-nueva" class="tarjeta ancha" novalidate></form>
+    </section>
+
     <section id="panel-tienda" role="tabpanel" aria-labelledby="tab-tienda" hidden>
       <h2>Ajustes de la tienda</h2>
       <form id="form-tienda" novalidate></form>

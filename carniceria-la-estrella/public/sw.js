@@ -2,7 +2,7 @@
 // fallback a caché. Prototipo sencillo: no pretende ser una PWA
 // offline-first completa.
 
-const CACHE_NAME = "la-estrella-v23";
+const CACHE_NAME = "la-estrella-v24";
 const PRECACHE_URLS = [
   "/",
   "/tienda",

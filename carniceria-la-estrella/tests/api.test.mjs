@@ -32,7 +32,7 @@ async function entrar() {
 }
 
 test("sin sesión, todo el panel responde 401 (salvo el acceso)", async () => {
-  for (const [ruta, metodo] of [["/datos", "GET"], ["/yo", "GET"], ["/pedidos", "GET"], ["/ajustes", "PUT"], ["/producto", "PUT"], ["/foto", "POST"], ["/diagnostico", "GET"], ["/pedidos.csv", "GET"]]) {
+  for (const [ruta, metodo] of [["/datos", "GET"], ["/yo", "GET"], ["/pedidos", "GET"], ["/ajustes", "PUT"], ["/producto", "PUT"], ["/foto", "POST"], ["/mercado", "PUT"], ["/diagnostico", "GET"], ["/pedidos.csv", "GET"]]) {
     const r = await adm(ruta, { metodo, cuerpo: metodo === "GET" ? undefined : {} });
     assert.equal(r.status, 401, `${metodo} ${ruta}`);
   }
@@ -414,4 +414,34 @@ test("fechas de actualización: el contenido, los precios y la confirmación «a
   // y el mapa del sitio usa la fecha de actualización
   const sm = await (await pagina(new Request(`${ORIGEN}/sitemap.xml`), deps())).text();
   assert.match(sm, /<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/);
+});
+
+test("mercado: /datos trae las fuentes de partida y los 30 productos de referencia; PUT valida y guarda; sin cambios públicos", async () => {
+  cookie ??= await entrar();
+  const { mercado, hoy } = await (await adm("/datos", { cookie })).json();
+  assert.equal(hoy, new Date(reloj).toISOString().slice(0, 10), "la fecha de hoy la pone el servidor");
+  assert.equal(mercado.anclas.length, 30);
+  assert.ok(mercado.fuentes.length >= 8 && mercado.fuentes.every((f) => f.tipo === "supermercado"));
+  assert.deepEqual(mercado.precios, {});
+
+  const antes = purgas.length;
+  const ok = await adm("/mercado", { metodo: "PUT", cookie, cuerpo: { fuentes: mercado.fuentes, precios: { "pollo-pechuga-de-pollo": { mercadona: { precio: "7,95", fecha: "2026-10-04" } } } } });
+  assert.equal(ok.status, 200);
+  assert.equal(purgas.length, antes, "es interno: no purga la web pública");
+  const otra = await (await adm("/datos", { cookie })).json();
+  assert.deepEqual(otra.mercado.precios, { "pollo-pechuga-de-pollo": { mercadona: { precio: 7.95, fecha: "2026-10-04" } } });
+  assert.equal(otra.mercado.anclas.length, 30, "las anclas no se guardan ni se pisan");
+
+  // el catálogo público no lo menciona
+  const cat = await (await catalogo(deps())).text();
+  assert.ok(!/mercadona|mediana/i.test(cat));
+
+  // validación
+  for (const cuerpo of [{ fuentes: mercado.fuentes, precios: { "no-existe": {} } }, { fuentes: mercado.fuentes, precios: { "pollo-pechuga-de-pollo": { mercadona: { precio: 0, fecha: "2026-10-04" } } } }, { fuentes: "x", precios: {} }]) {
+    const r = await adm("/mercado", { metodo: "PUT", cookie, cuerpo });
+    assert.equal(r.status, 400);
+    assert.ok((await r.json()).errores.length);
+  }
+  assert.equal((await adm("/mercado", { metodo: "PUT", cookie, cuerpo: { fuentes: [], precios: {} }, origen: "https://evil.test" })).status, 403);
+  assert.equal((await adm("/mercado", { metodo: "PUT", cookie, raw: "x".repeat(300 * 1024), cabeceras: { "content-type": "application/json" } })).status, 413);
 });

@@ -1,4 +1,4 @@
-# Carnicería La Estrella — web y tienda online (v5.4.0)
+# Carnicería La Estrella — web y tienda online (v5.5.0)
 
 Web del negocio (portada, aviso legal, privacidad) **más una tienda online con panel de administración**:
 el cliente elige productos (casi todo al peso, de 250 en 250 g), indica si recoge o quiere reparto, día y franja,
@@ -178,7 +178,16 @@ sitio publicado**. Quedan por confirmar al desplegar:
 
 ### Fuentes de los rangos de mercado: estado actual y lo que se ha comprobado
 
-Hoy los rangos son una **estimación propia**, sin ninguna fuente que los actualice. Se ha explorado, el 7 de octubre de 2026, qué se podría usar para mejorarlo (comprobaciones puntuales desde el entorno de desarrollo, no una auditoría):
+**Desde v5.5.0** existe la pestaña **Mercado** (`lib/mercado.mjs`, `public/admin/mercado.js`, datos de partida en `data/mercado.default.json`), según lo decidido con el dueño:
+
+- **Nada se lee automáticamente.** Las 8 fuentes de partida (Mercadona, Carrefour / Hipermercado, Dia, Alcampo, Lidl, Aldi, El Corte Inglés / Hipercor, Supersol; todas «semanal» y a mano) y las que se añadan (carnicerías online, mayoristas…) se anotan a mano; el dueño prefirió no leer ninguna web salvo que alguien revise antes sus condiciones. Las direcciones web de partida son las webs principales de cada cadena y **no se han comprobado una a una**.
+- **30 productos de referencia** («ancla»: pollo, cerdo, ternera, cordero, picada, embutidos básicos…); también se pueden anotar todos los productos al peso.
+- **Semáforo:** con precios recientes, el rango es la **mediana** de las fuentes vigentes ±12 % (3 o más fuentes), ±20 % (2) o ±30 % (1), y el semáforo dice «mediana de N fuentes, la más antigua de hace X días». Cuenta un precio hasta **45 días** (14 si la fuente es «diaria»); pasado eso se ignora. Sin precios vigentes se sigue usando la estimación propia de abajo.
+- **Avisos:** el panel avisa si una fuente semanal lleva más de 7 días sin anotarse, y la pestaña Estado lo recoge.
+- **Solo uso interno:** los precios de otras tiendas no salen en el catálogo público ni en la web (hay una prueba). Los clientes no ven ninguna comparación.
+- Se guardan en el almacén (`config/mercado`) como `{fuentes, precios}` y la API es `PUT /api/admin/mercado` (valida fuentes, tipos, frecuencias, URLs http(s), precios 0,01–2000 € y fechas no futuras).
+
+Lo que sigue pendiente de decidir: **carnicerías online concretas** (la búsqueda que hice solo confirmó dos nombres, Comprar Carne Gallega / Carnicería Frebas y Eduardo Benito Carnicería —ternera de Ávila—; no he revisado sus precios ni condiciones) y si algún día se automatiza alguna fuente. Hasta v5.4.0 los rangos eran solo una **estimación propia**, sin ninguna fuente que los actualice. Se ha explorado, el 7 de octubre de 2026, qué se podría usar para mejorarlo (comprobaciones puntuales desde el entorno de desarrollo, no una auditoría):
 
 | Fuente | Qué se ha visto | Idoneidad |
 |---|---|---|
@@ -218,6 +227,7 @@ Reglas: el cliente siempre escribe su código postal al pedir reparto. Si solo h
 
 ## Historial
 
+- **v5.5.0** — Pestaña «Mercado»: fuentes de precios de otras tiendas (8 supermercados de partida, más las que se añadan), precios anotados a mano con fecha, semáforo por mediana de las fuentes recientes y avisos de atraso.
 - **v5.4.0** — Fotos de producto: solo JPG/PNG/WebP, ajuste automático a 400–1000 px (cualquier resolución de origen), JPG ligero sin metadatos y comprobación de medidas en el servidor.
 - **v5.3.0** — Pie con la fecha de actualización y la versión de la web; fecha de «precios actualizados» visible en la tienda (automática, más botón «Los precios están al día»); rangos de mercado con su origen y fecha; productos del panel agrupados por categorías plegables con navegación por botones.
 - **v5.2.0** — Precios orientativos para los 225 productos (se aceptan desde el panel; hasta entonces, «Consultar»), calculadora de precio (desde el coste, con merma, recargo e IVA, o ajustando el orientativo), semáforo de precio en la lista y en el editor, recargo habitual e IVA por categoría en los ajustes, y coste/merma/recargo privados por producto.

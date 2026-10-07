@@ -1,6 +1,6 @@
 // Acceso a Netlify Blobs: ajustes, productos, pedidos, fotos y control de intentos de acceso.
 import { getStore } from "@netlify/blobs";
-import { ajustesPorDefecto, productosPorDefecto } from "./datos.generado.mjs";
+import { ajustesPorDefecto, productosPorDefecto, mercadoPorDefecto } from "./datos.generado.mjs";
 import { numeroPedido } from "./pedido.mjs";
 
 const REINTENTOS = 8;
@@ -51,6 +51,13 @@ export function crearAlmacen(abrir = (nombre) => getStore({ name: nombre, consis
         await config().setJSON("meta", meta);
       } catch (e) { console.warn("No se pudo guardar la fecha de actualización:", e?.message ?? e); }
     },
+
+    // Precios de referencia de otras fuentes (uso interno del carnicero): { fuentes, precios }.
+    async leerMercado() {
+      const m = await config().get("mercado", { type: "json" });
+      return m ?? { fuentes: structuredClone(mercadoPorDefecto.fuentes), precios: {} };
+    },
+    async guardarMercado(valor) { await config().setJSON("mercado", valor); },
 
     async leerProductos() { return (await config().get("productos", { type: "json" })) ?? structuredClone(productosPorDefecto); },
     actualizarProductos(transformar) { return actualizarJson(config(), "productos", productosPorDefecto, transformar); },

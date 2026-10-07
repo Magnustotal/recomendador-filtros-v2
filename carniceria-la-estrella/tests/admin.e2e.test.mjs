@@ -647,3 +647,86 @@ test("productos por categorías: al aceptar un precio, la cuenta de la categorí
   assert.equal(await page.locator("#pcat-cordero").getAttribute("open"), "");
   await page.context().close();
 });
+
+// ---------- precios de mercado (pestaña «Mercado») ----------
+test("mercado: fuentes de partida, anotar precios de varias tiendas y el semáforo usa la mediana (con su origen)", async () => {
+  const { datos } = await e.api.llamar("/datos");
+  const pechuga = datos.productos.find((p) => p.id === "pollo-pechuga-de-pollo");
+  assert.equal((await e.api.llamar("/producto", { metodo: "PUT", cuerpo: { ...pechuga, precio: 9 } })).estado, 200);
+
+  const page = await entrar();
+  await page.click("#tab-mercado");
+  assert.match(await page.locator("#merc-avisos").innerText(), /Todavía no hay precios anotados/);
+  const fuentes = await page.locator("#merc-fuentes .merc-fuente .nombre").allInnerTexts();
+  assert.deepEqual(fuentes, ["Mercadona", "Carrefour / Hipermercado", "Dia", "Alcampo", "Lidl", "Aldi", "El Corte Inglés / Hipercor", "Supersol"]);
+  assert.equal(await page.locator("#merc-lista .merc-fila").count(), 30, "los 30 productos de referencia");
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), "sin scroll horizontal en el móvil");
+
+  // sin referencia de mercado, el semáforo usa la estimación propia
+  await page.click("#tab-productos");
+  await page.fill("#prod-buscar", "pechuga de pollo");
+  const sem = page.locator(".prod-fila").first().locator(".sem");
+  assert.match(await sem.getAttribute("title"), /El rango habitual que manejo es/);
+
+  // anota 3 tiendas: 7,95 / 8,50 / 8,10 -> mediana 8,10
+  const anotar = async (tienda, precio) => {
+    await page.click("#tab-mercado");
+    await page.selectOption("#merc-fuente", { label: tienda });
+    await page.fill("#merc-p-pollo-pechuga-de-pollo", precio);
+    await page.click("#merc-guardar");
+    await page.locator("#aviso", { hasText: `Guardados 1 precios de ${tienda}` }).waitFor();
+  };
+  await anotar("Mercadona", "7,95");
+  await anotar("Lidl", "8,50");
+  await anotar("Aldi", "8,10");
+  const guardado = (await e.api.llamar("/datos")).datos.mercado.precios["pollo-pechuga-de-pollo"];
+  assert.deepEqual(Object.keys(guardado).sort(), ["aldi", "lidl", "mercadona"]);
+  assert.equal(guardado.aldi.fecha, "2026-10-05");
+  assert.match(await page.locator("#merc-lista .merc-fila", { has: page.locator("#merc-p-pollo-pechuga-de-pollo") }).innerText(), /Mediana: 8,10 € con 3 fuentes/);
+  assert.match(await page.locator("#merc-avisos").innerText(), /todavía no has anotado ningún precio/, "las demás tiendas siguen sin anotar");
+
+  await page.click("#tab-productos");
+  await page.fill("#prod-buscar", "pechuga de pollo");
+  const tit = await page.locator(".prod-fila").first().locator(".sem").getAttribute("title");
+  assert.match(tit, /Referencia de mercado: mediana de 3 fuentes \(la más antigua es de hoy\)/);
+  assert.match(tit, /7,13 €–9,07 €/);
+  await page.locator(".prod-fila").first().getByRole("button", { name: /Editar/ }).click();
+  assert.match(await page.locator("#dlg-producto .fuente-rango").innerText(), /mediana de 3 fuentes.*pestaña «Mercado»/);
+  await page.keyboard.press("Escape");
+
+  // un precio antiguo (más de 45 días) no cuenta
+  await page.click("#tab-mercado");
+  await page.selectOption("#merc-fuente", { label: "Dia" });
+  await page.fill("#merc-fecha", "2026-07-01");
+  await page.fill("#merc-p-pollo-pechuga-de-pollo", "20");
+  await page.click("#merc-guardar");
+  await page.locator("#aviso", { hasText: "Guardados 1 precios de Dia" }).waitFor();
+  assert.match(await page.locator("#merc-lista .merc-fila", { has: page.locator("#merc-p-pollo-pechuga-de-pollo") }).innerText(), /Mediana: 8,10 € con 3 fuentes \(1 caducada\)/);
+
+  // un precio inválido no se guarda
+  await page.fill("#merc-p-pollo-pechuga-de-pollo", "abc");
+  await page.click("#merc-guardar");
+  assert.match(await page.locator("#merc-estado").innerText(), /no es un precio válido/);
+
+  // añadir una fuente y quitarla
+  page.on("dialog", (d) => d.accept());
+  await page.fill("#merc-n-nombre", "Comprar Carne Gallega");
+  await page.selectOption("#merc-n-tipo", "carniceria_online");
+  await page.fill("#merc-n-url", "https://www.comprarcarnegallega.es");
+  await page.getByRole("button", { name: "Añadir fuente" }).click();
+  await page.locator("#aviso", { hasText: "añadida" }).waitFor();
+  const nueva = page.locator(".merc-fuente", { hasText: "Comprar Carne Gallega" });
+  assert.match(await nueva.innerText(), /Carnicería online · 0 precios/);
+  assert.equal(await nueva.locator("a").getAttribute("href"), "https://www.comprarcarnegallega.es");
+  await nueva.getByRole("button", { name: /Quitar/ }).click();
+  await page.locator("#aviso", { hasText: "quitada" }).waitFor();
+  assert.equal(await page.locator(".merc-fuente", { hasText: "Comprar Carne Gallega" }).count(), 0);
+
+  // el estado lo refleja y la tienda pública no sabe nada del mercado
+  await page.click("#tab-estado");
+  assert.match(await page.locator("#lista-comprobacion").innerText(), /Precios de mercado atrasados en: .*Carrefour/);
+  const publico = await (await fetch(e.url + "/api/catalogo")).text();
+  assert.ok(!/mediana|Mercadona/.test(publico));
+  assert.deepEqual(errores(page), []);
+  await page.context().close();
+});

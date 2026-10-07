@@ -75,7 +75,7 @@ export function semaforo({ precio, orientativo = null, coste = null, merma = 0, 
   if (orientativo && esNumero(orientativo.min) && esNumero(orientativo.max)) {
     const { min, max } = orientativo;
     const poco = orientativo.fiabilidad === "b" ? " (estimación poco fiable)" : "";
-    const rango = `El rango habitual que manejo es ${eur(min)}–${eur(max)}${poco}.`;
+    const rango = orientativo.origen ? `El rango habitual es ${eur(min)}–${eur(max)}. ${orientativo.origen}` : `El rango habitual que manejo es ${eur(min)}–${eur(max)}${poco}.`;
     const pc = (v) => num(Math.abs(Math.round((v) * 100)));
     let nivel, etiqueta, frase;
     if (precio < min * 0.85) { nivel = "rojo"; etiqueta = "Muy barato"; frase = `Está un ${pc(precio / min - 1)} % por debajo del límite bajo.`; }

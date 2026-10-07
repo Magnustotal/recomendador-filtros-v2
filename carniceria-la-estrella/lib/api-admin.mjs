@@ -7,8 +7,9 @@ import {
 } from "./auth.mjs";
 import { validarAjustes } from "./ajustes.mjs";
 import { validarProducto, aplicarRedondeoATodos } from "./productos.mjs";
-import { categorias, preciosOrientativos } from "./datos.generado.mjs";
+import { categorias, preciosOrientativos, mercadoPorDefecto } from "./datos.generado.mjs";
 import { redondear } from "./dinero.mjs";
+import { validarMercado } from "./mercado.mjs";
 import { randomUUID } from "node:crypto";
 
 const IDS_CATEGORIA = categorias.map((c) => c.id);
@@ -41,7 +42,8 @@ export async function manejarAdmin(req, deps) {
     if (ruta === "/datos" && metodo === "GET") {
       const [ajustes, productos] = await Promise.all([deps.almacen.leerAjustes(), deps.almacen.leerProductos()]);
       const meta = await deps.almacen.leerMeta().catch(() => ({}));
-      return json(200, { ok: true, ajustes, productos, categorias, orientativos: preciosOrientativos, meta });
+      const mercado = { ...(await deps.almacen.leerMercado().catch(() => ({ fuentes: mercadoPorDefecto.fuentes, precios: {} }))), anclas: mercadoPorDefecto.anclas };
+      return json(200, { ok: true, ajustes, productos, categorias, orientativos: preciosOrientativos, meta, mercado, hoy: new Date(deps.ahora()).toISOString().slice(0, 10) });
     }
 
     if (ruta === "/ajustes" && metodo === "PUT") {
@@ -51,6 +53,15 @@ export async function manejarAdmin(req, deps) {
       await deps.almacen.tocarMeta({ contenido: true }, new Date(deps.ahora()));
       await deps.purgar(["paginas", "catalogo"]);
       return json(200, { ok: true, ajustes: v.valor });
+    }
+
+    // Precios de referencia de otras fuentes: solo para el semáforo del panel; no cambian nada de lo público.
+    if (ruta === "/mercado" && metodo === "PUT") {
+      const productos = await deps.almacen.leerProductos();
+      const v = validarMercado(await leerJson(req, 256 * 1024), { idsProductos: productos.map((p) => p.id), hoy: new Date(deps.ahora()).toISOString().slice(0, 10) });
+      if (!v.ok) return json(400, { ok: false, errores: v.errores });
+      await deps.almacen.guardarMercado(v.valor);
+      return json(200, { ok: true, mercado: { ...v.valor, anclas: mercadoPorDefecto.anclas } });
     }
 
     if (ruta === "/producto" && metodo === "PUT") {

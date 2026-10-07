@@ -1,7 +1,7 @@
 # Guía rápida del panel (para el carnicero)
 
 Entras en **tu-web/admin/** (la misma dirección de la web, añadiendo `/admin/`) y escribes la contraseña.
-En el móvil funciona igual que en el ordenador. Arriba tienes cinco pestañas.
+En el móvil funciona igual que en el ordenador. Arriba tienes seis pestañas.
 
 ## Pedidos
 
@@ -29,6 +29,16 @@ En el móvil funciona igual que en el ordenador. Arriba tienes cinco pestañas.
 - **Fotos por defecto:** cada categoría ya trae su foto y cada pieza muestra el icono de su categoría hasta que subas la suya.
 - **Foto:** pulsa *Subir foto* y elige una del móvil o del ordenador (formatos **JPG, PNG o WebP**, del tamaño que sea). Se ajusta sola: si es enorme se reduce y si es muy pequeña se amplía (puede verse algo borrosa); si es diminuta (menos de 120 px) te dirá que uses otra. Además se le quitan los datos ocultos, como la ubicación. Luego pulsa **Guardar**.
 - **Añadir producto** crea uno nuevo. Para dejar de ofrecer algo un tiempo, mejor *Oculto* o *Agotado* que *Eliminar*.
+
+## Mercado
+
+Sirve para que el semáforo de los precios se apoye en lo que cuestan **otras tiendas**, no solo en mi estimación. Solo lo ves tú; el cliente no ve nada de esto.
+
+- **Anotar precios:** elige la tienda (Mercadona, Lidl, Aldi…), mira el precio por kilo en su web o en el lineal y escríbelo en cada producto; pulsa **Guardar precios**. Lo que dejes en blanco no se toca. La **fecha** del precio es hoy salvo que la cambies. Con una vez por semana basta.
+- Se muestran **30 productos de referencia** (pollo, cerdo, ternera, cordero, picada…). Marca «Mostrar todos los productos al peso» si quieres anotar más.
+- **Cómo se usa:** el semáforo coge la **mediana** de las tiendas con precio reciente (hasta 45 días) y te dice cuántas son y de cuándo es la más antigua. Si no hay ninguna reciente, vuelve a la estimación propia.
+- **Fuentes:** puedes cambiar cada cuánto repasas cada tienda, quitarla o **añadir otra** (una carnicería online, un mayorista…). Antes de usar la web de otra empresa, mira sus condiciones: aquí solo anotas a mano lo que ves publicado.
+- El panel te avisa (y la pestaña **Estado**) si una tienda semanal lleva más de 7 días sin anotarse.
 
 ## Tienda
 
