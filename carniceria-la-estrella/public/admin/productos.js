@@ -6,6 +6,7 @@ import { semaforo, rangoOrientativo, precioDesdeCoste, ajustarPorcentaje, MARGEN
 import { redondear } from "/assets/compartido/dinero.js";
 import { referenciaMercado, rangoDesdeMercado } from "/assets/compartido/mercado.js";
 import { ofertaVigente, nombreOferta } from "/assets/compartido/ofertas.js";
+import { ALERGENOS_UE, alergenosPendientes } from "/assets/compartido/alergenos.js";
 
 let productos = [];
 let categorias = [];
@@ -74,6 +75,7 @@ export function cargarProductos({ productos: lista, categorias: cats, orientativ
 
 export const productosSinPrecio = () => productos.filter((p) => !p.oculto && p.precio == null).length;
 export const productosConPrecio = () => productos.filter((p) => p.precio != null).length;
+export const alergenosPorRevisar = () => alergenosPendientes(productos);
 
 // ---------- precios orientativos y semáforo ----------
 const cfgPrecios = () => contexto.preciosCfg();
@@ -280,7 +282,23 @@ function abrirEditor(original) {
   const maximo = h("input", { id: "f-maximo", type: "number", min: "1", step: "1", inputmode: "numeric", value: p.maximo ?? "" });
   const precio = h("input", { id: "f-precio", type: "text", inputmode: "decimal", value: importeEs(p.precio), placeholder: "Vacío = Consultar" });
   const opciones = h("textarea", { id: "f-opciones", rows: "4", placeholder: "Una por línea: Entero / En filetes / Picado" }, (p.opciones ?? []).join("\n"));
-  const alergenos = h("input", { id: "f-alergenos", type: "text", value: (p.alergenos ?? []).join(", "), placeholder: "gluten, leche, huevo…" });
+  const alergenos = h("input", { id: "f-alergenos", type: "text", value: (p.alergenos ?? []).join(", "), placeholder: "Cereales con gluten, Leche…" });
+  const cAlergenosRev = h("label", { class: "check", for: "f-alergenos-rev" }, h("input", { id: "f-alergenos-rev", type: "checkbox", checked: !!p.alergenosRevisados }), h("span", { texto: "He revisado los alérgenos de este producto (si no lleva ninguno, déjalo vacío y marca esto)" }));
+  const listaAlergenos = () => alergenos.value.split(/[\n,]/).map((x) => x.trim()).filter(Boolean);
+  const chipsAlergenos = h("div", { class: "chips-alergenos", role: "group", "aria-label": "Alérgenos de la lista oficial (14)" }, ...ALERGENOS_UE.map((nombre) => {
+    const chip = h("button", { type: "button", class: "chip", "aria-pressed": "false", texto: nombre });
+    const pintar = () => chip.setAttribute("aria-pressed", String(listaAlergenos().some((x) => x.toLowerCase() === nombre.toLowerCase())));
+    chip.addEventListener("click", () => {
+      const l = listaAlergenos();
+      const i = l.findIndex((x) => x.toLowerCase() === nombre.toLowerCase());
+      if (i >= 0) l.splice(i, 1); else l.push(nombre);
+      alergenos.value = l.join(", ");
+      alergenos.dispatchEvent(new Event("input"));
+    });
+    alergenos.addEventListener("input", pintar);
+    pintar();
+    return chip;
+  }));
   const chk = (id, etiqueta, marcado) => h("label", { class: "check", for: id }, h("input", { id, type: "checkbox", checked: marcado }), h("span", { texto: etiqueta }));
   const cAgotado = chk("f-agotado", "Agotado (se ve pero no se puede pedir)", p.agotado);
   const cOculto = chk("f-oculto", "Oculto (no aparece en la tienda)", p.oculto);
@@ -466,7 +484,9 @@ function abrirEditor(original) {
     ofertasGrupo,
     h("div", { class: "fila-tres" }, campo("f-paso", "Paso", paso), campo("f-minimo", "Mínimo (opcional)", minimo), campo("f-maximo", "Máximo (opcional)", maximo)),
     campo("f-opciones", "Opciones al pedir (opcional)", opciones, "Por ejemplo cómo cortarlo. Si hay opciones, el cliente elige una."),
-    campo("f-alergenos", "Alérgenos (opcional)", alergenos, "Separados por comas."),
+    campo("f-alergenos", "Alérgenos", alergenos, "Pulsa los que lleve o escríbelos separados por comas. La ley pide que el cliente los vea antes de comprar: se enseñan en la tienda."),
+    chipsAlergenos,
+    cAlergenosRev,
     h("fieldset", { class: "campo-grupo" }, h("legend", { texto: "Foto" }), vista,
       h("div", { class: "acciones" }, h("label", { class: "btn-sec", for: "f-foto", texto: p.foto ? "Cambiar foto" : "Subir foto" }), quitar), archivo,
       h("p", { class: "ayuda", id: "reglas-foto", texto: `Formatos JPG, PNG o WebP, de cualquier tamaño: se ajusta sola a entre ${LADO_MINIMO} y ${LADO_MAXIMO} px por el lado largo y se guarda como JPG ligero (sin ubicación ni datos ocultos).` }), estadoFoto),
@@ -485,7 +505,7 @@ function abrirEditor(original) {
       nombre: nombre.value, categoria: categoria.value, descripcion: descripcion.value, unidad: unidad.value,
       paso: num(paso), minimo: num(minimo), maximo: num(maximo), precio: precio.value.trim() === "" ? null : precio.value,
       coste: costeIn.value.trim() === "" ? null : costeIn.value, merma: mermaIn.value.trim() === "" ? null : mermaIn.value, margen: margenIn.value.trim() === "" ? null : margenIn.value,
-      opciones: opciones.value.split("\n").map((x) => x.trim()).filter(Boolean), alergenos: lista(alergenos.value),
+      opciones: opciones.value.split("\n").map((x) => x.trim()).filter(Boolean), alergenos: lista(alergenos.value), alergenosRevisados: cAlergenosRev.querySelector("input").checked,
       ofertas: p.ofertas ?? [], // se cambian en la pestaña «Ofertas»; aquí se conservan tal cual
       agotado: cAgotado.querySelector("input").checked, oculto: cOculto.querySelector("input").checked, alcohol: cAlcohol.querySelector("input").checked, foto: p.foto,
     };

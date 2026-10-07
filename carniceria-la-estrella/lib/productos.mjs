@@ -79,7 +79,7 @@ export function validarProducto(entrada, { categorias, redondeo = null }) {
     return {
       id, categoria, nombre, descripcion, unidad, paso, minimo: minimo ?? null, maximo: maximo ?? null, precio: precio ?? null,
       coste: coste ?? null, merma: merma ?? null, margen: margen ?? null, ofertas,
-      agotado: booleano(e.agotado), oculto: booleano(e.oculto), opciones: opciones ?? [], foto, alcohol: booleano(e.alcohol), alergenos: alergenos ?? [], orden,
+      agotado: booleano(e.agotado), oculto: booleano(e.oculto), opciones: opciones ?? [], foto, alcohol: booleano(e.alcohol), alergenos: alergenos ?? [], alergenosRevisados: booleano(e.alergenosRevisados), orden,
     };
   });
 }

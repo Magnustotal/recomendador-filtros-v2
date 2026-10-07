@@ -77,6 +77,8 @@
 .prod-foto img { width: 100%; height: 100%; object-fit: cover; }
 @media (min-width: 720px) { .prod-foto { width: 88px; height: 88px; } }
 .prod-info h3 { font-size: 1.12rem; line-height: 1.2; margin: 0 0 0.25em; }
+.prod-alergenos { margin: 0 0 0.4em; font-size: 0.85rem; color: var(--ink-soft); }
+.prod-alergenos-contiene { font-weight: 700; color: var(--ink); }
 .prod-desc { margin: 0 0 0.4em; font-size: 0.93rem; color: var(--ink-soft); }
 .prod-precio { margin: 0; font-weight: 800; color: var(--maroon-deep); }
 .prod-precio .consultar { font-weight: 700; color: var(--ink-soft); }

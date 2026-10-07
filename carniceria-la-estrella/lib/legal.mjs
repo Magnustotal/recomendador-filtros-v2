@@ -22,6 +22,8 @@ export function textosLegales(ajustes, escapar) {
     razonSocial: pendiente(n.razonSocial, "razón social"),
     nif: pendiente(n.nif, "NIF"),
     email: pendiente(n.email, "correo electrónico"),
+    // Datos que la Orden de 24 de abril de 2026 (Andalucía, anexo II) manda enseñar donde se venda por internet
+    reclamaciones: `Si desea reclamar, puede hacerlo a través de <a href="https://www.consumoresponde.es" target="_blank" rel="noopener">www.consumoresponde.es</a> y dirigirse a: ${pendiente(n.razonSocial, "razón social")}, CIF ${pendiente(n.nif, "NIF")}, ${escapar(n.calle)}, ${escapar(n.cp)} ${escapar(n.localidad)} (${escapar(n.provincia)}), correo electrónico ${pendiente(n.email, "correo electrónico")}. Para más información: <a href="https://www.consumoresponde.es" target="_blank" rel="noopener">www.consumoresponde.es</a>, consumoresponde@juntadeandalucia.es, teléfono gratuito 900 21 50 80.`,
   };
 
   if (!activa) {
@@ -93,7 +95,8 @@ export function textosLegales(ajustes, escapar) {
       <li><strong>Desistimiento.</strong> No hay derecho de desistimiento en los alimentos que pueden deteriorarse o caducar con rapidez (carne y aves frescas, casquería, elaborados frescos) ni en los productos cortados, picados o preparados según tus indicaciones (art. 103, letras c y d, del texto refundido de la Ley General para la Defensa de los Consumidores y Usuarios). En los demás productos (por ejemplo, vino, conservas, salsas o especias envasadas) sí puedes desistir del contrato, sin dar motivo, en el plazo de <strong>14 días naturales</strong> desde que los recibes o los recoges. Para ello comunícanoslo de forma clara: por correo electrónico a ${t.email}, por escrito en ${escapar(n.calle)} (${escapar(n.cp)} ${escapar(n.localidad)}) o con el modelo de formulario de abajo. Te devolveremos lo que hayas pagado en un máximo de 14 días desde que nos avises, y podemos esperar a recibir los productos o a que acredites que los has devuelto; los costes directos de la devolución son por tu cuenta. Si dudas de si un producto tiene este derecho, pregúntanoslo antes de pedir.</li>
       <li><strong>Garantía.</strong> Los productos que compras tienen la garantía legal de conformidad que la ley reconoce a los consumidores. Si hay algún problema con tu pedido, avísanos y lo solucionamos.</li>
       <li><strong>Bebidas alcohólicas.</strong> No se venden a menores de 18 años. Al pedirlas debes confirmar que eres mayor de edad y podemos pedirte que lo acredites en la entrega.</li>
-      <li><strong>Alergias e intolerancias.</strong> Si tienes alguna alergia o intolerancia, indícalo en los comentarios del pedido o consúltanos antes de pedir.</li>
+      <li><strong>Alergias e intolerancias.</strong> Cada producto indica los alérgenos que contiene. Si un producto de los que suelen llevarlos (elaborados, embutidos, quesos, salsas, vino…) no lo indica, consúltanos antes de pedir por teléfono o WhatsApp. Si tienes alguna alergia o intolerancia, indícalo también en los comentarios del pedido. Al entregarte el pedido tienes a tu disposición la información obligatoria de cada producto.</li>
+      <li id="reclamaciones"><strong>Quejas y reclamaciones.</strong> ${t.reclamaciones}</li>
     </ul>
     <h3>Modelo de formulario de desistimiento</h3>
     <p>(Solo si quieres desistir del contrato. Puedes copiarlo y enviarlo; su uso no es obligatorio.)</p>

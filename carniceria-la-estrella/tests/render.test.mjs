@@ -118,6 +118,21 @@ test("aviso legal con tienda: desistimiento acotado a lo que dice la ley, modelo
   assert.match(con, /no se considera aceptado y no tienes que pagar nada/);
 });
 
+test("quejas y reclamaciones (anexo II de la Orden de 24/04/2026): en el aviso legal y en la tienda, con los datos del negocio", () => {
+  const a = ajustes((x) => { x.tienda.activa = true; x.negocio.razonSocial = "Estrella Cárnicas S.L."; x.negocio.nif = "B12345678"; x.negocio.email = "pedidos@example.es"; return x; });
+  for (const pagina of ["aviso-legal.html", "tienda.html"]) {
+    const html = renderizarPagina(pagina, a, { ahora: AHORA });
+    assert.match(html, /Si desea reclamar, puede hacerlo a través de/, pagina);
+    assert.match(html, /<strong>Estrella Cárnicas S\.L\.<\/strong>, CIF <strong>B12345678<\/strong>/, pagina);
+    assert.match(html, /pedidos@example\.es/, pagina);
+    assert.match(html, /900 21 50 80/, pagina);
+    assert.match(html, /consumoresponde@juntadeandalucia\.es/, pagina);
+  }
+  const sin = renderizarPagina("tienda.html", ajustes((x) => { x.tienda.activa = true; return x; }), { ahora: AHORA });
+  assert.match(sin, /\[razón social a completar\]/);
+  assert.match(renderizarPagina("aviso-legal.html", a, { ahora: AHORA }), /Cada producto indica los alérgenos que contiene/);
+});
+
 test("páginas legales: el nombre del negocio se escapa", () => {
   const html = renderizarPagina("aviso-legal.html", ajustes((x) => { x.negocio.nombre = 'Carne <img src=x onerror=alert(1)>'; x.tienda.activa = true; return x; }), { ahora: AHORA });
   assert.doesNotMatch(html, /<img src=x/);

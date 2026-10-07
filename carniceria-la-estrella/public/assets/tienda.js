@@ -2,6 +2,7 @@
 // El navegador solo manda lo que el cliente quiere (ids, opciones, cantidades);
 // los precios y los totales que se ven aquí son orientativos: los decide el servidor.
 import { importeLinea, aCentimos, formatoEuro, formatoCantidad, cantidadValida } from "/assets/compartido/dinero.js";
+import { infoAlergenos } from "/assets/compartido/alergenos.js";
 import { calcularLineas, precioEfectivo, nombreOferta, regalosDelPedido, fechaCorta } from "/assets/compartido/ofertas.js";
 import { pintarDestacadas } from "/assets/destacadas.js";
 import { ahoraEnMadrid, diaSemanaDeFecha, sumarDias, aMinutos, franjaDentroDeHorario } from "/assets/compartido/horario.js";
@@ -119,6 +120,7 @@ function pintarFila(p) {
     crear("h3", { texto: p.nombre }),
     p.descripcion ? crear("p", { class: "prod-desc", texto: p.descripcion }) : null,
     lineaPrecio,
+    alergenosLinea(p),
     textoOferta ? crear("p", { class: "prod-oferta", texto: `${textoOferta} · hasta el ${fechaCorta(ef.oferta.hasta)}` }) : null,
     p.agotado ? crear("p", { class: "prod-agotado", texto: "Agotado por ahora" }) : null,
   );
@@ -380,6 +382,12 @@ function marcado(nombre) {
 }
 
 // Texto de la zona de reparto a partir de lo configurado en el panel (texto libre, códigos postales y/o radio).
+// Alérgenos del producto (la ley pide que se vean antes de comprar). Sin nada que decir, no sale nada.
+function alergenosLinea(p) {
+  const a = infoAlergenos(p);
+  return a ? crear("p", { class: `prod-alergenos prod-alergenos-${a.nivel}`, texto: a.texto }) : null;
+}
+
 function descripcionZona(rp) {
   const cps = rp.codigosPostales ?? [];
   const km = rp.radioKm == null ? null : String(rp.radioKm).replace(".", ",");

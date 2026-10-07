@@ -1,4 +1,4 @@
-# Carnicería La Estrella — web y tienda online (v5.8.1)
+# Carnicería La Estrella — web y tienda online (v5.9.0)
 
 Web del negocio (portada, aviso legal, privacidad) **más una tienda online con panel de administración**:
 el cliente elige productos (casi todo al peso, de 250 en 250 g), indica si recoge o quiere reparto, día y franja,
@@ -126,9 +126,13 @@ qué no** (verificación del 7 de octubre de 2026; ver «Verificación legal (v5
 - **Venta de vino por internet:** casilla de mayor de 18 años y verificación en la entrega. La prohibición de vender alcohol a
   menores de 18 años es de la ley andaluza de drogas (Ley 4/1997 con la reforma de la Ley 12/2003), pero **no he podido leer su
   texto vigente en el BOJA**; comprobar también los requisitos de la licencia.
-- **Alérgenos:** el catálogo inicial los trae vacíos; en elaborados (hamburguesas, San Jacobos, flamenquines…) hay que
-  rellenarlos antes de dar el pedido por bueno, o remitir al cliente a preguntar.
-- **Hojas de reclamaciones y datos registrales:** no están en la web; no he comprobado qué exige la normativa andaluza.
+- **Alérgenos (v5.9.0):** en la venta a distancia la información sobre alérgenos tiene que estar disponible **antes de comprar**
+  (Reglamento (UE) 1169/2011, art. 14.1; Real Decreto 126/2015, arts. 4.1.b y 9). Hasta v5.8.1 el panel guardaba el campo pero la
+  tienda **no lo enseñaba**. Ahora cada tarjeta lo muestra y, en las categorías donde es normal que haya alérgenos (elaborados,
+  embutidos, jamones, quesos, salsas, especias, vino), un producto sin revisar dice «Alérgenos: consúltanos antes de pedir». **El
+  trabajo de rellenarlos es del negocio** (83 productos del catálogo inicial) y el panel avisa mientras falten.
+- **Quejas y reclamaciones (v5.9.0):** ver «Verificación legal (v5.9.0)». Falta que el negocio se dé de alta en Hoj@ y tenga las
+  hojas en papel.
 
 ## Guía rápida del panel
 
@@ -244,6 +248,7 @@ Reglas: el cliente siempre escribe su código postal al pedir reparto. Si solo h
 
 ## Historial
 
+- **v5.9.0** — Segunda revisión legal (lo que faltaba): alérgenos visibles en la tienda con aviso «consúltanos» mientras no se revisen, botones de la lista oficial de 14 alérgenos en la ficha, datos de quejas y reclamaciones (Andalucía, Hoj@) en la tienda y el aviso legal, y documentación de lo pendiente (ver «Verificación legal (v5.9.0)»).
 - **v5.8.1** — Verificación de los textos legales contra el BOE: desistimiento corregido (solo se excluye lo perecedero y lo personalizado) con modelo de formulario y garantía, botón «Enviar pedido con obligación de pago», campo de correo del negocio, precios «finales» (no «orientativos»), plazo de confirmación del pedido, aviso de venta con pérdida en las ofertas y una cita errónea del README corregida (ver «Verificación legal»).
 - **v5.8.0** — Regla legal del precio anterior de 30 días (historial de precios, tachado automático, avisos al programar una rebaja), aviso de errores de precio en la tienda y en el aviso legal, y confirmación ante precios que parecen una errata.
 - **v5.7.0** — Pestaña «Ofertas» en el panel (crear la oferta eligiendo el producto en una lista; ofertas y regalos centralizados) y escaparate «Oferta(s) de la semana» en la portada y en la tienda.
@@ -318,3 +323,21 @@ Hecha el 7 de octubre de 2026 leyendo el texto consolidado de [BOE-A-1996-1072 (
 | Aviso de errores de precio | Ver apartado «Errores de precio»: útil pero no blinda | Texto igual; documentación afinada |
 
 **Sin verificar** (no he leído el texto ni sentencias): ley andaluza de comercio interior y quién sanciona en la práctica; ley andaluza de drogas (alcohol a menores) vigente; hojas de reclamaciones en Andalucía; si ciertos productos (curados, quesos, huevos) «caducan con rapidez»; RGPD en detalle (transferencias fuera de la UE, contratos de encargado); la directiva europea 2019/2161; sentencias del Tribunal Supremo sobre errores de precio; guía de la Comisión sobre el precio anterior.
+
+## Verificación legal (v5.9.0)
+
+Segunda pasada, el 7 de octubre de 2026, preguntándome qué **faltaba** (no qué estaba mal). Fuentes leídas en el original: [Real Decreto 126/2015 (BOE-A-2015-2293)](https://www.boe.es/buscar/act.php?id=BOE-A-2015-2293), [Reglamento (UE) 1169/2011 en EUR-Lex](https://eur-lex.europa.eu/legal-content/ES/TXT/HTML/?uri=CELEX:32011R1169) (arts. 9, 14, 21 y 44 y anexo II) y la [Orden de 24 de abril de 2026 de la Junta de Andalucía (BOJA nº 82, 30/04/2026)](https://juntadeandalucia.es/eboja/2026/82/BOJA26-082-00021-5609-01_00336846.pdf).
+
+| Tema | Qué dice la norma (leído) | Estado en la web |
+|---|---|---|
+| **Alérgenos antes de comprar** | Reglamento 1169/2011 art. 14.1 y RD 126/2015 art. 9: en la venta a distancia las menciones obligatorias, entre ellas los alérgenos (art. 9.1.c del Reglamento y art. 4.1.b del RD), deben estar disponibles antes de la compra; el origen y las no enumeradas en el art. 9.1 pueden darse después; todas, en la entrega. El art. 4.1.b del RD no exige repetirlo si el nombre del alimento ya nombra la sustancia (p. ej. «huevos») | **Hecho**: se muestran en la tienda. **Pendiente del negocio**: rellenarlos producto a producto. Entrega: tener la información a mano al entregar |
+| Lista de alérgenos | Anexo II del Reglamento: 14 (cereales con gluten, crustáceos, huevos, pescado, cacahuetes, soja, leche, frutos de cáscara, apio, mostaza, sésamo, sulfitos por encima de 10 mg/kg o 10 mg/l, altramuces y moluscos) | Botones en la ficha del producto. El vino casi siempre lleva sulfitos |
+| Carne fresca sin elaborar, casquería, avíos | **Suposición mía**: sin alérgenos, por eso no sale nada. Si añaden adobo, marinado o relleno, hay que indicarlo | Vigilar en «elaborados» (está en la lista de revisión) |
+| **Hojas de quejas y reclamaciones (Andalucía)** | Orden de 24/04/2026: sigue siendo obligatorio tener y entregar hojas **en papel** y, además, estar de alta en **Hoj@** (electrónicas). La orden entra en vigor a los 20 días de su publicación (por mi cuenta, el 20 de mayo de 2026). Disp. adic. 3.ª: las empresas pequeñas, como una carnicería, tienen **un año** desde entonces para darse de alta (por mi cuenta, hasta el 20 de mayo de 2027); los más de 250 trabajadores, 50 M€ de facturación o más de 20 establecimientos, seis meses. Disp. adic. 2.ª: el cartel del anexo III en el establecimiento, y la información del anexo II «en cada dispositivo utilizado para la… comercialización de bienes de modo automático o telemático» | **Hecho**: el texto del anexo II (menos el código QR) sale bajo el formulario de pedido y en el aviso legal, con los datos del negocio. **Pendiente del negocio**: alta en Hoj@ (genera el cartel con QR), cartel en la tienda, hojas en papel. **Pendiente de añadir a la web**: el QR, cuando exista. No he leído el Decreto 82/2022 |
+| Plataforma europea de litigios en línea (ODR) | Dejó de funcionar el 20 de julio de 2025 (aviso del Ministerio de Consumo, fuente secundaria; Reglamento (UE) 2024/3228); el enlace obligatorio ya no existe | La web **no** enlaza a ella: correcto. No volver a ponerlo |
+| Entidad de resolución alternativa (Ley 7/2017, art. 40) | Solo obliga a informar a quien está adherido a una o debe aceptarla por norma o código; según fuentes secundarias, si no lo está, ante una reclamación no resuelta hay que indicar al menos una entidad competente. **No he leído el BOE** | Nada en la web (el negocio no está adherido). Consultar a la gestoría |
+| Precio por unidad de medida (RD 3423/2000) | Según el texto consolidado leído a través de un resumen automático (no literal): hay que dar el precio por kilo/litro/unidad, salvo cuando coincide con el precio de venta (por eso no hace falta en lo que se vende por kilo) y en una lista de excepciones (entre ellas los vinos con denominación de origen o indicación geográfica) | **No implementado.** Posible incumplimiento en productos que se venden por unidad con cantidad conocida: botellas de vino sin denominación (€/litro), quesos o salsas envasados (€/kg), huevos (€/docena). Que lo decida la gestoría; si procede, se añade |
+| Accesibilidad de la tienda online (Ley 11/2023) | Fuentes secundarias (despachos, no el BOE): aplica al comercio electrónico desde el 28 de junio de 2025, con exención de microempresas (menos de 10 empleados y menos de 2 millones de euros; las fuentes discrepan en si es facturación o balance) | La web se prueba con axe y está diseñada para WCAG 2.2 AA. Que la gestoría confirme si es microempresa |
+| Etiquetado de carne (origen, lote, categoría…) y trazabilidad | **No leído.** Existen normas de origen para carne fresca y de vacuno | Fuera de lo que muestra la web hoy. Comprobar con la gestoría o el servicio de sanidad |
+| Registro sanitario, licencia y datos registrales | No leído | Fuera de la web |
+
