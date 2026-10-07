@@ -109,6 +109,29 @@
       "transferencia": true,
       "transferenciaDatos": ""
     },
-    "textoEntrega": "Reparto a domicilio en la zona. Condiciones a confirmar por WhatsApp."
+    "textoEntrega": "Reparto a domicilio en la zona. Condiciones a confirmar por WhatsApp.",
+    "precios": {
+      "margenDefecto": 30,
+      "iva": {
+        "vacuno": 10,
+        "cerdo": 10,
+        "cerdo-iberico": 10,
+        "cordero": 10,
+        "pollo": 10,
+        "pavo": 10,
+        "conejo": 10,
+        "caza": 10,
+        "casqueria": 10,
+        "jamones": 10,
+        "embutidos": 10,
+        "quesos": 10,
+        "elaborados": 10,
+        "huevos": 4,
+        "avios": 10,
+        "especias": 10,
+        "salsas": 10,
+        "vino": 21
+      }
+    }
   }
 }

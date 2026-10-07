@@ -1,5 +1,7 @@
 import { texto, numeroOpcional, entero, booleano, hora, franja, diasSemana, fechaISO, telefonoEspana, recoger, ErrorValidacion } from "./validar.mjs";
 import { aMinutos } from "./horario.mjs";
+import { categorias } from "./datos.generado.mjs";
+import { MARGEN_POR_DEFECTO } from "./precios.mjs";
 
 const URL_MAPS = /^https:\/\/(maps\.app\.goo\.gl|www\.google\.com\/maps|goo\.gl\/maps|maps\.google\.com)\//;
 
@@ -82,7 +84,7 @@ export function validarAjustes(entrada) {
       antelacionHoras: ctx.intento(() => entero(t.antelacionHoras ?? 2, { campo: "tienda.antelacionHoras", max: 168 })),
       diasMaximos: ctx.intento(() => entero(t.diasMaximos ?? 14, { campo: "tienda.diasMaximos", min: 1, max: 60 })),
       diasSinServicio: ctx.intento(() => { const l = Array.isArray(t.diasSinServicio) ? t.diasSinServicio : []; if (l.length > 120) throw new ErrorValidacion("tienda.diasSinServicio", "Máximo 120 fechas."); return [...new Set(l.map((x) => fechaISO(x, "tienda.diasSinServicio")))].sort(); }) ?? [],
-      recogida: undefined, reparto: undefined, pagos: undefined,
+      recogida: undefined, reparto: undefined, pagos: undefined, precios: undefined,
       textoEntrega: ctx.intento(() => texto(t.textoEntrega, { max: 300, campo: "tienda.textoEntrega" })),
     };
     const franjas = (lista, campo) => ctx.intento(() => { if (!Array.isArray(lista) || lista.length > 12) throw new ErrorValidacion(campo, "Lista de franjas (máximo 12)."); return [...new Set(lista.map((f) => franja(f, campo)))]; });
@@ -105,6 +107,12 @@ export function validarAjustes(entrada) {
       efectivo: booleano(p.efectivo), tarjetaRecogida: booleano(p.tarjetaRecogida), bizum: booleano(p.bizum), transferencia: booleano(p.transferencia),
       bizumNumero: ctx.intento(() => texto(p.bizumNumero, { max: 30, campo: "tienda.pagos.bizumNumero" })),
       transferenciaDatos: ctx.intento(() => texto(p.transferenciaDatos, { max: 200, campo: "tienda.pagos.transferenciaDatos" })),
+    };
+    const pr = t.precios ?? {};
+    const ivaEntrada = pr.iva ?? {};
+    tienda.precios = {
+      margenDefecto: ctx.intento(() => numeroOpcional(pr.margenDefecto ?? MARGEN_POR_DEFECTO, { campo: "tienda.precios.margenDefecto", min: 0, max: 300, decimales: 1 })) ?? MARGEN_POR_DEFECTO,
+      iva: Object.fromEntries(categorias.map((c) => [c.id, ctx.intento(() => numeroOpcional(ivaEntrada[c.id] ?? 10, { campo: `tienda.precios.iva.${c.id}`, min: 0, max: 30, decimales: 1 })) ?? 10])),
     };
     if (tienda.reparto.radioKm != null && negocio.lat == null) ctx.error("tienda.reparto.radioKm", "Para usar el radio hay que indicar la latitud y la longitud de la tienda (pestaña Negocio).");
     if (tienda.activa) {

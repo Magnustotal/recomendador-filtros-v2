@@ -1,0 +1,907 @@
+{
+ "_nota": "Precios orientativos con IVA (€ por kg o por unidad) para una carnicería de barrio de precio medio en Sevilla, otoño de 2026. Estimación propia anclada en pocos datos web dispersos y de fechas distintas; NO verificada. Fiabilidad: a = alta, m = media, b = baja. Se editan aquí y con `node scripts/empaquetar.mjs`.",
+ "fecha": "2026-10",
+ "nivel": "medio",
+ "precios": {
+  "vacuno-solomillo-de-ternera": [
+   36.9,
+   "m"
+  ],
+  "vacuno-entrecot-de-ternera": [
+   21.9,
+   "m"
+  ],
+  "vacuno-chuleton-de-ternera": [
+   18.9,
+   "m"
+  ],
+  "vacuno-lomo-bajo-de-ternera": [
+   19.9,
+   "m"
+  ],
+  "vacuno-cadera-de-ternera": [
+   14.9,
+   "m"
+  ],
+  "vacuno-tapa-de-ternera": [
+   14.5,
+   "m"
+  ],
+  "vacuno-tapilla-de-ternera": [
+   13.9,
+   "m"
+  ],
+  "vacuno-babilla-de-ternera": [
+   14.5,
+   "m"
+  ],
+  "vacuno-contra-de-ternera": [
+   13.9,
+   "m"
+  ],
+  "vacuno-redondo-de-ternera": [
+   13.5,
+   "m"
+  ],
+  "vacuno-aguja-de-ternera": [
+   10.9,
+   "m"
+  ],
+  "vacuno-espaldilla-de-ternera": [
+   10.5,
+   "m"
+  ],
+  "vacuno-morcillo-de-ternera": [
+   10.9,
+   "m"
+  ],
+  "vacuno-osobuco-de-ternera": [
+   11.9,
+   "m"
+  ],
+  "vacuno-falda-de-ternera": [
+   9.9,
+   "m"
+  ],
+  "vacuno-vacio-de-ternera": [
+   15.9,
+   "b"
+  ],
+  "vacuno-entrana-de-ternera": [
+   18.9,
+   "b"
+  ],
+  "vacuno-picana-de-ternera": [
+   17.9,
+   "b"
+  ],
+  "vacuno-costilla-de-ternera": [
+   8.9,
+   "m"
+  ],
+  "vacuno-pecho-de-ternera": [
+   8.9,
+   "m"
+  ],
+  "vacuno-carrillera-de-ternera": [
+   14.9,
+   "m"
+  ],
+  "vacuno-ternera-para-guisar": [
+   10.5,
+   "m"
+  ],
+  "cerdo-solomillo-de-cerdo": [
+   11.9,
+   "m"
+  ],
+  "cerdo-cinta-de-lomo": [
+   8.9,
+   "m"
+  ],
+  "cerdo-chuletas-de-lomo": [
+   7.9,
+   "m"
+  ],
+  "cerdo-chuletas-de-aguja": [
+   6.5,
+   "m"
+  ],
+  "cerdo-cabeza-de-lomo": [
+   8.5,
+   "m"
+  ],
+  "cerdo-magro-de-cerdo": [
+   6.9,
+   "m"
+  ],
+  "cerdo-filetes-de-magra-de-jamon": [
+   7.5,
+   "m"
+  ],
+  "cerdo-paletilla-de-cerdo": [
+   6.9,
+   "m"
+  ],
+  "cerdo-pierna-de-cerdo-fresca": [
+   5.9,
+   "m"
+  ],
+  "cerdo-panceta-fresca": [
+   6.5,
+   "m"
+  ],
+  "cerdo-costillas-de-cerdo": [
+   6.9,
+   "m"
+  ],
+  "cerdo-costilla-con-panceta": [
+   6.5,
+   "m"
+  ],
+  "cerdo-codillo-de-cerdo": [
+   4.5,
+   "m"
+  ],
+  "cerdo-careta-de-cerdo": [
+   4.2,
+   "b"
+  ],
+  "cerdo-papada-de-cerdo": [
+   5.5,
+   "b"
+  ],
+  "cerdo-cochinillo-por-encargo": [
+   69.0,
+   "b"
+  ],
+  "cerdo-iberico-secreto-iberico": [
+   22.9,
+   "m"
+  ],
+  "cerdo-iberico-presa-iberica": [
+   27.9,
+   "m"
+  ],
+  "cerdo-iberico-pluma-iberica": [
+   24.9,
+   "m"
+  ],
+  "cerdo-iberico-abanico-iberico": [
+   21.9,
+   "m"
+  ],
+  "cerdo-iberico-lagarto-iberico": [
+   22.9,
+   "m"
+  ],
+  "cerdo-iberico-solomillo-iberico": [
+   17.9,
+   "m"
+  ],
+  "cerdo-iberico-cinta-de-lomo-iberica": [
+   15.9,
+   "m"
+  ],
+  "cerdo-iberico-cabecero-de-lomo-iberico": [
+   14.9,
+   "m"
+  ],
+  "cerdo-iberico-carrillera-iberica": [
+   11.9,
+   "m"
+  ],
+  "cerdo-iberico-costillas-ibericas": [
+   9.9,
+   "m"
+  ],
+  "cerdo-iberico-panceta-iberica": [
+   9.9,
+   "m"
+  ],
+  "cerdo-iberico-papada-iberica": [
+   8.9,
+   "b"
+  ],
+  "cordero-pierna-de-cordero-lechal": [
+   23.9,
+   "m"
+  ],
+  "cordero-paletilla-de-cordero-lechal": [
+   19.9,
+   "m"
+  ],
+  "cordero-chuletillas-de-cordero-lechal": [
+   34.9,
+   "m"
+  ],
+  "cordero-costillar-de-cordero-lechal": [
+   17.9,
+   "m"
+  ],
+  "cordero-medio-cordero-lechal-por-encargo": [
+   59.0,
+   "b"
+  ],
+  "cordero-pierna-de-cordero-recental": [
+   15.9,
+   "m"
+  ],
+  "cordero-paletilla-de-cordero-recental": [
+   13.9,
+   "m"
+  ],
+  "cordero-chuletas-de-cordero": [
+   21.9,
+   "m"
+  ],
+  "cordero-costillar-de-cordero": [
+   11.9,
+   "m"
+  ],
+  "cordero-cuello-de-cordero": [
+   8.9,
+   "m"
+  ],
+  "cordero-falda-de-cordero": [
+   6.9,
+   "m"
+  ],
+  "cordero-cordero-para-guisar": [
+   10.9,
+   "m"
+  ],
+  "cordero-pierna-de-cabrito-lechal": [
+   23.9,
+   "b"
+  ],
+  "cordero-paletilla-de-cabrito-lechal": [
+   19.9,
+   "b"
+  ],
+  "cordero-cabrito-lechal-por-encargo": [
+   95.0,
+   "b"
+  ],
+  "pollo-pollo-entero": [
+   8.0,
+   "m"
+  ],
+  "pollo-medio-pollo": [
+   4.2,
+   "m"
+  ],
+  "pollo-pollo-campero": [
+   17.5,
+   "b"
+  ],
+  "pollo-pollo-troceado-para-guisar": [
+   4.9,
+   "m"
+  ],
+  "pollo-pollo-troceado-para-freir": [
+   5.2,
+   "m"
+  ],
+  "pollo-pechuga-de-pollo": [
+   7.9,
+   "m"
+  ],
+  "pollo-filetes-de-pechuga-de-pollo": [
+   8.5,
+   "m"
+  ],
+  "pollo-muslo-de-pollo": [
+   4.2,
+   "m"
+  ],
+  "pollo-contramuslo-de-pollo": [
+   4.5,
+   "m"
+  ],
+  "pollo-jamoncitos-de-pollo": [
+   4.9,
+   "m"
+  ],
+  "pollo-alitas-de-pollo": [
+   3.9,
+   "m"
+  ],
+  "pollo-cuartos-traseros-de-pollo": [
+   3.2,
+   "m"
+  ],
+  "pollo-solomillo-de-pollo": [
+   9.5,
+   "m"
+  ],
+  "pollo-carcasa-de-pollo": [
+   1.5,
+   "b"
+  ],
+  "pollo-gallina": [
+   9.5,
+   "b"
+  ],
+  "pollo-picanton": [
+   4.9,
+   "b"
+  ],
+  "pollo-capon-por-encargo": [
+   34.0,
+   "b"
+  ],
+  "pollo-codornices": [
+   2.2,
+   "b"
+  ],
+  "pavo-pechuga-de-pavo": [
+   9.5,
+   "m"
+  ],
+  "pavo-solomillo-de-pavo": [
+   10.5,
+   "m"
+  ],
+  "pavo-filetes-de-pavo": [
+   9.9,
+   "m"
+  ],
+  "pavo-muslo-de-pavo": [
+   5.5,
+   "m"
+  ],
+  "pavo-contramuslo-de-pavo": [
+   5.9,
+   "m"
+  ],
+  "pavo-alas-de-pavo": [
+   3.9,
+   "m"
+  ],
+  "pavo-pavo-troceado-para-guisar": [
+   6.9,
+   "m"
+  ],
+  "pavo-pavo-entero-por-encargo": [
+   39.0,
+   "b"
+  ],
+  "conejo-conejo-entero": [
+   10.9,
+   "m"
+  ],
+  "conejo-conejo-troceado": [
+   9.5,
+   "m"
+  ],
+  "conejo-muslos-de-conejo": [
+   11.5,
+   "b"
+  ],
+  "conejo-paletillas-de-conejo": [
+   9.5,
+   "b"
+  ],
+  "conejo-lomo-de-conejo": [
+   16.9,
+   "b"
+  ],
+  "conejo-costillar-de-conejo": [
+   8.5,
+   "b"
+  ],
+  "caza-solomillo-de-jabali": [
+   24.9,
+   "b"
+  ],
+  "caza-lomo-de-jabali": [
+   19.9,
+   "b"
+  ],
+  "caza-jabali-para-guisar": [
+   12.9,
+   "b"
+  ],
+  "caza-solomillo-de-venado": [
+   34.9,
+   "b"
+  ],
+  "caza-lomo-de-venado": [
+   29.9,
+   "b"
+  ],
+  "caza-venado-para-guisar": [
+   15.9,
+   "b"
+  ],
+  "caza-perdiz": [
+   7.9,
+   "b"
+  ],
+  "caza-liebre": [
+   19.0,
+   "b"
+  ],
+  "caza-faisan": [
+   15.0,
+   "b"
+  ],
+  "caza-paloma": [
+   5.5,
+   "b"
+  ],
+  "casqueria-callos-de-ternera": [
+   8.9,
+   "m"
+  ],
+  "casqueria-rabo-de-toro": [
+   11.9,
+   "m"
+  ],
+  "casqueria-pata-de-ternera": [
+   5.5,
+   "m"
+  ],
+  "casqueria-morro-de-ternera": [
+   5.9,
+   "m"
+  ],
+  "casqueria-higado-de-ternera": [
+   9.9,
+   "m"
+  ],
+  "casqueria-higado-de-cerdo": [
+   4.9,
+   "m"
+  ],
+  "casqueria-rinones-de-ternera": [
+   7.9,
+   "m"
+  ],
+  "casqueria-rinones-de-cordero": [
+   9.9,
+   "m"
+  ],
+  "casqueria-lengua-de-ternera": [
+   12.9,
+   "m"
+  ],
+  "casqueria-lengua-de-cerdo": [
+   7.9,
+   "m"
+  ],
+  "casqueria-corazon-de-ternera": [
+   7.5,
+   "m"
+  ],
+  "casqueria-mollejas-de-ternera": [
+   22.9,
+   "b"
+  ],
+  "casqueria-mollejas-de-cordero": [
+   19.9,
+   "b"
+  ],
+  "casqueria-manitas-de-cerdo": [
+   3.9,
+   "m"
+  ],
+  "casqueria-oreja-de-cerdo": [
+   5.5,
+   "m"
+  ],
+  "casqueria-morro-de-cerdo": [
+   4.9,
+   "m"
+  ],
+  "casqueria-rabo-de-cerdo": [
+   5.9,
+   "m"
+  ],
+  "casqueria-asadura-de-cordero": [
+   8.9,
+   "b"
+  ],
+  "casqueria-gallinejas-y-entresijos-de-cordero": [
+   11.9,
+   "b"
+  ],
+  "casqueria-cabeza-de-cordero": [
+   9.0,
+   "b"
+  ],
+  "casqueria-higaditos-y-corazones-de-pollo": [
+   3.9,
+   "m"
+  ],
+  "casqueria-mollejas-de-pollo": [
+   5.5,
+   "b"
+  ],
+  "jamones-jamon-iberico-de-bellota": [
+   165.0,
+   "b"
+  ],
+  "jamones-jamon-iberico-de-cebo": [
+   85.0,
+   "b"
+  ],
+  "jamones-jamon-serrano": [
+   36.0,
+   "b"
+  ],
+  "jamones-paleta-iberica-de-bellota": [
+   110.0,
+   "b"
+  ],
+  "jamones-paleta-iberica-de-cebo": [
+   62.0,
+   "b"
+  ],
+  "jamones-paleta-serrana": [
+   24.0,
+   "b"
+  ],
+  "jamones-lomo-iberico-embuchado": [
+   62.0,
+   "b"
+  ],
+  "jamones-cana-de-lomo-iberica": [
+   68.0,
+   "b"
+  ],
+  "embutidos-chorizo-fresco": [
+   7.9,
+   "m"
+  ],
+  "embutidos-chorizo-curado": [
+   14.9,
+   "m"
+  ],
+  "embutidos-chorizo-iberico": [
+   24.9,
+   "m"
+  ],
+  "embutidos-salchichon": [
+   14.9,
+   "m"
+  ],
+  "embutidos-salchichon-iberico": [
+   26.9,
+   "m"
+  ],
+  "embutidos-morcilla": [
+   7.9,
+   "m"
+  ],
+  "embutidos-longaniza": [
+   9.9,
+   "m"
+  ],
+  "embutidos-butifarra": [
+   7.9,
+   "m"
+  ],
+  "embutidos-morcon": [
+   24.9,
+   "b"
+  ],
+  "embutidos-chicharrones": [
+   12.9,
+   "b"
+  ],
+  "embutidos-torreznos": [
+   16.9,
+   "b"
+  ],
+  "embutidos-bacon": [
+   11.9,
+   "m"
+  ],
+  "embutidos-sobrasada": [
+   11.9,
+   "m"
+  ],
+  "embutidos-jamon-cocido": [
+   12.9,
+   "m"
+  ],
+  "embutidos-pechuga-de-pavo-cocida": [
+   11.9,
+   "m"
+  ],
+  "embutidos-mortadela": [
+   8.9,
+   "m"
+  ],
+  "quesos-queso-curado-de-oveja": [
+   18.9,
+   "m"
+  ],
+  "quesos-queso-semicurado-de-oveja": [
+   15.9,
+   "m"
+  ],
+  "quesos-queso-manchego": [
+   21.9,
+   "m"
+  ],
+  "quesos-queso-de-cabra-semicurado": [
+   15.9,
+   "m"
+  ],
+  "quesos-queso-de-cabra-curado": [
+   19.9,
+   "m"
+  ],
+  "quesos-queso-tierno": [
+   12.9,
+   "m"
+  ],
+  "quesos-queso-fresco": [
+   9.9,
+   "m"
+  ],
+  "quesos-queso-en-aceite": [
+   24.9,
+   "b"
+  ],
+  "elaborados-hamburguesas-de-ternera": [
+   1.8,
+   "m"
+  ],
+  "elaborados-hamburguesas-de-ternera-y-cerdo": [
+   1.3,
+   "m"
+  ],
+  "elaborados-hamburguesas-de-cerdo": [
+   1.1,
+   "m"
+  ],
+  "elaborados-hamburguesas-de-pollo": [
+   1.2,
+   "m"
+  ],
+  "elaborados-salchichas-frescas-de-cerdo": [
+   7.9,
+   "m"
+  ],
+  "elaborados-salchichas-frescas-de-pollo": [
+   6.9,
+   "m"
+  ],
+  "elaborados-pinchitos-morunos-de-cerdo": [
+   9.9,
+   "m"
+  ],
+  "elaborados-pinchitos-morunos-de-pollo": [
+   9.5,
+   "m"
+  ],
+  "elaborados-pinchitos-de-cordero": [
+   15.9,
+   "b"
+  ],
+  "elaborados-brochetas-de-pollo": [
+   2.2,
+   "b"
+  ],
+  "elaborados-albondigas": [
+   9.9,
+   "m"
+  ],
+  "elaborados-carne-picada-de-ternera": [
+   11.9,
+   "m"
+  ],
+  "elaborados-carne-picada-de-cerdo": [
+   7.5,
+   "m"
+  ],
+  "elaborados-carne-picada-mixta": [
+   9.5,
+   "m"
+  ],
+  "elaborados-carne-picada-de-pollo": [
+   7.9,
+   "m"
+  ],
+  "elaborados-carne-picada-de-pavo": [
+   8.9,
+   "m"
+  ],
+  "elaborados-costillas-adobadas": [
+   8.9,
+   "m"
+  ],
+  "elaborados-lomo-adobado": [
+   9.9,
+   "m"
+  ],
+  "elaborados-alitas-de-pollo-adobadas": [
+   5.5,
+   "m"
+  ],
+  "elaborados-lagrimitas-de-pollo": [
+   8.9,
+   "b"
+  ],
+  "elaborados-filetes-de-pollo-empanados": [
+   9.9,
+   "m"
+  ],
+  "elaborados-san-jacobos": [
+   1.6,
+   "b"
+  ],
+  "elaborados-flamenquines": [
+   2.5,
+   "b"
+  ],
+  "elaborados-pechugas-rellenas-de-bechamel": [
+   2.6,
+   "b"
+  ],
+  "elaborados-cachopo": [
+   7.5,
+   "b"
+  ],
+  "huevos-huevos-camperos": [
+   0.4,
+   "m"
+  ],
+  "huevos-huevos-de-gallina": [
+   0.28,
+   "m"
+  ],
+  "huevos-huevos-de-codorniz": [
+   0.13,
+   "b"
+  ],
+  "avios-hueso-de-cana-de-ternera": [
+   3.9,
+   "b"
+  ],
+  "avios-hueso-de-rodilla": [
+   3.5,
+   "b"
+  ],
+  "avios-huesos-de-jamon": [
+   3.9,
+   "b"
+  ],
+  "avios-tocino-fresco": [
+   3.5,
+   "b"
+  ],
+  "avios-tocino-salado": [
+   4.9,
+   "b"
+  ],
+  "avios-codillo-salado": [
+   5.9,
+   "b"
+  ],
+  "avios-costilla-salada": [
+   5.5,
+   "b"
+  ],
+  "avios-espinazo-de-cerdo": [
+   3.9,
+   "b"
+  ],
+  "avios-gallina-para-caldo": [
+   8.5,
+   "b"
+  ],
+  "avios-morcillo-de-ternera-para-puchero": [
+   10.5,
+   "m"
+  ],
+  "especias-pimenton-dulce": [
+   2.5,
+   "b"
+  ],
+  "especias-pimenton-picante": [
+   2.5,
+   "b"
+  ],
+  "especias-pimienta-negra-molida": [
+   2.9,
+   "b"
+  ],
+  "especias-comino-molido": [
+   2.5,
+   "b"
+  ],
+  "especias-oregano": [
+   1.9,
+   "b"
+  ],
+  "especias-laurel": [
+   1.5,
+   "b"
+  ],
+  "especias-ajo-en-polvo": [
+   2.5,
+   "b"
+  ],
+  "especias-adobo-para-pinchitos": [
+   2.9,
+   "b"
+  ],
+  "especias-adobo-para-carne": [
+   2.9,
+   "b"
+  ],
+  "especias-sal-gruesa": [
+   0.9,
+   "b"
+  ],
+  "especias-sal-en-escamas": [
+   3.5,
+   "b"
+  ],
+  "salsas-mojo-picon": [
+   3.5,
+   "b"
+  ],
+  "salsas-salsa-chimichurri": [
+   3.9,
+   "b"
+  ],
+  "salsas-salsa-barbacoa": [
+   3.2,
+   "b"
+  ],
+  "salsas-salsa-de-pimienta": [
+   3.5,
+   "b"
+  ],
+  "salsas-alioli": [
+   3.2,
+   "b"
+  ],
+  "salsas-salsa-brava": [
+   3.2,
+   "b"
+  ],
+  "salsas-mostaza": [
+   2.5,
+   "b"
+  ],
+  "vino-vino-tinto-crianza": [
+   8.9,
+   "m"
+  ],
+  "vino-vino-tinto-joven": [
+   5.9,
+   "m"
+  ],
+  "vino-vino-blanco": [
+   5.5,
+   "m"
+  ],
+  "vino-vino-rosado": [
+   5.5,
+   "m"
+  ],
+  "vino-fino": [
+   6.5,
+   "m"
+  ],
+  "vino-manzanilla": [
+   6.5,
+   "m"
+  ],
+  "vino-amontillado": [
+   9.9,
+   "b"
+  ],
+  "vino-oloroso": [
+   9.9,
+   "b"
+  ]
+ }
+}

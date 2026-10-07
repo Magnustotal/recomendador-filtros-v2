@@ -7,7 +7,8 @@ import {
 } from "./auth.mjs";
 import { validarAjustes } from "./ajustes.mjs";
 import { validarProducto, aplicarRedondeoATodos } from "./productos.mjs";
-import { categorias } from "./datos.generado.mjs";
+import { categorias, preciosOrientativos } from "./datos.generado.mjs";
+import { redondear } from "./dinero.mjs";
 import { randomUUID } from "node:crypto";
 
 const IDS_CATEGORIA = categorias.map((c) => c.id);
@@ -39,7 +40,7 @@ export async function manejarAdmin(req, deps) {
 
     if (ruta === "/datos" && metodo === "GET") {
       const [ajustes, productos] = await Promise.all([deps.almacen.leerAjustes(), deps.almacen.leerProductos()]);
-      return json(200, { ok: true, ajustes, productos, categorias });
+      return json(200, { ok: true, ajustes, productos, categorias, orientativos: preciosOrientativos });
     }
 
     if (ruta === "/ajustes" && metodo === "PUT") {
@@ -90,6 +91,22 @@ export async function manejarAdmin(req, deps) {
       await deps.almacen.actualizarProductos((lista) => { const nueva = aplicarRedondeoATodos(lista, final); tocados = nueva.filter((p, i) => p.precio !== lista[i].precio).length; return nueva; });
       await deps.purgar(["catalogo"]);
       return json(200, { ok: true, tocados });
+    }
+
+    // Acepta de golpe los precios orientativos de los productos que aún no tienen precio (nunca pisa un precio ya puesto).
+    if (ruta === "/orientativos" && metodo === "POST") {
+      const ajustes = await deps.almacen.leerAjustes();
+      const final = ajustes.tienda.redondeo;
+      let aplicados = 0;
+      await deps.almacen.actualizarProductos((lista) => lista.map((p) => {
+        const o = preciosOrientativos.precios[p.id];
+        if (p.precio != null || !o) return p;
+        aplicados++;
+        const precio = final && p.unidad === "kg" ? redondear(o[0], final) : o[0];
+        return { ...p, precio };
+      }));
+      await deps.purgar(["catalogo"]);
+      return json(200, { ok: true, aplicados });
     }
 
     if (ruta === "/foto" && metodo === "POST") {

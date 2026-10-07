@@ -2,8 +2,8 @@
 import { api, cuandoCaduque, textoErrores } from "./api.js";
 import { h, $, aviso } from "./util.js";
 import { iniciarPedidos, cargar as cargarPedidos, vigilar } from "./pedidos.js";
-import { iniciarProductos, cargarProductos, productosConPrecio, productosSinPrecio } from "./productos.js";
-import { iniciarAjustes, cargarAjustes, enviar, ajustesBorrador, refrescarTienda } from "./ajustes.js";
+import { iniciarProductos, cargarProductos, productosConPrecio, productosSinPrecio, orientativosPendientes } from "./productos.js";
+import { iniciarAjustes, cargarAjustes, enviar, ajustesBorrador, refrescarTienda, fijarCategorias } from "./ajustes.js";
 
 const TITULO = "Panel · La Estrella";
 let guardado = null; // ajustes tal y como están en el servidor
@@ -102,6 +102,7 @@ iniciarPedidos({ cuandoCambienNuevos: marcarNuevos });
 
 iniciarProductos({
   redondeoActual: () => guardado?.tienda.redondeo ?? null,
+  preciosCfg: () => guardado?.tienda.precios ?? { margenDefecto: 30, iva: {} },
   async guardarRedondeo(valor) {
     const base = structuredClone(guardado);
     base.tienda.redondeo = valor;
@@ -119,7 +120,7 @@ iniciarProductos({
 async function recargarProductos() {
   const r = await api("/datos");
   if (!r.ok) { aviso(textoErrores(r.errores), { error: true }); return; }
-  cargarProductos({ productos: r.datos.productos, categorias: r.datos.categorias });
+  cargarProductos({ productos: r.datos.productos, categorias: r.datos.categorias, orientativos: r.datos.orientativos });
 }
 
 // ---------- estado y lista de comprobación ----------
@@ -136,6 +137,8 @@ function comprobaciones() {
   punto(t.reparto.activo ? !!t.reparto.zona && t.reparto.franjas.length > 0 : true, "El reparto tiene zona y franjas horarias.", "tienda");
   punto(!t.pagos.bizum || !!t.pagos.bizumNumero, "Bizum activado con su número.", "tienda");
   punto(!t.pagos.transferencia || !!t.pagos.transferenciaDatos, "Transferencia activada con sus datos.", "tienda");
+  const pend = orientativosPendientes();
+  punto(pend === 0, pend ? `Hay ${pend} productos con precio orientativo sin aceptar: en la tienda se ven como «Consultar» hasta que los aceptes o pongas el tuyo.` : "No quedan precios orientativos por revisar.", "productos");
   punto(t.activa, t.activa ? "La tienda está abierta a los clientes." : "La tienda está cerrada: los botones de pedir llevan a WhatsApp.", "tienda");
   return lista;
 }
@@ -171,8 +174,9 @@ async function abrirPanel() {
   $("acceso").hidden = true;
   $("panel").hidden = false;
   guardado = structuredClone(r.datos.ajustes);
+  fijarCategorias(r.datos.categorias);
   cargarAjustes(r.datos.ajustes);
-  cargarProductos({ productos: r.datos.productos, categorias: r.datos.categorias });
+  cargarProductos({ productos: r.datos.productos, categorias: r.datos.categorias, orientativos: r.datos.orientativos });
   const inicial = PESTANAS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "pedidos";
   if (inicial !== "pedidos") await cargarPedidos(); // para el contador de nuevos
   irA(inicial); // la pestaña de pedidos carga su lista al abrirse

@@ -2,10 +2,13 @@
 import { api, textoErrores } from "./api.js";
 import { h, $, importeEs, aviso, sinAcentos, describirError } from "./util.js";
 import { prepararFoto } from "./fotos.js";
+import { semaforo, rangoOrientativo, precioDesdeCoste, ajustarPorcentaje, MARGEN_POR_DEFECTO, NOMBRE_FIABILIDAD } from "/assets/compartido/precios.js";
+import { redondear } from "/assets/compartido/dinero.js";
 
 let productos = [];
 let categorias = [];
-let contexto = null; // { redondeoActual(), guardarRedondeo(valor), recargar() }
+let orientativos = null; // { precios: { id: [precio, fiabilidad] }, fecha, nivel, _nota }
+let contexto = null; // { redondeoActual(), guardarRedondeo(valor), recargar(), preciosCfg() }
 let busqueda = "";
 let categoriaFiltro = "";
 
@@ -14,6 +17,15 @@ export function iniciarProductos(ctx) {
   $("prod-buscar").addEventListener("input", (e) => { busqueda = sinAcentos(e.target.value.trim()); pintar(); });
   $("prod-categoria").addEventListener("change", (e) => { categoriaFiltro = e.target.value; pintar(); });
   $("prod-nuevo").addEventListener("click", () => abrirEditor(null));
+  $("prod-aceptar-todos").addEventListener("click", async () => {
+    const n = orientativosPendientes();
+    if (!n) return;
+    if (!confirm(`Se pondrá el precio orientativo a los ${n} productos que aún no tienen precio (no se toca ninguno que ya tenga). Después los verás en la tienda con ese precio. ¿Continuar?`)) return;
+    const r = await api("/orientativos", { metodo: "POST", cuerpo: {} });
+    if (!r.ok) { aviso(textoErrores(r.errores), { error: true }); return; }
+    await contexto.recargar();
+    aviso(`Precios orientativos aplicados a ${r.datos.aplicados} productos. Revísalos y ajústalos cuando puedas.`);
+  });
   $("prod-redondeo").addEventListener("change", async (e) => {
     const valor = e.target.value ? Number(e.target.value) : null;
     const ok = await contexto.guardarRedondeo(valor);
@@ -31,7 +43,8 @@ export function iniciarProductos(ctx) {
   });
 }
 
-export function cargarProductos({ productos: lista, categorias: cats }) {
+export function cargarProductos({ productos: lista, categorias: cats, orientativos: orient }) {
+  if (orient) orientativos = orient;
   productos = lista;
   categorias = cats;
   const sel = $("prod-categoria");
@@ -47,6 +60,25 @@ export function cargarProductos({ productos: lista, categorias: cats }) {
 export const productosSinPrecio = () => productos.filter((p) => !p.oculto && p.precio == null).length;
 export const productosConPrecio = () => productos.filter((p) => p.precio != null).length;
 
+// ---------- precios orientativos y semáforo ----------
+const cfgPrecios = () => contexto.preciosCfg();
+const ivaDe = (categoria) => cfgPrecios().iva?.[categoria] ?? 10;
+export function orientativoDe(id) {
+  const e = orientativos?.precios?.[id];
+  if (!e) return null;
+  const [precio, fiabilidad] = e;
+  return { precio, fiabilidad, ...rangoOrientativo(precio, fiabilidad) };
+}
+export const orientativosPendientes = () => productos.filter((p) => p.precio == null && orientativoDe(p.id)).length;
+const semDe = (p) => semaforo({ precio: p.precio, orientativo: orientativoDe(p.id), coste: p.coste, merma: p.merma ?? 0, iva: ivaDe(p.categoria), margenObjetivo: p.margen ?? cfgPrecios().margenDefecto ?? MARGEN_POR_DEFECTO });
+const SIMBOLO = { verde: "✔", ambar: "!", rojo: "✖", gris: "–" };
+const eurosTxt = (n) => `${Number(n).toFixed(2).replace(".", ",")} €`;
+
+// Etiqueta del semáforo: lleva icono y texto, no solo color.
+function etiquetaSem(r) {
+  return h("span", { class: `sem sem-${r.nivel}`, title: r.detalle }, h("span", { "aria-hidden": "true", texto: SIMBOLO[r.nivel] }), ` ${r.etiqueta}`);
+}
+
 const nombreCategoria = (id) => categorias.find((c) => c.id === id)?.nombre ?? id;
 const unidadTexto = (p) => (p.unidad === "kg" ? "€/kg" : "€/ud");
 
@@ -55,7 +87,11 @@ function pintar() {
     .filter((p) => (!categoriaFiltro || p.categoria === categoriaFiltro)
       && (!busqueda || sinAcentos(`${p.nombre} ${nombreCategoria(p.categoria)}`).includes(busqueda)))
     .sort((a, b) => categorias.findIndex((c) => c.id === a.categoria) - categorias.findIndex((c) => c.id === b.categoria) || a.orden - b.orden);
-  $("prod-contador").textContent = `${lista.length} de ${productos.length} productos · ${productosSinPrecio()} sin precio`;
+  const pend = orientativosPendientes();
+  $("prod-contador").textContent = `${lista.length} de ${productos.length} productos · ${productosSinPrecio()} sin precio · ${pend} con precio orientativo sin aceptar`;
+  const botonTodos = $("prod-aceptar-todos");
+  botonTodos.disabled = pend === 0;
+  botonTodos.textContent = pend ? `Aceptar los ${pend} precios orientativos pendientes` : "No quedan precios orientativos pendientes";
   $("prod-lista").replaceChildren(...lista.map(fila));
 }
 
@@ -70,28 +106,44 @@ async function guardar(p, cambios, { estado, alFallar }) {
 function fila(p) {
   const estado = h("span", { class: "fila-estado", role: "status" });
   const precio = h("input", { type: "text", inputmode: "decimal", autocomplete: "off", value: importeEs(p.precio), placeholder: "Consultar", "aria-label": `Precio de ${p.nombre} en ${unidadTexto(p)}` });
+  const sem = h("span", { class: "sem-hueco" });
+  const sugerido = h("div", { class: "sugerido" });
+  const etiquetas = h("span", { class: "etiquetas" });
+
+  // Lo que depende del precio actual: semáforo, sugerencia y etiquetas (se repinta sin rehacer la lista)
+  const actualizar = () => {
+    precio.value = importeEs(p.precio);
+    sem.replaceChildren(etiquetaSem(semDe(p)));
+    const o = orientativoDe(p.id);
+    if (p.precio == null && o) {
+      const aceptar = h("button", { type: "button", class: "btn-sec btn-mini", texto: "Aceptar", "aria-label": `Aceptar el precio orientativo de ${p.nombre}: ${eurosTxt(o.precio)}` });
+      aceptar.addEventListener("click", async () => {
+        const g = await guardar(p, { precio: o.precio }, { estado });
+        if (g) actualizar();
+      });
+      sugerido.replaceChildren(h("span", { texto: `Orientativo: ${eurosTxt(o.precio)}${p.unidad === "kg" ? "/kg" : "/ud"}` }), aceptar);
+    } else sugerido.replaceChildren();
+    etiquetas.replaceChildren(...[p.oculto && "Oculto", p.agotado && "Agotado", p.foto && "Con foto", p.alcohol && "+18"].filter(Boolean).map((t) => h("span", { class: "mini", texto: t })));
+  };
+
   precio.addEventListener("change", async () => {
     const antes = p.precio;
     const g = await guardar(p, { precio: precio.value.trim() === "" ? null : precio.value }, { estado, alFallar: () => { precio.value = importeEs(antes); } });
-    if (g) { precio.value = importeEs(g.precio); if (g.precio == null) estado.textContent = "✓ Sin precio (se verá «Consultar»)"; }
+    if (g) { actualizar(); if (g.precio == null) estado.textContent = "✓ Sin precio (se verá «Consultar»)"; }
   });
   const agotado = h("input", { type: "checkbox", id: `ag-${p.id}`, checked: !!p.agotado });
   agotado.addEventListener("change", async () => {
     await guardar(p, { agotado: agotado.checked }, { estado, alFallar: () => { agotado.checked = !agotado.checked; } });
-    pintarEtiquetas(fila_);
+    actualizar();
   });
   const editar = h("button", { type: "button", class: "btn-sec", texto: "Editar", "aria-label": `Editar ${p.nombre}` });
   editar.addEventListener("click", () => abrirEditor(p));
-  const etiquetas = h("span", { class: "etiquetas" });
   const fila_ = h("div", { class: "prod-fila" },
-    h("div", { class: "prod-nombre" }, h("strong", { texto: p.nombre }), h("small", { texto: nombreCategoria(p.categoria) }), etiquetas),
-    h("label", { class: "precio" }, precio, h("span", { texto: unidadTexto(p) })),
+    h("div", { class: "prod-nombre" }, h("strong", { texto: p.nombre }), h("small", { texto: nombreCategoria(p.categoria) }), etiquetas, sugerido),
+    h("div", { class: "precio-sem" }, h("label", { class: "precio" }, precio, h("span", { texto: unidadTexto(p) })), sem),
     h("label", { class: "interruptor", for: agotado.id }, agotado, h("span", { texto: "Agotado" })),
     editar, estado);
-  const pintarEtiquetas = () => {
-    etiquetas.replaceChildren(...[p.oculto && "Oculto", p.agotado && "Agotado", p.foto && "Con foto", p.alcohol && "+18"].filter(Boolean).map((t) => h("span", { class: "mini", texto: t })));
-  };
-  pintarEtiquetas();
+  actualizar();
   return fila_;
 }
 
@@ -169,6 +221,110 @@ function abrirEditor(original) {
     aviso("Producto eliminado.");
   } });
 
+  // ---------- calculadora de precio y semáforo ----------
+  const orient = esNuevo ? null : orientativoDe(p.id);
+  const redondeoActual = () => contexto.redondeoActual();
+  const numero = (el) => { const t = el.value.trim().replace(",", "."); const n = Number(t); return t === "" || !Number.isFinite(n) ? null : n; };
+  const costeIn = h("input", { id: "f-coste", type: "text", inputmode: "decimal", autocomplete: "off", value: importeEs(p.coste) });
+  const mermaIn = h("input", { id: "f-merma", type: "text", inputmode: "decimal", autocomplete: "off", value: p.merma == null ? "" : String(p.merma).replace(".", ","), placeholder: "0" });
+  const margenIn = h("input", { id: "f-margen", type: "text", inputmode: "decimal", autocomplete: "off", value: p.margen == null ? "" : String(p.margen).replace(".", ","), placeholder: String(cfgPrecios().margenDefecto ?? MARGEN_POR_DEFECTO).replace(".", ",") });
+  const iva = () => ivaDe(categoria.value);
+  const margenObjetivo = () => numero(margenIn) ?? cfgPrecios().margenDefecto ?? MARGEN_POR_DEFECTO;
+  const porUnidad = () => (unidad.value === "kg" ? "kg" : "ud");
+  // Precio tal y como quedará al guardarlo (con el redondeo ,90/,95 si se vende por kilo)
+  const efectivo = () => {
+    const n = numero(precio);
+    if (n == null || n < 0) return null;
+    return redondeoActual() && unidad.value === "kg" ? redondear(n, redondeoActual()) : n;
+  };
+
+  const semPildora = h("div", { class: "sem-grande", role: "status" });
+  const semDetalle = h("p", { class: "ayuda" });
+  const marca = h("span", { class: "sem-marca", "aria-hidden": "true", texto: "▲" });
+  const zona = h("span", { class: "sem-zona" });
+  const barra = h("div", { class: "sem-barra", role: "img" }, zona, marca);
+  const refrescarSem = () => {
+    const n = efectivo();
+    const o = orient;
+    const r = semaforo({ precio: n, orientativo: o, coste: numero(costeIn), merma: numero(mermaIn) ?? 0, iva: iva(), margenObjetivo: margenObjetivo() });
+    semPildora.replaceChildren(etiquetaSem(r));
+    semDetalle.textContent = r.detalle;
+    barra.hidden = !o;
+    if (o) {
+      const lo = o.min * 0.6, hi = o.max * 1.4;
+      const pos = (v) => Math.min(100, Math.max(0, ((v - lo) / (hi - lo)) * 100));
+      zona.style.left = `${pos(o.min)}%`;
+      zona.style.width = `${pos(o.max) - pos(o.min)}%`;
+      marca.hidden = n == null;
+      if (n != null) marca.style.left = `${pos(n)}%`;
+      barra.setAttribute("aria-label", `Rango habitual de ${eurosTxt(o.min)} a ${eurosTxt(o.max)}${n != null ? `; tu precio, ${eurosTxt(n)}` : ""}`);
+    }
+  };
+
+  // --- modo 1: escribirlo directamente (el campo «Precio») ---
+  // --- modo 2: desde mi coste ---
+  const resultado = h("p", { class: "calc-resultado", role: "status" });
+  const usar = h("button", { type: "button", class: "btn-sec", texto: "Usar este precio" });
+  let calculado = null;
+  const refrescarCoste = () => {
+    const c = numero(costeIn);
+    const m = numero(mermaIn) ?? 0;
+    calculado = null;
+    if (c == null || c <= 0) { resultado.textContent = "Escribe lo que te cuesta el kilo (o la unidad) sin IVA y verás el precio de venta."; usar.disabled = true; return; }
+    if (m < 0 || m >= 100) { resultado.textContent = "La merma tiene que estar entre 0 y 99 %."; usar.disabled = true; return; }
+    calculado = precioDesdeCoste({ coste: c, merma: m, margen: margenObjetivo(), iva: iva(), redondeo: redondeoActual(), unidad: unidad.value });
+    resultado.textContent = `Precio de venta calculado: ${eurosTxt(calculado.exacto)}${calculado.precio !== calculado.exacto ? ` → ${eurosTxt(calculado.precio)} con el redondeo ,${redondeoActual()}` : ""} (con ${iva()} % de IVA y un ${String(margenObjetivo()).replace(".", ",")} % sobre el coste).`;
+    usar.disabled = false;
+  };
+  usar.addEventListener("click", () => { if (!calculado) return; precio.value = importeEs(calculado.precio); trabajo = calculado.exacto; refrescarSem(); aviso("Precio puesto en el campo «Precio». Pulsa Guardar para aplicarlo."); });
+  const panelCoste = h("div", { class: "calc-panel" },
+    h("div", { class: "fila-tres" },
+      campo("f-coste", `Coste de compra (€/${porUnidad()}, sin IVA)`, costeIn),
+      campo("f-merma", "Merma (%)", mermaIn),
+      campo("f-margen", "Recargo sobre coste (%)", margenIn)),
+    h("p", { class: "ayuda", texto: "La merma es lo que se pierde al limpiar y cortar (grasa, hueso, recortes). El recargo es lo que pones encima del coste; si lo dejas vacío se usa el general. El IVA sale de la categoría (se cambia en Tienda → Precios y márgenes)." }),
+    resultado, usar);
+
+  // --- modo 3: ajustar el orientativo ---
+  let trabajo = numero(precio) ?? orient?.precio ?? null;
+  const delta = h("p", { class: "calc-resultado", role: "status" });
+  const refrescarAjuste = () => {
+    const n = efectivo();
+    delta.textContent = orient
+      ? `Orientativo: ${eurosTxt(orient.precio)} (fiabilidad ${NOMBRE_FIABILIDAD[orient.fiabilidad]}).${n != null && orient.precio ? ` Tu precio está un ${String(Math.round((n / orient.precio - 1) * 1000) / 10).replace(".", ",")} % ${n >= orient.precio ? "por encima" : "por debajo"}.` : ""}`
+      : "Este producto no tiene precio orientativo: escribe un precio en el campo «Precio» y ajústalo desde ahí.";
+  };
+  const aplicarTrabajo = () => { precio.value = importeEs(redondeoActual() && unidad.value === "kg" ? redondear(trabajo, redondeoActual()) : trabajo); refrescarSem(); refrescarAjuste(); };
+  const botonPct = (pct) => {
+    const b = h("button", { type: "button", class: "btn-sec", texto: `${pct > 0 ? "+" : "−"}${Math.abs(pct)} %`, "aria-label": `${pct > 0 ? "Subir" : "Bajar"} el precio un ${Math.abs(pct)} por ciento` });
+    b.addEventListener("click", () => {
+      if (trabajo == null || trabajo <= 0) trabajo = orient?.precio ?? null;
+      if (trabajo == null) { aviso("Escribe primero un precio en el campo «Precio».", { error: true }); return; }
+      trabajo = ajustarPorcentaje(trabajo, pct);
+      aplicarTrabajo();
+    });
+    return b;
+  };
+  const volver = h("button", { type: "button", class: "btn-sec", texto: "Volver al orientativo", disabled: !orient });
+  volver.addEventListener("click", () => { trabajo = orient.precio; aplicarTrabajo(); });
+  const panelAjuste = h("div", { class: "calc-panel" },
+    h("div", { class: "acciones" }, [-10, -5, -1, 1, 5, 10].map(botonPct), volver),
+    delta);
+
+  const panelDirecto = h("div", { class: "calc-panel" }, h("p", { class: "ayuda", texto: "Escribe el precio en el campo «Precio» de arriba. El semáforo te dice si está bien." }));
+  const MODOS = [["directo", "Escribirlo yo", panelDirecto], ["coste", "Desde mi coste", panelCoste], ["ajuste", "Ajustar el orientativo", panelAjuste]];
+  const radios = MODOS.map(([valor, texto]) => h("label", { class: "modo" }, h("input", { type: "radio", name: "modo-precio", value: valor, checked: valor === (p.coste != null ? "coste" : "directo") }), h("span", { texto })));
+  const mostrarModo = () => { const v = radios.find((r) => r.querySelector("input").checked).querySelector("input").value; for (const [valor, , panel] of MODOS) panel.hidden = valor !== v; };
+  for (const r of radios) r.querySelector("input").addEventListener("change", mostrarModo);
+  const calculadora = h("fieldset", { class: "campo-grupo calculadora" }, h("legend", { texto: "Ayuda para poner el precio" }),
+    h("div", { class: "modos", role: "radiogroup", "aria-label": "Cómo quieres poner el precio" }, radios),
+    panelDirecto, panelCoste, panelAjuste, semPildora, barra, semDetalle);
+  precio.addEventListener("input", () => { trabajo = numero(precio); refrescarSem(); refrescarAjuste(); });
+  for (const el of [costeIn, mermaIn, margenIn]) el.addEventListener("input", () => { refrescarCoste(); refrescarSem(); });
+  categoria.addEventListener("change", () => { refrescarCoste(); refrescarSem(); });
+  unidad.addEventListener("change", () => { refrescarCoste(); refrescarSem(); refrescarAjuste(); calculadora.querySelector('label[for="f-coste"]').textContent = `Coste de compra (€/${porUnidad()}, sin IVA)`; });
+  mostrarModo(); refrescarCoste(); refrescarSem(); refrescarAjuste();
+
   const formulario = h("form", { novalidate: true, "aria-labelledby": "dlg-titulo" },
     h("h2", { id: "dlg-titulo", texto: esNuevo ? "Nuevo producto" : "Editar producto" }),
     errores,
@@ -177,6 +333,7 @@ function abrirEditor(original) {
     campo("f-descripcion", "Descripción corta (opcional)", descripcion),
     h("div", { class: "fila-dos" }, campo("f-unidad", "Se vende", unidad), campo("f-precio", "Precio (€ por kg o por unidad)", precio, "Déjalo vacío para que se vea «Consultar».")),
     ayudaUnidad,
+    calculadora,
     h("div", { class: "fila-tres" }, campo("f-paso", "Paso", paso), campo("f-minimo", "Mínimo (opcional)", minimo), campo("f-maximo", "Máximo (opcional)", maximo)),
     campo("f-opciones", "Opciones al pedir (opcional)", opciones, "Por ejemplo cómo cortarlo. Si hay opciones, el cliente elige una."),
     campo("f-alergenos", "Alérgenos (opcional)", alergenos, "Separados por comas."),
@@ -194,6 +351,7 @@ function abrirEditor(original) {
       ...(esNuevo ? {} : { id: p.id, orden: p.orden }),
       nombre: nombre.value, categoria: categoria.value, descripcion: descripcion.value, unidad: unidad.value,
       paso: num(paso), minimo: num(minimo), maximo: num(maximo), precio: precio.value.trim() === "" ? null : precio.value,
+      coste: costeIn.value.trim() === "" ? null : costeIn.value, merma: mermaIn.value.trim() === "" ? null : mermaIn.value, margen: margenIn.value.trim() === "" ? null : margenIn.value,
       opciones: opciones.value.split("\n").map((x) => x.trim()).filter(Boolean), alergenos: lista(alergenos.value),
       agotado: cAgotado.querySelector("input").checked, oculto: cOculto.querySelector("input").checked, alcohol: cAlcohol.querySelector("input").checked, foto: p.foto,
     };

@@ -369,3 +369,138 @@ test("pedidos: el reparto muestra el código postal y avisa si la dirección est
   void a;
   await page.context().close();
 });
+
+// ---------- precios orientativos, calculadora y semáforo ----------
+const filaProd = (page, nombre) => page.locator(".prod-fila", { has: page.getByRole("strong").filter({ hasText: new RegExp(`^${nombre}$`) }) });
+
+test("orientativos: se ven como sugerencia (sin precio en la tienda) y se aceptan uno a uno, con semáforo", async () => {
+  const page = await entrar();
+  await page.click("#tab-productos");
+  await page.fill("#prod-buscar", "Lomo bajo de ternera");
+  const fila = page.locator(".prod-fila").first();
+  assert.match(await fila.innerText(), /Orientativo: 19,90 €\/kg/);
+  assert.equal(await fila.locator("input[type=text]").inputValue(), "", "el orientativo no es todavía el precio");
+  assert.match(await fila.innerText(), /Sin precio/);
+  // el cliente sigue viendo «Consultar»
+  const pub = await (await fetch(e.url + "/api/catalogo")).json();
+  assert.equal(pub.productos.find((p) => p.id === "vacuno-lomo-bajo-de-ternera").precio, null);
+  await fila.getByRole("button", { name: /Aceptar el precio orientativo/ }).click();
+  await fila.locator(".fila-estado", { hasText: "Guardado" }).waitFor();
+  assert.equal(await fila.locator("input[type=text]").inputValue(), "19,90");
+  assert.match(await fila.locator(".sem").innerText(), /En rango/);
+  assert.equal(await fila.locator(".sugerido button").count(), 0);
+  assert.equal((await e.api.llamar("/datos")).datos.productos.find((p) => p.id === "vacuno-lomo-bajo-de-ternera").precio, 19.9);
+  await page.context().close();
+});
+
+test("calculadora desde el coste: merma, recargo, IVA y redondeo; el coste se guarda en privado", async () => {
+  const page = await entrar();
+  await page.click("#tab-productos");
+  await page.fill("#prod-buscar", "Cadera de ternera");
+  await page.locator(".prod-fila").first().getByRole("button", { name: /Editar/ }).click();
+  const dlg = page.locator("#dlg-producto");
+  await dlg.getByText("Desde mi coste").click();
+  assert.match(await dlg.locator(".calc-resultado").first().innerText(), /Escribe lo que te cuesta/);
+  await dlg.locator("#f-coste").fill("10");
+  await dlg.locator("#f-merma").fill("20");
+  await dlg.locator("#f-margen").fill("30");
+  // 10 / 0,8 = 12,50; +30 % = 16,25; +10 % IVA = 17,875 -> 17,88; con ,90 -> 17,90
+  assert.match(await dlg.locator(".calc-resultado").first().innerText(), /17,88 € → 17,90 € con el redondeo ,90/);
+  await dlg.getByRole("button", { name: "Usar este precio" }).click();
+  assert.equal(await dlg.locator("#f-precio").inputValue(), "17,90");
+  assert.match(await dlg.locator(".sem-grande").innerText(), /Margen correcto/);
+  // un precio por debajo del coste = rojo
+  await dlg.locator("#f-precio").fill("9");
+  assert.match(await dlg.locator(".sem-grande").innerText(), /No cubre el coste/);
+  assert.ok(await dlg.locator(".sem-grande .sem-rojo").count() === 1);
+  await dlg.locator("#f-precio").fill("17,9");
+  await dlg.getByRole("button", { name: "Guardar", exact: true }).click();
+  await page.locator("#aviso", { hasText: "Cambios guardados" }).waitFor();
+  const p = (await e.api.llamar("/datos")).datos.productos.find((x) => x.id === "vacuno-cadera-de-ternera");
+  assert.equal(p.precio, 17.9); assert.equal(p.coste, 10); assert.equal(p.merma, 20); assert.equal(p.margen, 30);
+  // y no se filtra al público
+  const pub = JSON.stringify((await (await fetch(e.url + "/api/catalogo")).json()).productos.find((x) => x.id === "vacuno-cadera-de-ternera"));
+  assert.ok(!/coste|merma|margen/.test(pub), pub);
+  // la lista muestra el semáforo basado en el coste
+  await page.fill("#prod-buscar", "Cadera de ternera");
+  assert.match(await page.locator(".prod-fila").first().locator(".sem").innerText(), /Margen correcto/);
+  await page.context().close();
+});
+
+test("ajustar el orientativo con botones de porcentaje y volver al orientativo", async () => {
+  const page = await entrar();
+  await page.click("#tab-productos");
+  await page.fill("#prod-buscar", "Tapa de ternera"); // orientativo 14,50
+  await page.locator(".prod-fila").first().getByRole("button", { name: /Editar/ }).click();
+  const dlg = page.locator("#dlg-producto");
+  await dlg.getByText("Ajustar el orientativo").click();
+  assert.match(await dlg.locator(".calc-resultado").last().innerText(), /Orientativo: 14,50 € \(fiabilidad media\)/);
+  await dlg.getByRole("button", { name: "Subir el precio un 10 por ciento" }).click(); // 14,50 +10 % = 15,95 -> siguiente ,90 = 16,90
+  assert.equal(await dlg.locator("#f-precio").inputValue(), "16,90");
+  await dlg.getByRole("button", { name: "Volver al orientativo" }).click(); // 14,50 -> 14,90
+  assert.equal(await dlg.locator("#f-precio").inputValue(), "14,90");
+  assert.match(await dlg.locator(".sem-grande").innerText(), /En rango/);
+  // bajar poco a poco: el redondeo no se «come» los pasos porque se trabaja con el valor exacto
+  for (let i = 0; i < 3; i++) await dlg.getByRole("button", { name: "Bajar el precio un 10 por ciento" }).click(); // 10,57 -> 10,90
+  assert.equal(await dlg.locator("#f-precio").inputValue(), "10,90");
+  assert.match(await dlg.locator(".sem-grande").innerText(), /Algo barato/);
+  for (let i = 0; i < 2; i++) await dlg.getByRole("button", { name: "Bajar el precio un 10 por ciento" }).click(); // 8,56 -> 8,90
+  assert.match(await dlg.locator(".sem-grande").innerText(), /Muy barato/);
+  assert.equal(await dlg.locator(".sem-barra").getAttribute("role"), "img");
+  assert.match(await dlg.locator(".sem-barra").getAttribute("aria-label"), /Rango habitual de 11,60 € a 17,40 €; tu precio, 8,90 €/);
+  await page.context().close();
+});
+
+test("recargo e IVA por defecto se cambian en Tienda → Precios y márgenes y llegan a la calculadora", async () => {
+  const page = await entrar();
+  await page.click("#tab-tienda");
+  await page.locator("#form-tienda summary", { hasText: "IVA por categoría" }).click();
+  await page.fill("#a-tienda-precios-margenDefecto", "40");
+  await page.fill("#a-tienda-precios-iva-vacuno", "21");
+  await page.locator("#form-tienda button[type=submit]").click();
+  await page.locator("#aviso", { hasText: "Cambios guardados" }).waitFor();
+  const cfg = (await e.api.llamar("/datos")).datos.ajustes.tienda.precios;
+  assert.equal(cfg.margenDefecto, 40); assert.equal(cfg.iva.vacuno, 21); assert.equal(cfg.iva.huevos, 4);
+  await page.click("#tab-productos");
+  await page.fill("#prod-buscar", "Redondo de ternera");
+  await page.locator(".prod-fila").first().getByRole("button", { name: /Editar/ }).click();
+  const dlg = page.locator("#dlg-producto");
+  assert.equal(await dlg.locator("#f-margen").getAttribute("placeholder"), "40");
+  await dlg.getByText("Desde mi coste").click();
+  await dlg.locator("#f-coste").fill("10");
+  // sin merma, 10 +40 % = 14 ; IVA 21 % = 16,94 -> ,90 = 16,90? (16,94 > 16,90 => 17,90)
+  assert.match(await dlg.locator(".calc-resultado").first().innerText(), /16,94 € → 17,90 € con el redondeo ,90 \(con 21 % de IVA y un 40 % sobre el coste\)/);
+  await page.keyboard.press("Escape");
+  // restablecer (el formulario se repinta al guardar y el desplegable vuelve a cerrarse)
+  await page.click("#tab-tienda");
+  await page.locator("#form-tienda summary", { hasText: "IVA por categoría" }).click();
+  await page.fill("#a-tienda-precios-margenDefecto", "30");
+  await page.fill("#a-tienda-precios-iva-vacuno", "10");
+  await page.locator("#form-tienda button[type=submit]").click();
+  await page.locator("#aviso", { hasText: "Cambios guardados" }).waitFor();
+  await page.context().close();
+});
+
+test("«Aceptar todos»: pone el orientativo a lo que no tiene precio y la tienda lo enseña; el estado lo refleja", async () => {
+  const page = await entrar();
+  page.on("dialog", (d) => d.accept());
+  await page.click("#tab-estado");
+  assert.match(await page.locator("#lista-comprobacion").innerText(), /productos con precio orientativo sin aceptar/);
+  await page.click("#tab-productos");
+  const antes = await page.locator("#prod-aceptar-todos").innerText();
+  assert.match(antes, /^Aceptar los \d+ precios orientativos pendientes$/);
+  await page.click("#prod-aceptar-todos");
+  await page.locator("#aviso", { hasText: "Precios orientativos aplicados" }).waitFor();
+  assert.equal(await page.locator("#prod-aceptar-todos").isDisabled(), true);
+  assert.match(await page.locator("#prod-aceptar-todos").innerText(), /No quedan/);
+  const sin = (await e.api.llamar("/datos")).datos.productos.filter((p) => p.precio == null).length;
+  assert.equal(sin, 0);
+  const pub = await (await fetch(e.url + "/api/catalogo")).json();
+  assert.equal(pub.productos.filter((p) => p.precio == null).length, 0);
+  assert.equal(pub.productos.find((p) => p.id === "vacuno-babilla-de-ternera").precio, 14.9, "14,50 orientativo -> ,90 al redondear");
+  assert.equal(pub.productos.find((p) => p.id === "vacuno-solomillo-de-ternera").precio, 29.9, "los que ya tenían precio no se tocan");
+  await page.click("#tab-estado");
+  assert.match(await page.locator("#lista-comprobacion").innerText(), /No quedan precios orientativos por revisar/);
+  assert.deepEqual(errores(page), []);
+  await page.context().close();
+});

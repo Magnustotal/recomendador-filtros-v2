@@ -31,6 +31,10 @@ export function validarProducto(entrada, { categorias, redondeo = null }) {
     let precio = ctx.intento(() => numeroOpcional(e.precio, { campo: "precio", min: 0, max: 9999 }));
     // El redondeo ,90/,95 solo afecta al precio por kilo; lo que se vende por unidad se queda como se escribe.
     if (precio != null && redondeo && unidad === "kg") precio = redondear(precio, redondeo);
+    // Datos privados de la calculadora de precios (nunca salen al público)
+    const coste = ctx.intento(() => numeroOpcional(e.coste, { campo: "coste", min: 0, max: 9999 }));
+    const merma = ctx.intento(() => numeroOpcional(e.merma, { campo: "merma", min: 0, max: 60, decimales: 1 }));
+    const margen = ctx.intento(() => numeroOpcional(e.margen, { campo: "margen", min: 0, max: 300, decimales: 1 }));
     const opciones = ctx.intento(() => listaTextos(e.opciones, { max: 12, maxLong: 40, campo: "opciones" }));
     const alergenos = ctx.intento(() => listaTextos(e.alergenos, { max: 14, maxLong: 30, campo: "alergenos" }));
     let foto = null;
@@ -38,6 +42,7 @@ export function validarProducto(entrada, { categorias, redondeo = null }) {
     const orden = e.orden == null ? 0 : ctx.intento(() => entero(e.orden, { campo: "orden", min: 0, max: 100000 }));
     return {
       id, categoria, nombre, descripcion, unidad, paso, minimo: minimo ?? null, maximo: maximo ?? null, precio: precio ?? null,
+      coste: coste ?? null, merma: merma ?? null, margen: margen ?? null,
       agotado: booleano(e.agotado), oculto: booleano(e.oculto), opciones: opciones ?? [], foto, alcohol: booleano(e.alcohol), alergenos: alergenos ?? [], orden,
     };
   });
@@ -48,7 +53,7 @@ export function catalogoPublico(productos) {
   return productos
     .filter((p) => !p.oculto)
     .sort((a, b) => a.orden - b.orden)
-    .map(({ oculto, ...resto }) => resto);
+    .map(({ oculto, coste, merma, margen, ...resto }) => resto); // el coste y el margen son datos del negocio, no del cliente
 }
 
 export function aplicarRedondeoATodos(productos, final) {

@@ -15,6 +15,9 @@ En el móvil funciona igual que en el ordenador. Arriba tienes cinco pestañas.
 
 ## Productos
 
+- **Precios orientativos:** cada producto trae un precio sugerido (lo ves en naranja, «Orientativo: 14,90 €/kg»). Son una estimación aproximada, **no verificada**: revísalos con tus precios reales. Hasta que no pulses **Aceptar** (o «Aceptar los N precios orientativos pendientes», que los acepta todos de golpe sin tocar los que ya tengan precio), el cliente sigue viendo «Consultar».
+- **Semáforo:** junto a cada precio verás una etiqueta: **verde** (bien), **ámbar** (algo bajo o algo alto) o **rojo** (muy barato, muy caro, o que no cubre tu coste). Si has escrito tu coste mide tu **margen real**; si no, compara con el precio habitual del mercado.
+- **Calculadora:** en **Editar → «Ayuda para poner el precio»** puedes (1) escribir el precio tú, (2) calcularlo **desde lo que te cuesta** (coste sin IVA, merma y el recargo que quieras poner encima; suma el IVA y aplica el redondeo ,90) o (3) subir o bajar el orientativo con botones de −10 % a +10 %. Lo que escribas de coste, merma y recargo es **privado**: nunca lo ve el cliente.
 - Escribe el **precio** directamente en la casilla de cada producto y sal de ella: se guarda en el momento (verás «✓ Guardado»).
 - Si dejas el precio **vacío**, en la tienda se verá **«Consultar precio»** y el cliente podrá pedirlo igualmente.
 - Marca **Agotado** cuando no tengas algo: se sigue viendo, pero no se puede pedir. Al volver a tenerlo, desmárcalo.
@@ -35,6 +38,8 @@ Aquí decides cómo funcionan los pedidos:
 - **Zona de reparto:** puedes poner una **lista de códigos postales**, un **radio en km** desde la tienda, o las dos cosas. Con solo códigos postales, el cliente tiene que escribir uno de tu lista. Con radio, los códigos de la lista entran siempre y el resto se comprueba por distancia; si el programa no consigue localizar la dirección, el pedido entra igualmente con el aviso **«Dirección por verificar»** para que lo mires tú antes de aceptarlo. La distancia es en línea recta, no por carretera.
 - **Formas de pago:** efectivo, tarjeta (solo al recoger), Bizum y transferencia. La web **no cobra**: se paga al recoger o recibir.
 - Pulsa **Guardar cambios** abajo. Si algo está mal, te dirá qué campo es.
+
+- **Precios y márgenes** (más abajo): el recargo que sueles poner por defecto (30 % de partida) y el IVA de cada categoría. Los IVA que trae son de partida: confírmalos con tu gestoría.
 
 ## Negocio
 

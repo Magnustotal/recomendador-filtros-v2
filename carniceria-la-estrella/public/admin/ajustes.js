@@ -6,6 +6,8 @@ let borrador = null;
 let guardarAjustes = async () => ({ ok: false, errores: [] });
 let alCambiar = () => {};
 let ajustesGuardados = () => null;
+let categorias = [];
+export const fijarCategorias = (c) => { categorias = c; };
 
 export function iniciarAjustes({ guardar, cuandoCambie, guardados }) {
   guardarAjustes = guardar;
@@ -221,6 +223,12 @@ function pintarTienda() {
       h("div", { class: "campo" }, h("p", { class: "etiqueta-grupo", texto: "Días de reparto" }), dias("tienda.reparto.dias", "Días de reparto")),
       h("div", { class: "campo" }, h("p", { class: "etiqueta-grupo", texto: "Franjas de reparto" }), franjas("tienda.reparto.franjas", "Franjas de reparto")),
       entrada("tienda.textoEntrega", "Texto sobre el reparto (opcional)", { area: true, max: 300 })),
+    grupo("Precios y márgenes",
+      aviso_zona("Datos para la calculadora y el semáforo del precio (pestaña Productos). Solo los ves tú."),
+      entrada("tienda.precios.margenDefecto", "Recargo habitual sobre el coste (%)", { tipo: "coord", ayuda: "Lo que sueles poner encima de lo que te cuesta. Por ejemplo, 30 = un 30 % sobre el coste. Cada producto puede tener el suyo." }),
+      h("details", { class: "ayuda-desplegable" }, h("summary", { texto: "IVA por categoría (%)" }),
+        aviso_zona("Son tipos de partida que he puesto yo (carne y casi todo, 10 %; huevos, 4 %; vino, 21 %). Confírmalos con tu gestoría y cámbialos si no coinciden."),
+        h("div", { class: "rejilla-iva" }, categorias.map((c) => entrada(`tienda.precios.iva.${c.id}`, c.nombre, { tipo: "coord" }))))),
     grupo("Formas de pago (siempre al recoger o recibir; la web no cobra)",
       interruptor("tienda.pagos.efectivo", "Efectivo"),
       interruptor("tienda.pagos.tarjetaRecogida", "Tarjeta (solo al recoger en tienda)"),

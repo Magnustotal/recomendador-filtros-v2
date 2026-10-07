@@ -47,3 +47,19 @@ test("aplicarRedondeoATodos solo toca productos con precio", () => {
   assert.deepEqual(r, [{ id: "a", unidad: "kg", precio: 10.95 }, { id: "b", unidad: "kg", precio: null }, { id: "c", unidad: "ud", precio: 3.2 }]);
   assert.equal(slug("Rabo de toro"), "rabo-de-toro");
 });
+
+test("coste, merma y recargo: se validan, se guardan y NUNCA salen en el catálogo público", () => {
+  const ok = validarProducto({ nombre: "Prueba", categoria: "vacuno", unidad: "kg", coste: "9,5", merma: "12", margen: "35" }, { categorias: cats });
+  assert.equal(ok.ok, true, JSON.stringify(ok.errores));
+  assert.equal(ok.valor.coste, 9.5); assert.equal(ok.valor.merma, 12); assert.equal(ok.valor.margen, 35);
+  const vacio = validarProducto({ nombre: "Prueba", categoria: "vacuno", unidad: "kg" }, { categorias: cats });
+  assert.equal(vacio.valor.coste, null); assert.equal(vacio.valor.merma, null); assert.equal(vacio.valor.margen, null);
+  for (const [campo, valor] of [["coste", "-1"], ["merma", "61"], ["margen", "301"], ["coste", "abc"]]) {
+    const r = validarProducto({ nombre: "Prueba", categoria: "vacuno", unidad: "kg", [campo]: valor }, { categorias: cats });
+    assert.equal(r.ok, false, `${campo}=${valor}`);
+  }
+  const publico = catalogoPublico([{ ...ok.valor, orden: 1 }]);
+  assert.equal(publico.length, 1);
+  for (const k of ["coste", "merma", "margen", "oculto"]) assert.ok(!(k in publico[0]), `${k} no debe ser público`);
+  assert.ok(!JSON.stringify(publico).includes("9.5"));
+});

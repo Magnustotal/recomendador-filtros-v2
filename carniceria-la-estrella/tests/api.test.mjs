@@ -303,3 +303,34 @@ test("reparto con radio: se localiza la dirección, se rechaza lo lejano y lo no
   assert.deepEqual((await almacen.leerAjustes()).tienda.reparto.codigosPostales, []);
   assert.equal((await catalogo(deps()).then((r) => r.json())).ajustes.tienda.reparto.radioKm, null);
 });
+
+test("orientativos: /datos los incluye y /orientativos rellena solo los productos sin precio, con redondeo", async () => {
+  const d = await (await adm("/datos", { cookie })).json();
+  assert.equal(Object.keys(d.orientativos.precios).length, d.productos.filter((p) => p.id in d.orientativos.precios).length);
+  assert.ok(d.orientativos.precios["vacuno-solomillo-de-ternera"][0] > 0);
+  // un precio puesto a mano no se toca
+  await adm("/producto", { metodo: "PUT", cuerpo: { ...d.productos.find((p) => p.id === "vacuno-entrecot-de-ternera"), precio: 5.5, coste: 4, merma: 10 }, cookie });
+  const sinPrecio = d.productos.filter((p) => p.precio == null && p.id in d.orientativos.precios && p.id !== "vacuno-entrecot-de-ternera").length;
+  const r = await adm("/orientativos", { metodo: "POST", cuerpo: {}, cookie });
+  assert.equal(r.status, 200);
+  const j = await r.json();
+  assert.ok(j.aplicados >= sinPrecio - 1 && j.aplicados > 100, `aplicados ${j.aplicados}`);
+  const lista = (await (await adm("/datos", { cookie })).json()).productos;
+  const sol = lista.find((p) => p.id === "vacuno-solomillo-de-ternera");
+  assert.equal(sol.precio, 36.9, "36,90 ya termina en ,90");
+  assert.equal(lista.find((p) => p.id === "vacuno-entrecot-de-ternera").precio, 5.9, "no pisa lo que ya tenía precio (5,5 redondeado a ,90 al guardarlo)");
+  const cadera = lista.find((p) => p.id === "vacuno-cadera-de-ternera");
+  assert.equal(cadera.precio, 14.9);
+  // por unidad no se redondea (redondeo ,90 activo en los ajustes de esta batería de pruebas)
+  assert.equal(lista.find((p) => p.id === "pollo-pollo-entero").precio, 8.5, "este ya tenía 8,5 de otra prueba");
+  assert.equal(lista.find((p) => p.id === "vino-vino-tinto-crianza").precio, 8.9);
+  // segunda vez: no queda nada por aplicar
+  assert.equal((await (await adm("/orientativos", { metodo: "POST", cuerpo: {}, cookie })).json()).aplicados, 0);
+  // y el coste/merma/margen no salen al público
+  const pub = await (await catalogo(deps())).json();
+  const txt = JSON.stringify(pub.productos); // (el «coste» de los ajustes es el del envío, que sí es público)
+  assert.ok(!txt.includes('"coste"') && !txt.includes('"merma"') && !txt.includes('"margen"'), "datos privados en el catálogo público");
+  assert.ok(!JSON.stringify(pub).includes('"merma"') && !JSON.stringify(pub).includes('"margen"') && !JSON.stringify(pub).includes('"margenDefecto"'), "el recargo no sale en ningún sitio público");
+  assert.equal(pub.productos.find((p) => p.id === "vacuno-entrecot-de-ternera").precio, 5.9);
+  assert.equal((await adm("/orientativos", { metodo: "POST", cuerpo: {} })).status, 401);
+});

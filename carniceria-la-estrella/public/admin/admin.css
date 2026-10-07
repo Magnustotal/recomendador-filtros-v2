@@ -156,3 +156,31 @@ label.btn-sec { cursor: pointer; }
 .aviso.es-error { background: var(--danger); }
 @media (prefers-reduced-motion: no-preference) { .aviso { animation: sube 0.2s ease-out; } @keyframes sube { from { opacity: 0; transform: translate(-50%, 8px); } } }
 .pedido, .prod-fila, .campo-grupo { overflow-wrap: anywhere; }
+
+/* ---------- precios: semáforo y calculadora ---------- */
+.sem { display: inline-flex; align-items: center; gap: 0.3em; padding: 0.12em 0.7em; border-radius: 999px; border: 1.5px solid currentColor; font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
+.sem-verde { background: #e1f0e6; color: #14402b; }
+.sem-ambar { background: #fff0cc; color: #6b3f00; }
+.sem-rojo { background: #fbe3e1; color: #8a1a22; }
+.sem-gris { background: #eee8da; color: #4a3a30; border-color: #bfb49a; }
+.precio-sem { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.8rem; }
+.sugerido { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.3rem; font-size: 0.9rem; font-weight: 700; color: var(--warn); }
+.btn-mini { min-height: 48px; padding: 0 0.9rem; font-size: 0.88rem; }
+.ayuda-desplegable { flex: 1 1 20rem; }
+.ayuda-desplegable summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; color: var(--maroon); }
+.rejilla-iva { display: grid; gap: 0 1rem; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); }
+.barra.orientativos { align-items: center; }
+.calculadora .modos { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 0.8rem; }
+.modo { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 48px; padding: 0 1rem; border: 2px solid var(--line); border-radius: 999px; font-weight: 700; cursor: pointer; background: var(--cream); }
+.modo:has(input:checked) { border-color: var(--maroon); background: #fbf1ea; }
+.modo input { accent-color: var(--maroon); width: 1.2rem; height: 1.2rem; }
+.calc-panel { margin: 0 0 0.8rem; }
+.calc-resultado { margin: 0.2rem 0 0.7rem; font-weight: 700; }
+.sem-grande { margin: 0.6rem 0 0.3rem; font-size: 1.05rem; }
+.sem-grande .sem { font-size: 1rem; padding: 0.25em 0.9em; }
+.sem-barra { position: relative; height: 12px; margin: 0.9rem 0.3rem 1.2rem; background: #e6dcc6; border-radius: 999px; }
+.sem-zona { position: absolute; top: 0; bottom: 0; background: #7bb592; border-radius: 999px; }
+.sem-marca { position: absolute; top: 12px; transform: translateX(-50%); font-size: 0.8rem; line-height: 1; color: var(--ink); }
+@media (min-width: 800px) {
+  .prod-fila { grid-template-columns: minmax(0, 1fr) 17rem 8rem auto 10rem; }
+}

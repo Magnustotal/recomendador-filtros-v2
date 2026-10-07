@@ -1,4 +1,4 @@
-# Carnicería La Estrella — web y tienda online (v5.1.0)
+# Carnicería La Estrella — web y tienda online (v5.2.0)
 
 Web del negocio (portada, aviso legal, privacidad) **más una tienda online con panel de administración**:
 el cliente elige productos (casi todo al peso, de 250 en 250 g), indica si recoge o quiere reparto, día y franja,
@@ -169,6 +169,15 @@ sitio publicado**. Quedan por confirmar al desplegar:
 - Las fotos de **producto** se suben desde el panel (se reducen a ≤ 900 px y ≤ 680 KB en el navegador).
 - El estado «sin conexión» de la PWA muestra la web visitada, pero **pedir exige conexión** (el carrito se conserva).
 
+## Precios orientativos, calculadora y semáforo (v5.2.0)
+
+- **Precios orientativos (`data/precios-orientativos.json`):** los 225 productos llevan un precio sugerido (€ con IVA, por kg o por unidad) y una fiabilidad (media o baja). Es **una estimación mía** para una carnicería de barrio de precio medio en Sevilla, otoño de 2026. Me he apoyado en pocos datos de internet, dispersos y de fechas distintas (por ejemplo, secreto ibérico en torno a 21 €/kg, presa 29 €/kg, entrecot de ternera 19–21 €/kg, chuletas de cordero 22 €/kg, paleta ibérica de bellota 46 €/kg en pieza) y en mi criterio; **no está verificada** y puede estar desfasada. Es un punto de partida, no una tarifa. Los de jamones, caza, despensa, vinos y encargos son los menos fiables.
+- **No salen a la tienda por sí solos.** El orientativo solo se ve en el panel (Productos). Hasta que el carnicero lo **acepta** (uno a uno con «Aceptar», o todos de golpe con «Aceptar los N precios orientativos pendientes»), el cliente ve «Consultar». Aceptar nunca pisa un precio ya puesto y respeta el redondeo ,90/,95 en los precios por kilo.
+- **Calculadora** (al editar un producto → «Ayuda para poner el precio»): (1) escribirlo directamente; (2) **desde mi coste**: coste de compra sin IVA + merma (%) + recargo sobre coste (%) + IVA de la categoría → precio de venta, con el redondeo; (3) **ajustar el orientativo** con botones −10/−5/−1/+1/+5/+10 %, que trabajan con el valor exacto para que el redondeo no «se coma» los pasos.
+- **Semáforo** (en la lista y en la calculadora, siempre con texto y símbolo, no solo color): con coste, mide el recargo real frente al objetivo (rojo si no cubre costes o deja muy poco, ámbar si es algo bajo/alto, verde si está en la zona buscada, que es entre el 80 % y el 150 % del objetivo). Sin coste, compara con el rango habitual (orientativo ±20 % o ±30 % según fiabilidad) con tramos «muy barato / algo barato / en rango / algo caro / muy caro».
+- **Datos privados:** el coste, la merma y el recargo de cada producto **nunca salen en el catálogo público** (hay pruebas que lo comprueban). Los ajustes generales (recargo habitual del 30 % y el IVA por categoría) están en **Tienda → Precios y márgenes**.
+- **IVA de partida** (carne y casi todo, 10 %; huevos, 4 %; vino, 21 %): son tipos que he puesto yo; en especias y salsas no estoy seguro (algunas fuentes dicen 10 % y otras 21 %). **Confírmalos con la gestoría** antes de fiarte de la calculadora. El 30 % de recargo tampoco es un dato del sector, es un punto de partida editable.
+
 ## Zona de reparto (v5.1.0)
 
 En **Tienda → Reparto a domicilio** se puede definir la zona de tres maneras (combinables):
@@ -188,6 +197,7 @@ Reglas: el cliente siempre escribe su código postal al pedir reparto. Si solo h
 
 ## Historial
 
+- **v5.2.0** — Precios orientativos para los 225 productos (se aceptan desde el panel; hasta entonces, «Consultar»), calculadora de precio (desde el coste, con merma, recargo e IVA, o ajustando el orientativo), semáforo de precio en la lista y en el editor, recargo habitual e IVA por categoría en los ajustes, y coste/merma/recargo privados por producto.
 - **v5.1.0** — Zona de reparto por códigos postales y/o radio en km (con localización de la dirección, pedidos «por verificar» y CP en pedidos y CSV); iconos y fotos por categoría en la tienda; miniatura con icono en cada pieza; fichas de «Cordero y cabrito» y «Despensa y vinos» en la portada.
 - **v5.0.0** — Tienda online, panel de administración, funciones de Netlify y almacén Blobs; páginas generadas desde los
   ajustes; catálogo de 225 productos; textos legales dependientes del estado de la tienda; servidor local y pruebas de
