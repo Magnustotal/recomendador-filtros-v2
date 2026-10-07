@@ -1,5 +1,5 @@
 // Extras de la app: estadísticas, reglas de equilibrio, traspaso a otro móvil, imagen y calendario, avisos y primeros pasos.
-import { h, icon, plural } from './dom.js';
+import { h, icon, illustration, plural } from './dom.js';
 import {
   MEALS, MEAL_EMOJI, MEAL_LABEL, TAGS, TAG_IDS, WA_FORMATS,
   addDays, backupDue, buildICS, dayName, daysBetween, decodeShare, dishEmoji, encodeShare, frozenReminders, periodStats, relativeDays,
@@ -170,7 +170,7 @@ export function createExtras(ctx) {
         h('h2', {}, '📊 Resumen'),
         s.meals
           ? h('p', {}, `En los últimos ${span} días has planificado ${s.planned} de ${s.total} comidas (${s.coverage} %) con ${plural(s.meals, 'plato', 'platos')} en total. Los días «fuera de casa» no cuentan.`)
-          : h('p', {}, 'Todavía no hay comidas planificadas en este periodo. Cuando planifiques, aquí verás qué repites más.'),
+          : h('div', { class: 'empty' }, illustration('chart'), 'Todavía no hay comidas planificadas en este periodo. Cuando planifiques, aquí verás qué repites más.'),
       ),
       s.top.length > 0 && h('section', { class: 'card' },
         h('h2', {}, '🏆 Lo que más repites'),
@@ -295,9 +295,9 @@ export function createExtras(ctx) {
       toast('Imagen descargada.');
     };
     return [
-      h('button', { class: 'btn outline small', type: 'button', 'data-fk': 'img', onclick: image }, '🖼️ Imagen'),
-      h('button', { class: 'btn outline small', type: 'button', onclick: () => ics(false) }, '📅 Calendario (semana)'),
-      h('button', { class: 'btn outline small', type: 'button', onclick: () => ics(true) }, '📅 Calendario (todo)'),
+      h('button', { class: 'btn outline small', type: 'button', 'data-fk': 'img', onclick: image }, icon('image'), 'Imagen'),
+      h('button', { class: 'btn outline small', type: 'button', onclick: () => ics(false) }, icon('calplus'), 'Calendario (semana)'),
+      h('button', { class: 'btn outline small', type: 'button', onclick: () => ics(true) }, icon('calplus'), 'Calendario (todo)'),
     ];
   }
 

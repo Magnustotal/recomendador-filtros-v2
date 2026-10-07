@@ -1,6 +1,6 @@
 // Herramientas de la vista Semana: detalles del día, menú de cada plato (mover/copiar), plantillas, mes y equilibrio.
 // Reciben un contexto (`ctx`) con el estado y los diálogos de app.js, para no depender de variables globales.
-import { h, icon } from './dom.js';
+import { h, icon, illustration } from './dom.js';
 import {
   MEALS, MEAL_LABEL, MEAL_EMOJI, MONTH_NAMES, OFF_LABEL, TAGS,
   applyTemplate, dayName, deleteTemplate, monthMatrix, moveDish, parseISO, removeFromSlot, ruleStatus, saveTemplate, setDayMeta,
@@ -147,7 +147,7 @@ export function createWeekTools(ctx) {
           h('button', { class: 'btn tonal small', type: 'button', onclick: () => apply(t) }, 'Aplicar'),
           h('button', { class: 'icon-btn', type: 'button', 'aria-label': `Eliminar la plantilla ${t.name}`, onclick: () => remove(t) }, icon('trash')),
         ),
-      )) : [h('p', { class: 'empty' }, 'Aún no tienes plantillas. Planifica una semana y guárdala para repetirla.')]));
+      )) : [h('div', { class: 'empty' }, illustration('pot'), 'Aún no tienes plantillas. Planifica una semana y guárdala para repetirla.')]));
     };
     const apply = (t) => {
       const prev = ctx.state();

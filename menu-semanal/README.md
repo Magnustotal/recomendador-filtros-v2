@@ -41,7 +41,7 @@ El emoji de cada plato se deduce del nombre (pasta 🍝, pollo 🍗, ensalada �
 ```
 menu-semanal/
 ├── public/            ← lo único que se publica
-│   ├── index.html, styles.css, app.js
+│   ├── index.html, styles.css, app.js, dom.js, icons.js, week-tools.js, extras.js
 │   ├── lib.js         (lógica pura: fechas, sugerencias, WhatsApp, validación)
 │   ├── sw.js, manifest.webmanifest, _headers, icons/
 ├── netlify/functions/ (gemini.mjs + lib/gemini-proxy.mjs: proxy que guarda la clave de Gemini)
@@ -59,6 +59,10 @@ menu-semanal/
 - **Datos:** pestaña de estadísticas (lo que más repites, grupos, cobertura, lo que llevas más tiempo sin comer); WhatsApp en cuatro formatos; imagen PNG de la semana; calendario `.ics`; **traspaso a otro móvil** con un código de texto (es una copia puntual, no sincroniza); aviso de copia de seguridad cada 30 días; platos de ejemplo al empezar; aviso «hay una versión nueva».
 - **Límites conocidos:** no hay recordatorios con la app cerrada (no hay notificaciones push); el arrastrar no funciona en todos los móviles; el aviso de versión nueva y la precarga de pdf.js sin conexión están implementados pero no los he probado en un dispositivo real; la imagen usa las fuentes y emojis del sistema.
 - **Pruebas:** `npm test` (unitarias) y `npm run e2e` (dos scripts: flujos generales y funciones nuevas, esta con axe-core para accesibilidad automática en las pantallas principales).
+
+## Terceros y licencias
+
+Los iconos son de [Lucide](https://lucide.dev) (ISC; algunos derivan de Feather, MIT) y se copian como datos en `public/icons.js`, sin dependencia. Los textos de licencia están en `public/THIRD-PARTY-NOTICES.txt`, enlazado desde Ajustes; `npm test` comprueba que el aviso existe y que todos los iconos usados están definidos. Las ilustraciones de los estados vacíos son propias. pdf.js (Apache-2.0) va en `public/vendor/`.
 
 ## Desplegar en Netlify
 
@@ -113,6 +117,7 @@ La versión vive en `public/version.js` (se muestra en **Ajustes**) y en `packag
 
 | Versión | Cambios |
 |---|---|
+| 2.1.0 | Iconos SVG de Lucide en la navegación y los botones (con `THIRD-PARTY-NOTICES.txt`), ilustraciones propias en los estados vacíos, esqueleto de carga para la IA y pulsación más táctil en los botones |
 | 2.0.0 | Gran actualización: días con nota/fuera de casa/comensales, mover/copiar/arrastrar, plantillas, vista de mes, grupos de alimentos y reglas de equilibrio, favoritos/tiempo/receta/ingredientes/congelados con filtros, estadísticas, formatos de WhatsApp, imagen y `.ics`, traspaso por código, avisos (copia, congelados, versión nueva), platos de ejemplo, pdf.js precargado, pruebas con axe-core |
 | 1.7.1 | Revisión: la entrada animada ya no se repite al añadir o quitar platos; `theme_color` del manifiesto alineado con el fondo; texto de «Borrar todo» sin referencias a la clave |
 | 1.7.0 | Acabado visual: luz cálida y viñeta, título con degradado, tarjetas con relieve y entrada escalonada, ingredientes con movimiento sutil, navegación de cristal esmerilado (todo respeta reduced-motion y alto contraste) |

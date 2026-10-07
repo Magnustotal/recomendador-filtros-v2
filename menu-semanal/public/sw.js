@@ -3,7 +3,7 @@
 // Así los cambios publicados llegan solos y no hay que subir versiones a mano.
 
 const CACHE = 'menu-semanal-v1';
-const CORE = ['./', 'index.html', 'styles.css', 'app.js', 'lib.js', 'ai.js', 'menu-pdf.js', 'dom.js', 'week-tools.js', 'extras.js', 'version.js', 'manifest.webmanifest', 'icons/icon.svg'];
+const CORE = ['./', 'index.html', 'styles.css', 'app.js', 'lib.js', 'ai.js', 'menu-pdf.js', 'dom.js', 'icons.js', 'week-tools.js', 'extras.js', 'version.js', 'manifest.webmanifest', 'icons/icon.svg'];
 const OPTIONAL = ['icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 // pdf.js (1,8 MB): para leer PDF sin conexión. No se precarga si el usuario ahorra datos.
 const PDF_JS = ['vendor/pdf.min.mjs', 'vendor/pdf.worker.min.mjs'];

@@ -223,6 +223,7 @@ button.row[aria-disabled='true'] { opacity: 0.55; cursor: default; }
 .version { text-align: center; font-size: 0.8125rem; color: var(--on-surface-variant); padding: 8px 0 16px; }
 .empty { padding: 32px 16px; text-align: center; color: var(--on-surface-variant); }
 .empty .big { font-size: 3rem; display: block; }
+.empty { display: grid; justify-items: center; gap: 12px; }
 
 /* ---------- Navegación inferior ---------- */
 .navbar {
@@ -524,3 +525,34 @@ ol.bars, ul.bars { margin: 0; padding: 0; list-style: none; display: grid; gap: 
 .navbar { gap: 4px; }
 @media (forced-colors: active) { .chip, .check, .mday, .notice, .balance { border: 1px solid CanvasText; } }
 .view-enter > .seg { margin-bottom: 12px; }
+
+/* ---------- 2.1: iconos Lucide, ilustraciones propias y detalles de movimiento ---------- */
+.icon { flex: none; }
+.nav-item .pill .icon { width: 22px; height: 22px; }
+.nav-item[aria-current='page'] .pill .icon { stroke-width: 2.4; }
+.version a { color: var(--primary); font-weight: 600; }
+
+.art { width: min(180px, 60%); height: auto; overflow: visible; }
+.art * { stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke: var(--primary); fill: none; }
+.art .art-body { fill: var(--primary-container); }
+.art .art-inner { fill: #fff; }
+.art .art-lid { fill: var(--lunch); }
+.art .art-steam, .art .art-line { stroke: var(--outline); }
+.art .art-leaf { fill: var(--sage); stroke: #2f6b2a; }
+.art .art-steam { animation: steam 3.2s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes steam { 0%, 100% { opacity: 0.35; transform: translateY(2px); } 50% { opacity: 1; transform: translateY(-3px); } }
+
+/* Esqueleto mientras la IA piensa */
+.skeleton { height: 96px; border-radius: 20px; background: linear-gradient(100deg, var(--surface-2) 30%, #fff 50%, var(--surface-2) 70%) 0 0 / 220% 100%; animation: shimmer 1.4s linear infinite; }
+.skeleton.short { height: 64px; width: 70%; }
+@keyframes shimmer { to { background-position: -220% 0; } }
+
+/* Pulsación más táctil en botones */
+@media (hover: hover) and (pointer: fine) {
+  .btn:not([disabled]):hover { transform: translateY(-1px); box-shadow: var(--shadow-2); }
+  .btn.text:hover, .btn.outline:hover { box-shadow: none; background: var(--surface-3); }
+}
+.btn:not([disabled]):active { transform: scale(0.96); }
+
+@media (prefers-reduced-motion: reduce) { .art .art-steam, .skeleton { animation: none !important; } }
+@media (forced-colors: active) { .art * { stroke: CanvasText; fill: none; } .skeleton { border: 1px solid CanvasText; } }

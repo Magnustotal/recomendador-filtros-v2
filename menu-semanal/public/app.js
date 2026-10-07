@@ -6,7 +6,7 @@ import {
   weekDays, weekRangeLabel, weekStart,
 } from './lib.js';
 import { VERSION } from './version.js';
-import { $, h, icon, plural } from './dom.js';
+import { $, h, icon, illustration, plural } from './dom.js';
 import { CARTA_SCHEMA, DEFAULT_MODEL, MAX_IMAGES, askGemini, buildCartaPrompt, buildPrompt, parseCombos, parseSuggestions, serverStatus } from './ai.js';
 import { createWeekTools } from './week-tools.js';
 import { createExtras } from './extras.js';
@@ -154,8 +154,8 @@ function renderWeek() {
       offset !== 0 && h('button', { class: 'btn text small', type: 'button', 'data-fk': 'today', onclick: () => goWeek(0) }, 'Ir a hoy'),
       canCopy && h('button', { class: 'btn tonal small', type: 'button', onclick: repeatPreviousWeek }, 'Repetir semana anterior'),
       h('button', { class: 'btn tonal small', type: 'button', 'data-fk': 'balance', onclick: openBalance }, '🥗 Cenas según la guardería'),
-      h('button', { class: 'btn tonal small', type: 'button', onclick: () => tools.openTemplates() }, '📋 Plantillas'),
-      h('button', { class: 'btn tonal small', type: 'button', onclick: () => tools.openMonth() }, '🗓️ Mes'),
+      h('button', { class: 'btn tonal small', type: 'button', onclick: () => tools.openTemplates() }, icon('template'), 'Plantillas'),
+      h('button', { class: 'btn tonal small', type: 'button', onclick: () => tools.openMonth() }, icon('month'), 'Mes'),
     ),
   );
 
@@ -366,7 +366,7 @@ function openShare() {
   let format = 'full';
   const text = () => formatWhatsApp(ui.weekStart, state, { includeEmpty, format });
   const area = h('textarea', { class: 'field', id: 'share-text', name: 'mensaje', 'aria-label': 'Mensaje de WhatsApp', spellcheck: 'false' });
-  const wa = h('a', { class: 'btn', target: '_blank', rel: 'noopener noreferrer' }, '💬 Abrir WhatsApp');
+  const wa = h('a', { class: 'btn', target: '_blank', rel: 'noopener noreferrer' }, icon('chat'), 'Abrir WhatsApp');
 
   const sync = () => { wa.href = `https://wa.me/?text=${encodeURIComponent(area.value)}`; };
   const refill = () => { area.value = text(); sync(); };
@@ -628,7 +628,7 @@ function openBalance() {
     go.disabled = true;
     status.className = 'ai-status';
     status.textContent = 'Pensando…';
-    results.replaceChildren();
+    results.replaceChildren(h('div', { class: 'skeleton', 'aria-hidden': 'true' }), h('div', { class: 'skeleton short', 'aria-hidden': 'true' }));
     try {
       const text = await askGemini({
         accessCode: ai.accessCode, model: ai.model, images, signal: controller.signal,
@@ -646,6 +646,7 @@ function openBalance() {
       if (err.kind === 'code') promptCode(err.message);
       else if (err.kind !== 'abort') fail(err.message || 'Algo salió mal.');
     } finally {
+      results.querySelectorAll('.skeleton').forEach((n) => n.remove());
       go.disabled = false;
     }
   }
@@ -765,7 +766,7 @@ function renderDishes() {
 
     if (!rows.length) {
       list.replaceChildren(h('div', { class: 'empty' },
-        h('span', { class: 'big', 'aria-hidden': 'true' }, '🍳'),
+        illustration(Object.keys(state.dishes).length ? 'plate' : 'pot'),
         Object.keys(state.dishes).length ? 'Ningún plato coincide con la búsqueda o el filtro.' : 'Aquí aparecerán los platos que añadas al menú, para repetirlos cuando quieras.',
       ));
       return;
@@ -916,7 +917,7 @@ function renderSettings() {
       h('h2', {}, 'Zona delicada'),
       h('div', { class: 'actions' }, h('button', { class: 'btn danger', type: 'button', onclick: resetAll }, 'Borrar todos los datos')),
     ),
-    h('p', { class: 'version' }, `Menú semanal · versión ${VERSION}`),
+    h('p', { class: 'version' }, `Menú semanal · versión ${VERSION} · `, h('a', { href: 'THIRD-PARTY-NOTICES.txt', target: '_blank', rel: 'noopener noreferrer' }, 'Licencias de terceros')),
   );
 }
 
