@@ -2,13 +2,14 @@
 // El navegador solo manda lo que el cliente quiere (ids, opciones, cantidades);
 // los precios y los totales que se ven aquí son orientativos: los decide el servidor.
 import { importeLinea, aCentimos, formatoEuro, formatoCantidad, cantidadValida } from "/assets/compartido/dinero.js";
+import { calcularLineas, precioEfectivo, nombreOferta, regalosDelPedido } from "/assets/compartido/ofertas.js";
 import { ahoraEnMadrid, diaSemanaDeFecha, sumarDias, aMinutos, franjaDentroDeHorario } from "/assets/compartido/horario.js";
 
 const CLAVE_CARRITO = "ls_pedido_v1";
 const $ = (id) => document.getElementById(id);
 
 const el = {
-  estado: $("estado"), anuncios: $("anuncios"), notaPrecios: $("nota-precios"), cerrada: $("tienda-cerrada"), aviso: $("aviso-tienda"), app: $("app"),
+  estado: $("estado"), anuncios: $("anuncios"), notaPrecios: $("nota-precios"), cerrada: $("tienda-cerrada"), aviso: $("aviso-tienda"), regalos: $("regalos-tienda"), app: $("app"),
   buscar: $("buscar"), chips: $("chips"), sinResultados: $("sin-resultados"), productos: $("productos"),
   pedido: $("pedido"), vacio: $("carrito-vacio"), form: $("formulario"), lineas: $("lineas"), totales: $("totales"),
   errores: $("errores"), nombre: $("nombre"), telefono: $("telefono"),
@@ -21,6 +22,7 @@ const el = {
 let cat = null; // respuesta de /api/catalogo
 let porId = new Map();
 let carrito = []; // [{ id, opcion, nota, cantidad }]
+let calculo = []; // importes y ofertas de cada línea del carrito (mismo orden), calculados con calcularLineas
 let enviando = false;
 
 // ---------- utilidades ----------
@@ -40,6 +42,8 @@ const euros = (cent) => formatoEuro(cent / 100);
 const pasoDe = (p) => p.paso ?? (p.unidad === "kg" ? 250 : 1);
 const minimoDe = (p) => p.minimo ?? pasoDe(p);
 const maximoDe = (p) => p.maximo ?? (p.unidad === "kg" ? 25000 : 50);
+const unidadPrecio = (p) => (p.unidad === "kg" ? "kg" : "ud");
+const fechaCorta = (iso) => new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`));
 const etiquetaPrecio = (p) => (p.precio == null ? null : `${formatoEuro(p.precio)}/${p.unidad === "kg" ? "kg" : "ud"}`);
 
 // Mensajes de estado: la carga y los fallos van en #estado; los avisos puntuales
@@ -98,11 +102,24 @@ function pintarFila(p) {
   mas.addEventListener("click", () => { cantidad = Math.min(maximoDe(p), cantidad + pasoDe(p)); sincronizar(); });
   sincronizar();
 
+  const ef = precioEfectivo(p, cat.hoy);
   const precio = etiquetaPrecio(p);
+  let lineaPrecio;
+  if (precio == null) lineaPrecio = crear("p", { class: "prod-precio" }, crear("span", { class: "consultar", texto: "Consultar precio" }));
+  else if (ef.habitual != null) {
+    // Rebaja: precio habitual tachado y precio de oferta (el texto oculto lo aclara a quien usa lector de pantalla)
+    lineaPrecio = crear("p", { class: "prod-precio" },
+      crear("span", { class: "sr-only", texto: "Precio habitual " }), crear("s", { class: "precio-tachado", texto: precio }),
+      crear("span", { class: "sr-only", texto: ". Precio de oferta " }), crear("span", { class: "precio-oferta", texto: `${formatoEuro(ef.precio)}/${unidadPrecio(p)}` }));
+  } else lineaPrecio = crear("p", { class: "prod-precio", texto: precio });
+  const textoOferta = ef.oferta == null ? null
+    : ef.oferta.tipo === "cantidad" ? `${nombreOferta(ef.oferta)}: llévate ${formatoCantidad(ef.oferta.lleva * (p.unidad === "kg" ? 1000 : 1), p.unidad)} y paga ${formatoCantidad(ef.oferta.paga * (p.unidad === "kg" ? 1000 : 1), p.unidad)}`
+      : "Oferta";
   const info = crear("div", { class: "prod-info" },
     crear("h3", { texto: p.nombre }),
     p.descripcion ? crear("p", { class: "prod-desc", texto: p.descripcion }) : null,
-    precio ? crear("p", { class: "prod-precio", texto: precio }) : crear("p", { class: "prod-precio" }, crear("span", { class: "consultar", texto: "Consultar precio" })),
+    lineaPrecio,
+    textoOferta ? crear("p", { class: "prod-oferta", texto: `${textoOferta} · hasta el ${fechaCorta(ef.oferta.hasta)}` }) : null,
     p.agotado ? crear("p", { class: "prod-agotado", texto: "Agotado por ahora" }) : null,
   );
 
@@ -215,14 +232,29 @@ function filtrar() {
   el.sinResultados.hidden = visibles > 0;
 }
 
+// Aviso de los regalos activos hoy («Por cada 30 € de compra, de regalo…»)
+function pintarAvisoRegalos() {
+  const regalos = cat.ajustes.tienda.regalos ?? [];
+  el.regalos.replaceChildren(...regalos.map((r) => {
+    const base = r.repetir ? `Por cada ${formatoEuro(r.minimo)} de compra, de regalo ${r.regalo}` : `En compras de ${formatoEuro(r.minimo)} o más, de regalo ${r.regalo}`;
+    const extra = [r.repetir && r.maximo != null ? `máximo ${r.maximo} por pedido` : null, r.hasta ? `hasta el ${fechaCorta(r.hasta)}` : null].filter(Boolean).join(", ");
+    return crear("p", { texto: `${base}${extra ? ` (${extra})` : ""}.` });
+  }));
+  el.regalos.hidden = regalos.length === 0;
+}
+
 // ---------- carrito: pintar ----------
+function recalcular() {
+  calculo = calcularLineas(carrito.map((l) => ({ p: porId.get(l.id), cantidad: l.cantidad })), cat.hoy);
+}
+
 function totales() {
-  let subtotal = 0, consultar = 0;
-  for (const l of carrito) {
-    const p = porId.get(l.id);
-    const imp = importeLinea(p.precio, p.unidad, l.cantidad);
-    if (imp == null) consultar++; else subtotal += imp;
+  let subtotal = 0, consultar = 0, ahorro = 0;
+  for (const c of calculo) {
+    if (c.subtotalCent == null) consultar++; else subtotal += c.subtotalCent;
+    ahorro += c.ahorroCent;
   }
+  const regalos = regalosDelPedido(cat.ajustes.tienda.regalos, subtotal, cat.hoy);
   const t = cat.ajustes.tienda;
   const tipo = tipoEntrega();
   let envio = 0, gratis = false;
@@ -230,7 +262,7 @@ function totales() {
     gratis = t.reparto.gratisDesde != null && consultar === 0 && subtotal >= aCentimos(t.reparto.gratisDesde);
     envio = gratis ? 0 : aCentimos(t.reparto.coste);
   }
-  return { subtotal, consultar, envio, gratis, total: subtotal + envio };
+  return { subtotal, consultar, ahorro, regalos, envio, gratis, total: subtotal + envio };
 }
 
 function pintarCarrito() {
@@ -240,6 +272,7 @@ function pintarCarrito() {
   actualizarBarra();
   if (!hay) { el.lineas.replaceChildren(); el.totales.replaceChildren(); return; }
 
+  recalcular();
   el.lineas.replaceChildren(...carrito.map((l, i) => pintarLinea(l, i)));
   pintarTotales();
   el.campoEdad.hidden = !carrito.some((l) => porId.get(l.id).alcohol);
@@ -249,7 +282,8 @@ function pintarCarrito() {
 
 function pintarLinea(l, i) {
   const p = porId.get(l.id);
-  const imp = importeLinea(p.precio, p.unidad, l.cantidad);
+  const c = calculo[i];
+  const imp = c.subtotalCent;
   const salida = crear("output", { texto: formatoCantidad(l.cantidad, p.unidad) });
   const menos = crear("button", { type: "button", "data-accion": "menos", "aria-label": `Menos ${p.nombre}`, texto: "−" });
   const mas = crear("button", { type: "button", "data-accion": "mas", "aria-label": `Más ${p.nombre}`, texto: "+" });
@@ -284,6 +318,7 @@ function pintarLinea(l, i) {
       crear("div", {}, crear("p", { class: "linea-nombre", texto: p.nombre }), l.opcion ? crear("p", { class: "linea-opcion", texto: l.opcion }) : null),
       crear("span", { class: "linea-importe" }, imp == null ? crear("span", { class: "consultar", texto: "Consultar" }) : document.createTextNode(euros(imp))),
     ),
+    c.oferta ? crear("p", { class: "linea-oferta", texto: c.gratis ? `${nombreOferta(c.oferta)}: ${formatoCantidad(c.gratis, p.unidad)} gratis (ahorras ${euros(c.ahorroCent)})` : c.habitual != null ? `Oferta: ${formatoEuro(c.precio)}/${unidadPrecio(p)} en vez de ${formatoEuro(c.habitual)} (ahorras ${euros(c.ahorroCent)})` : `${nombreOferta(c.oferta)}: llévate ${formatoCantidad(c.oferta.lleva * (p.unidad === "kg" ? 1000 : 1), p.unidad)} y paga ${formatoCantidad(c.oferta.paga * (p.unidad === "kg" ? 1000 : 1), p.unidad)}` }) : null,
     crear("div", { class: "linea-ctrl" }, crear("div", { class: "cantidad", role: "group", "aria-label": `Cantidad de ${p.nombre}` }, menos, salida, mas), quitar),
     nota,
   );
@@ -295,12 +330,17 @@ function pintarTotales() {
   const filas = [];
   const fila = (a, b, clase) => crear("p", { class: clase }, crear("span", { texto: a }), crear("span", { texto: b }));
   if (x.subtotal > 0 || x.consultar === 0) filas.push(fila("Productos", euros(x.subtotal)));
+  if (x.ahorro > 0) filas.push(fila("Ahorras con las ofertas", `−${euros(x.ahorro)}`, "ahorro"));
   if (tipoEntrega() === "reparto" && t.reparto.coste != null) filas.push(fila("Envío", x.gratis ? "Gratis" : euros(x.envio)));
   if (x.subtotal > 0 || x.consultar === 0) filas.push(fila("Total estimado", euros(x.total), "total"));
   if (x.consultar) filas.push(crear("p", { class: "nota", texto: `${x.consultar} producto${x.consultar === 1 ? "" : "s"} sin precio: te lo confirmamos al preparar el pedido.` }));
   if (x.consultar === 0) {
     const minimo = tipoEntrega() === "reparto" && t.reparto.minimo != null ? t.reparto.minimo : t.pedidoMinimo;
     if (minimo != null && x.subtotal < aCentimos(minimo)) filas.push(crear("p", { class: "nota", texto: `Pedido mínimo: ${formatoEuro(minimo)}.` }));
+  }
+  for (const r of x.regalos) {
+    if (r.cantidad > 0) filas.push(crear("p", { class: "regalo-linea", texto: `Regalo por tu compra: ${r.cantidad > 1 ? `${r.cantidad} × ` : ""}${r.texto}` }));
+    if (r.faltaCent != null && x.consultar === 0) filas.push(crear("p", { class: "nota", texto: `Te faltan ${euros(r.faltaCent)} para ${r.cantidad > 0 ? "otro regalo igual" : `tu regalo: ${r.texto}`}.` }));
   }
   filas.push(crear("p", { class: "nota", texto: "Importe orientativo: el peso y el precio finales se confirman al prepararlo." }));
   el.totales.replaceChildren(...filas);
@@ -572,6 +612,8 @@ function confirmar(datos) {
     crear("h3", { texto: "Pedido guardado" }),
     crear("p", {}, crear("span", { class: "numero", texto: datos.numero })),
     crear("p", { texto: "Último paso: pulsa el botón y envíanos el mensaje por WhatsApp para que lo veamos. Hasta que lo envíes, el pedido no está confirmado." }),
+    ...(datos.resumen?.ahorroCent > 0 ? [crear("p", { texto: `Con las ofertas te has ahorrado ${euros(datos.resumen.ahorroCent)}.` })] : []),
+    ...((datos.resumen?.regalos ?? []).map((r) => crear("p", { class: "regalo-linea", texto: `Tu regalo: ${r.cantidad > 1 ? `${r.cantidad} × ` : ""}${r.texto}` }))),
     ...(datos.resumido ? [crear("p", { texto: "El mensaje va resumido porque el pedido es muy largo; con el número lo tenemos completo." })] : []),
     wa, otro,
   );
@@ -598,6 +640,7 @@ async function iniciar() {
 
   porId = new Map(cat.productos.map((p) => [p.id, p]));
   carrito = cargarCarrito();
+  pintarAvisoRegalos();
   el.estado.hidden = true;
   el.estado.textContent = "";
   const fecha = cat.preciosActualizados

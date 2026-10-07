@@ -2,6 +2,7 @@ import { texto, numeroOpcional, entero, booleano, hora, franja, diasSemana, fech
 import { aMinutos } from "./horario.mjs";
 import { categorias } from "./datos.generado.mjs";
 import { MARGEN_POR_DEFECTO } from "./precios.mjs";
+import { fechaReal, MAX_REGALOS } from "./ofertas.mjs";
 
 const URL_MAPS = /^https:\/\/(maps\.app\.goo\.gl|www\.google\.com\/maps|goo\.gl\/maps|maps\.google\.com)\//;
 
@@ -18,6 +19,27 @@ function codigosPostales(valor, campo) {
     salida.add(t);
   }
   return [...salida].sort();
+}
+
+// Regalos por compra: «por cada X € de compra, de regalo Y», con fechas opcionales. Se guardan como texto libre.
+function validarRegalos(lista, ctx) {
+  if (lista == null) return [];
+  if (!Array.isArray(lista) || lista.length > MAX_REGALOS) { ctx.error("tienda.regalos", `Lista de regalos (máximo ${MAX_REGALOS}).`); return []; }
+  const salida = [];
+  lista.forEach((r, i) => {
+    const campo = `tienda.regalos[${i + 1}]`;
+    if (!r || typeof r !== "object") return ctx.error(campo, "Regalo no válido.");
+    const regalo = ctx.intento(() => texto(r.regalo, { min: 1, max: 80, campo: `${campo}.regalo` }));
+    const minimo = ctx.intento(() => numeroOpcional(r.minimo, { campo: `${campo}.minimo`, min: 1, max: 10000 }));
+    if (minimo === null) ctx.error(`${campo}.minimo`, "Indica a partir de cuántos euros de compra se regala.");
+    const fecha = (v, nombre) => { if (v == null || v === "") return null; if (!fechaReal(v)) { ctx.error(`${campo}.${nombre}`, "Fecha no válida (AAAA-MM-DD)."); return null; } return v; };
+    const desde = fecha(r.desde, "desde");
+    const hasta = fecha(r.hasta, "hasta");
+    if (desde && hasta && desde > hasta) ctx.error(campo, "La fecha de fin no puede ser anterior a la de inicio.");
+    const maximo = r.maximo == null || r.maximo === "" ? null : ctx.intento(() => entero(Number(r.maximo), { campo: `${campo}.maximo`, min: 1, max: 20 }));
+    if (regalo && minimo != null) salida.push({ regalo, minimo, repetir: booleano(r.repetir), maximo: maximo ?? null, desde, hasta });
+  });
+  return salida;
 }
 
 // Valida y normaliza los ajustes que llegan del panel. Devuelve {ok, valor} o {ok:false, errores}.
@@ -85,6 +107,7 @@ export function validarAjustes(entrada) {
       diasMaximos: ctx.intento(() => entero(t.diasMaximos ?? 14, { campo: "tienda.diasMaximos", min: 1, max: 60 })),
       diasSinServicio: ctx.intento(() => { const l = Array.isArray(t.diasSinServicio) ? t.diasSinServicio : []; if (l.length > 120) throw new ErrorValidacion("tienda.diasSinServicio", "Máximo 120 fechas."); return [...new Set(l.map((x) => fechaISO(x, "tienda.diasSinServicio")))].sort(); }) ?? [],
       recogida: undefined, reparto: undefined, pagos: undefined, precios: undefined,
+      regalos: validarRegalos(t.regalos, ctx),
       textoEntrega: ctx.intento(() => texto(t.textoEntrega, { max: 300, campo: "tienda.textoEntrega" })),
     };
     const franjas = (lista, campo) => ctx.intento(() => { if (!Array.isArray(lista) || lista.length > 12) throw new ErrorValidacion(campo, "Lista de franjas (máximo 12)."); return [...new Set(lista.map((f) => franja(f, campo)))]; });

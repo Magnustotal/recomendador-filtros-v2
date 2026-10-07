@@ -214,11 +214,11 @@ function celdaCsv(v) {
 }
 const euros = (c) => (c / 100).toFixed(2).replace(".", ","); // coma decimal: se abre bien en Excel en español
 export function csvPedidos(pedidos) {
-  const cab = ["numero", "creado", "estado", "cliente", "telefono", "entrega", "dia", "franja", "direccion", "cp", "distancia_km", "zona_verificada", "pago", "subtotal_eur", "envio_eur", "total_eur", "por_consultar", "lineas", "comentarios", "nota_interna"];
+  const cab = ["numero", "creado", "estado", "cliente", "telefono", "entrega", "dia", "franja", "direccion", "cp", "distancia_km", "zona_verificada", "pago", "subtotal_eur", "envio_eur", "total_eur", "por_consultar", "ahorro_eur", "regalos", "lineas", "comentarios", "nota_interna"];
   const filas = pedidos.map((p) => [
     p.numero, p.creado, p.estado, p.cliente.nombre, p.cliente.telefono, p.entrega.tipo, p.entrega.dia, p.entrega.franja, p.entrega.direccion, p.entrega.cp ?? "", p.entrega.distanciaKm == null ? "" : String(p.entrega.distanciaKm).replace(".", ","), p.entrega.zonaVerificada === false ? "NO" : "sí", p.pago,
-    euros(p.subtotalCent), euros(p.envioCent), euros(p.totalCent), p.consultar,
-    p.lineas.map((l) => `${l.nombre} ${l.cantidad}${l.unidad === "kg" ? " g" : " ud"}${l.opcion ? ` (${l.opcion})` : ""}${l.nota ? ` [${l.nota}]` : ""}`).join(" | "),
+    euros(p.subtotalCent), euros(p.envioCent), euros(p.totalCent), p.consultar, euros(p.ahorroCent ?? 0), (p.regalos ?? []).map((r) => `${r.cantidad} × ${r.texto}`).join(" | "),
+    p.lineas.map((l) => `${l.nombre} ${l.cantidad}${l.unidad === "kg" ? " g" : " ud"}${l.opcion ? ` (${l.opcion})` : ""}${l.nota ? ` [${l.nota}]` : ""}${l.oferta ? ` {${l.oferta}${l.gratis ? `: ${l.gratis}${l.unidad === "kg" ? " g" : " ud"} gratis` : ""}}` : ""}`).join(" | "),
     p.comentarios, p.notaInterna,
   ]);
   return "﻿" + [cab, ...filas].map((f) => f.map(celdaCsv).join(";")).join("\r\n") + "\r\n";

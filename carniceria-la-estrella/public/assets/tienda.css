@@ -206,3 +206,14 @@ html { scroll-padding-bottom: 7rem; }
 }
 .prod-foto.es-icono { display: grid; place-items: center; background: linear-gradient(145deg, #f3e3c3, #ead3a8); color: var(--maroon); }
 .prod-foto.es-icono .icono { width: 46%; height: 46%; }
+
+/* ---------- ofertas y regalos ---------- */
+.prod-precio .precio-tachado { font-weight: 600; color: var(--ink-soft); margin-right: 0.45rem; text-decoration-thickness: 2px; }
+.prod-precio .precio-oferta { color: var(--maroon); font-size: 1.12em; }
+.prod-oferta { margin: 0.2rem 0 0.2rem; display: inline-block; padding: 0.1rem 0.6rem; font-size: 0.85rem; font-weight: 800; color: var(--white); background: var(--maroon); border-radius: 999px; }
+.linea-oferta { margin: 0.1rem 0 0.4rem; font-size: 0.88rem; font-weight: 700; color: var(--green); }
+.totales .ahorro { color: var(--green); font-weight: 700; }
+.regalo-linea { margin: 0.4rem 0; padding: 0.55rem 0.8rem; font-weight: 800; color: var(--green-deep); background: var(--cream); border: 1px solid var(--green); border-radius: var(--radius); }
+.regalo-aviso { margin: 0 0 1rem; padding: 0.8rem 1rem; font-weight: 700; color: var(--green-deep); background: var(--cream); border: 1px solid var(--green); border-radius: var(--radius); }
+.regalo-aviso p { margin: 0; }
+.regalo-aviso p + p { margin-top: 0.4rem; }

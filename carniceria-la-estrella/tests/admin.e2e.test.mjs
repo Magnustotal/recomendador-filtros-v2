@@ -769,3 +769,135 @@ test("productos en móvil: «Agotado» y «Editar» comparten fila y los botones
   assert.ok(nuevo.y > abrirTodas.y, "«Añadir producto» debajo, a todo el ancho");
   await page.context().close();
 });
+
+// ---------- ofertas temporales y regalo por compra ----------
+test("ofertas: se programan desde la ficha del producto y los errores se explican", async () => {
+  const antes = (await e.api.llamar("/datos")).datos.productos.find((p) => p.id === "elaborados-albondigas");
+  assert.equal((await e.api.llamar("/producto", { metodo: "PUT", cuerpo: { ...antes, precio: 9.9 } })).estado, 200); // el 3x2 solo se aplica a lo que tiene precio
+  const page = await entrar();
+  await page.click("#tab-productos");
+  await page.fill("#prod-buscar", "Albóndigas");
+  const abrirFicha = async () => { await page.locator(".prod-fila").first().getByRole("button", { name: /Editar/ }).click(); };
+  await abrirFicha();
+  const dlg = page.locator("#dlg-producto");
+  assert.match(await dlg.innerText(), /Sin ofertas/);
+  await dlg.getByRole("button", { name: /Añadir 3x2/ }).click();
+  assert.equal(await dlg.locator("#f-of-1-desde").inputValue(), "2026-10-05", "empieza hoy");
+  assert.equal(await dlg.locator("#f-of-1-hasta").inputValue(), "2026-10-11", "una semana");
+  assert.equal(await dlg.locator("#f-of-1-lleva").inputValue(), "3");
+  assert.equal(await dlg.locator("#f-of-1-paga").inputValue(), "2");
+  assert.match(await dlg.locator(".oferta-fila legend").innerText(), /Activa hoy/);
+  // un error: la fecha de fin antes de la de inicio
+  await dlg.locator("#f-of-1-hasta").fill("2026-10-01");
+  await dlg.getByRole("button", { name: "Guardar", exact: true }).click();
+  await dlg.locator(".errores").waitFor({ state: "visible" });
+  assert.match(await dlg.locator(".errores").innerText(), /fecha de fin no puede ser anterior/);
+  await dlg.locator("#f-of-1-hasta").fill("2026-10-11");
+  await dlg.getByRole("button", { name: "Guardar", exact: true }).click();
+  await dlg.waitFor({ state: "hidden" }); // la ficha se cierra al guardar
+  const alb = (await e.api.llamar("/datos")).datos.productos.find((p) => p.id === "elaborados-albondigas");
+  assert.deepEqual(alb.ofertas, [{ tipo: "cantidad", desde: "2026-10-05", hasta: "2026-10-11", lleva: 3, paga: 2 }]);
+  // la lista lo dice
+  await page.fill("#prod-buscar", "Albóndigas");
+  assert.match(await page.locator(".prod-fila").first().innerText(), /3x2 hasta el 11\/10/);
+
+  // una rebaja que no es más barata que el precio habitual (ya redondeado) se rechaza con el precio a la vista
+  await page.fill("#prod-buscar", "Secreto ibérico");
+  await abrirFicha();
+  await dlg.locator("#f-precio").fill("29,95");
+  await dlg.getByRole("button", { name: /Añadir rebaja/ }).click();
+  await dlg.locator("#f-of-1-precio").fill("31");
+  await dlg.getByRole("button", { name: "Guardar", exact: true }).click();
+  await dlg.locator(".errores").waitFor({ state: "visible" });
+  assert.match(await dlg.locator(".errores").innerText(), /tiene que ser más barato que el habitual \(30,90\s€\)/, "con el redondeo ,90 el habitual 29,95 queda en 30,90");
+  await dlg.locator("#f-of-1-precio").fill("19,95");
+  await dlg.getByRole("button", { name: "Guardar", exact: true }).click();
+  await dlg.waitFor({ state: "hidden" }); // la ficha se cierra al guardar
+  const sec = (await e.api.llamar("/datos")).datos.productos.find((p) => p.id === "cerdo-iberico-secreto-iberico");
+  assert.deepEqual(sec.ofertas, [{ tipo: "precio", desde: "2026-10-05", hasta: "2026-10-11", precio: 19.95 }]);
+  assert.equal(sec.precio, 30.9, "el habitual se redondea a ,90 (ajuste de la tienda); la oferta se queda en 19,95");
+  assert.deepEqual(errores(page).filter((m) => !/status of 400/.test(m)), [], "solo los dos 400 de las validaciones provocadas");
+  await page.context().close();
+});
+
+test("regalo por compra: se configura en la pestaña Tienda y se guarda", async () => {
+  const page = await entrar();
+  await page.click("#tab-tienda");
+  await page.getByRole("button", { name: "Añadir un regalo" }).click();
+  await page.fill("#a-regalo-1-texto", "250 g de chorizo");
+  await page.fill("#a-regalo-1-minimo", "30");
+  await page.fill("#a-regalo-1-hasta", "2026-10-11");
+  await page.locator("#form-tienda button[type=submit]").click();
+  await page.locator("#aviso", { hasText: "Cambios guardados" }).waitFor();
+  const r = (await e.api.llamar("/datos")).datos.ajustes.tienda.regalos;
+  assert.deepEqual(r, [{ regalo: "250 g de chorizo", minimo: 30, repetir: true, maximo: null, desde: null, hasta: "2026-10-11" }]);
+  // un regalo mal puesto se explica
+  await page.fill("#a-regalo-1-minimo", "0");
+  await page.locator("#form-tienda button[type=submit]").click();
+  await page.locator("#errores-tienda").waitFor({ state: "visible" });
+  assert.match(await page.locator("#errores-tienda").innerText(), /entre 1 y 10000/);
+  await page.getByRole("button", { name: "Descartar" }).click().catch(() => {});
+  await page.context().close();
+});
+
+test("tienda: precio tachado y de oferta, 3x2 en el carrito, ahorro y regalo; el pedido lo guarda el servidor", async () => {
+  const tienda = await e.nuevaPagina({ ancho: 390 });
+  await tienda.goto(e.url + "/tienda", { waitUntil: "networkidle" });
+  await tienda.locator("#app").waitFor();
+  assert.match(await tienda.locator("#regalos-tienda").innerText(), /Por cada 30,00\s€ de compra, de regalo 250 g de chorizo \(hasta el 11 de octubre\)\./);
+
+  await tienda.fill("#buscar", "Secreto ibérico");
+  const sec = tienda.locator(".prod:not([hidden])", { has: tienda.getByRole("heading", { name: "Secreto ibérico", exact: true }) });
+  await sec.scrollIntoViewIfNeeded(); // las categorías lejanas no se pintan hasta que se acercan (content-visibility)
+  assert.match(await sec.locator(".precio-tachado").textContent(), /30,90\s€\/kg/);
+  assert.match(await sec.locator(".precio-oferta").textContent(), /19,95\s€\/kg/);
+  assert.equal(await sec.locator(".precio-tachado").evaluate((s) => getComputedStyle(s).textDecorationLine), "line-through");
+  assert.match(await sec.locator(".prod-oferta").textContent(), /Oferta · hasta el 11 de octubre/);
+  assert.match(await sec.locator(".prod-precio").textContent(), /Precio habitual.*Precio de oferta/s, "el texto oculto lo explica a lectores de pantalla");
+
+  await tienda.fill("#buscar", "Albóndigas");
+  const alb = tienda.locator(".prod:not([hidden])", { has: tienda.getByRole("heading", { name: "Albóndigas", exact: true }) });
+  assert.match(await alb.locator(".prod-oferta").textContent(), /3x2: llévate 3 kg y paga 2 kg · hasta el 11 de octubre/);
+  await alb.scrollIntoViewIfNeeded();
+  const mas = alb.getByRole("button", { name: /^Más/ });
+  for (let i = 0; i < 11; i++) await mas.click(); // de 250 g a 3 kg (pasos de 250 g)
+  await alb.getByRole("button", { name: /^Añadir/ }).click();
+  await tienda.locator("#pedido").scrollIntoViewIfNeeded();
+  const linea = tienda.locator(".linea", { hasText: "Albóndigas" });
+  assert.match(await linea.locator(".linea-oferta").innerText(), /3x2: 1 kg gratis \(ahorras/);
+  const totales = await tienda.locator("#totales").innerText();
+  assert.match(totales, /Ahorras con las ofertas/);
+  const { datos } = await e.api.llamar("/datos");
+  const precioAlb = datos.productos.find((p) => p.id === "elaborados-albondigas").precio;
+  assert.match(totales, new RegExp(`Productos\\s*${String(Math.round(precioAlb * 2 * 100) / 100).replace(".", ",")}`.replace(/,(\d)(?!\d)/, ",$10")));
+  // con tan poco, aún no hay regalo (faltan euros); al añadir más, sí
+  const compra = Math.round(precioAlb * 2 * 100);
+  if (compra < 3000) assert.match(totales, /Te faltan .* para tu regalo: 250 g de chorizo/);
+
+  // el pedido lo calcula el servidor, no el navegador
+  const r = await fetch(e.url + "/api/pedido", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({
+    lineas: [{ id: "elaborados-albondigas", cantidad: 3000 }, { id: "cerdo-iberico-secreto-iberico", cantidad: 2000 }],
+    cliente: { nombre: "Laura Gil", telefono: "611222333" }, entrega: { tipo: "recogida", dia: "2026-10-06", franja: "11:00-13:00" }, pago: "efectivo", web: "",
+  }) });
+  assert.equal(r.status, 201, JSON.stringify(await r.clone().json()));
+  const ok = await r.json();
+  const secPrecio = 19.95;
+  assert.equal(ok.resumen.subtotalCent, Math.round(precioAlb * 2 * 100) + Math.round(secPrecio * 2 * 100));
+  assert.equal(ok.resumen.ahorroCent, Math.round(precioAlb * 100) + (3090 - 1995) * 2);
+  assert.deepEqual(ok.resumen.regalos, [{ texto: "250 g de chorizo", cantidad: Math.floor(ok.resumen.subtotalCent / 3000) }]);
+  assert.match(decodeURIComponent(ok.whatsappUrl), /3x2: 1 kg gratis/);
+  assert.match(decodeURIComponent(ok.whatsappUrl), /Regalo por tu compra: .*250 g de chorizo/);
+  await tienda.context().close();
+
+  // el panel lo muestra y el CSV lo recoge
+  const page = await entrar();
+  await page.locator(".pedido", { hasText: ok.numero }).waitFor();
+  const tarjeta = await page.locator(".pedido", { hasText: ok.numero }).innerText();
+  assert.match(tarjeta, /3x2: 1 kg gratis/);
+  assert.match(tarjeta, /Ahorro por ofertas/);
+  assert.match(tarjeta, /Regalo por la compra: .*250 g de chorizo/);
+  const csv = await page.evaluate(async () => (await fetch("/api/admin/pedidos.csv")).text());
+  assert.match(csv, /"ahorro_eur";"regalos"/);
+  assert.match(csv, /250 g de chorizo/);
+  await page.context().close();
+});

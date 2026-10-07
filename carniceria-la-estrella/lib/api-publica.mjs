@@ -5,11 +5,12 @@ import { categorias } from "./datos.generado.mjs";
 import { validarPedido, enlaceWhatsApp, consultaGeocodificacion } from "./pedido.mjs";
 import { distanciaKm, redondear1 } from "./geocodificar.mjs";
 import { ahoraEnMadrid } from "./horario.mjs";
+import { estaVigente } from "./ofertas.mjs";
 
 const CACHE_CATALOGO = "public, durable, max-age=30, stale-while-revalidate=300";
 
 // Solo lo que necesita el navegador para pintar la tienda y el formulario.
-export function ajustesPublicos(a) {
+export function ajustesPublicos(a, hoy) {
   const t = a.tienda;
   return {
     negocio: { nombre: a.negocio.nombre, telefono: a.negocio.telefono, whatsapp: a.negocio.whatsapp, calle: a.negocio.calle, cp: a.negocio.cp, localidad: a.negocio.localidad },
@@ -19,18 +20,20 @@ export function ajustesPublicos(a) {
       recogida: t.recogida,
       reparto: { activo: t.reparto.activo, zona: t.reparto.zona, codigosPostales: t.reparto.codigosPostales, radioKm: t.reparto.radioKm, minimo: t.reparto.minimo, coste: t.reparto.coste, gratisDesde: t.reparto.gratisDesde, dias: t.reparto.dias, franjas: t.reparto.franjas },
       pagos: { efectivo: t.pagos.efectivo, tarjetaRecogida: t.pagos.tarjetaRecogida, bizum: t.pagos.bizum, transferencia: t.pagos.transferencia },
+      regalos: (t.regalos ?? []).filter((r) => estaVigente(r, hoy)), // solo los de hoy
     },
   };
 }
 
 export async function catalogo(deps) {
   const [ajustes, productos, meta] = await Promise.all([deps.almacen.leerAjustes(), deps.almacen.leerProductos(), deps.almacen.leerMeta().catch(() => ({}))]);
-  const publico = catalogoPublico(productos);
+  const hoy = ahoraEnMadrid(new Date(deps.ahora())).fecha;
+  const publico = catalogoPublico(productos, hoy);
   const usadas = new Set(publico.map((p) => p.categoria));
   const cuerpo = {
     ok: true,
-    ajustes: ajustesPublicos(ajustes),
-    hoy: ahoraEnMadrid(new Date(deps.ahora())).fecha,
+    ajustes: ajustesPublicos(ajustes, hoy),
+    hoy,
     preciosActualizados: meta?.precios ? ahoraEnMadrid(new Date(meta.precios)).fecha : null,
     categorias: categorias.filter((c) => usadas.has(c.id)),
     productos: publico,
@@ -70,6 +73,6 @@ export async function crearPedido(req, deps) {
   const enlace = enlaceWhatsApp(pedido, pedido.numero, ajustes.negocio.whatsapp);
   return json(201, {
     ok: true, numero: pedido.numero, whatsappUrl: enlace.url, resumido: enlace.resumido,
-    resumen: { lineas: pedido.lineas.length, subtotalCent: pedido.subtotalCent, envioCent: pedido.envioCent, totalCent: pedido.totalCent, consultar: pedido.consultar },
+    resumen: { lineas: pedido.lineas.length, subtotalCent: pedido.subtotalCent, ahorroCent: pedido.ahorroCent, regalos: pedido.regalos, envioCent: pedido.envioCent, totalCent: pedido.totalCent, consultar: pedido.consultar },
   });
 }

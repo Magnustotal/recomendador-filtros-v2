@@ -110,6 +110,7 @@
       "transferenciaDatos": ""
     },
     "textoEntrega": "Reparto a domicilio en la zona. Condiciones a confirmar por WhatsApp.",
+    "regalos": [],
     "precios": {
       "margenDefecto": 30,
       "iva": {

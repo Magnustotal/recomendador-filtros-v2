@@ -2,7 +2,8 @@
 // cantidades, totales, disponibilidad de día y franja) se decide aquí, en el servidor:
 // el navegador del cliente solo envía lo que quiere, nunca lo que cuesta.
 import { texto, telefonoEspana, fechaISO, recoger, ErrorValidacion } from "./validar.mjs";
-import { cantidadValida, importeLinea, aCentimos, formatoCantidad, formatoEuro } from "./dinero.mjs";
+import { cantidadValida, aCentimos, formatoCantidad, formatoEuro } from "./dinero.mjs";
+import { calcularLineas, regalosDelPedido, nombreOferta } from "./ofertas.mjs";
 import { diaSemanaDeFecha, sumarDias, aMinutos, franjaDentroDeHorario } from "./horario.mjs";
 
 const MAX_LINEAS = 60;
@@ -49,11 +50,21 @@ export function validarPedido(entrada, { productos, ajustes, ahora, geo = null }
         const cantidad = (previa?.cantidad ?? 0) + (typeof l.cantidad === "number" ? l.cantidad : NaN);
         fusion.set(clave, { p, opcion, nota, cantidad });
       }
+      const validas = [];
       for (const { p, opcion, nota, cantidad } of fusion.values()) {
         if (!cantidadValida(p, cantidad)) { ctx.error("lineas", `Cantidad no válida para ${p.nombre}.`); continue; }
-        const sub = importeLinea(p.precio, p.unidad, cantidad);
-        lineas.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, cantidad, opcion, nota, precio: p.precio, subtotalCent: sub, alcohol: p.alcohol });
+        validas.push({ p, opcion, nota, cantidad });
       }
+      // Precios y ofertas de HOY (fecha de Madrid): el servidor lo decide, el navegador solo lo enseña.
+      const calculo = calcularLineas(validas.map(({ p, cantidad }) => ({ p, cantidad })), ahora.fecha);
+      validas.forEach(({ p, opcion, nota, cantidad }, i) => {
+        const c = calculo[i];
+        lineas.push({
+          id: p.id, nombre: p.nombre, unidad: p.unidad, cantidad, opcion, nota,
+          precio: c.precio, precioHabitual: c.habitual, subtotalCent: c.subtotalCent, ahorroCent: c.ahorroCent,
+          oferta: c.oferta ? nombreOferta(c.oferta) : "", gratis: c.gratis, alcohol: p.alcohol,
+        });
+      });
     }
 
     // ---- cliente ----
@@ -124,6 +135,9 @@ export function validarPedido(entrada, { productos, ajustes, ahora, geo = null }
     const conPrecio = lineas.filter((l) => l.subtotalCent != null);
     const subtotalCent = conPrecio.reduce((s, l) => s + l.subtotalCent, 0);
     const consultar = lineas.length - conPrecio.length;
+    const ahorroCent = lineas.reduce((s, l) => s + (l.ahorroCent ?? 0), 0);
+    // Regalo por compra: se calcula sobre lo que se paga por los productos (ya con las ofertas y sin el envío)
+    const regalos = regalosDelPedido(t.regalos, subtotalCent, ahora.fecha).filter((r) => r.cantidad > 0).map(({ texto, cantidad }) => ({ texto, cantidad }));
     if (consultar === 0 && lineas.length) {
       if (t.pedidoMinimo != null && subtotalCent < aCentimos(t.pedidoMinimo)) ctx.error("lineas", `El pedido mínimo es de ${formatoEuro(t.pedidoMinimo)}.`);
       if (tipo === "reparto" && t.reparto.minimo != null && subtotalCent < aCentimos(t.reparto.minimo)) ctx.error("lineas", `El pedido mínimo para reparto es de ${formatoEuro(t.reparto.minimo)}.`);
@@ -139,7 +153,7 @@ export function validarPedido(entrada, { productos, ajustes, ahora, geo = null }
       entrega: { tipo, direccion, cp, dia, franja, distanciaKm, zonaVerificada },
       pago, comentarios, mayorEdad,
       lineas: lineas.map(({ alcohol, ...l }) => l),
-      subtotalCent, consultar, envioCent, totalCent: subtotalCent + envioCent,
+      subtotalCent, ahorroCent, regalos, consultar, envioCent, totalCent: subtotalCent + envioCent,
     };
   });
 }
@@ -161,7 +175,8 @@ export function mensajeWhatsApp(pedido, numero, { completo = true } = {}) {
   const lineas = completo ? pedido.lineas : pedido.lineas.slice(0, 8);
   for (const x of lineas) {
     const extra = [x.opcion, x.nota].filter(Boolean).join("; ");
-    l.push(`- ${x.nombre}: ${formatoCantidad(x.cantidad, x.unidad)}${extra ? ` (${extra})` : ""}`);
+    const oferta = x.oferta ? ` [${x.oferta}${x.gratis ? `: ${formatoCantidad(x.gratis, x.unidad)} gratis` : x.precioHabitual != null ? `: ${formatoEuro(x.precio)}/${x.unidad === "kg" ? "kg" : "ud"} en vez de ${formatoEuro(x.precioHabitual)}` : ""}]` : "";
+    l.push(`- ${x.nombre}: ${formatoCantidad(x.cantidad, x.unidad)}${extra ? ` (${extra})` : ""}${oferta}`);
   }
   if (!completo && pedido.lineas.length > 8) l.push(`- ...y ${pedido.lineas.length - 8} productos más (detalle completo con el número ${numero})`);
   l.push("");
@@ -169,6 +184,8 @@ export function mensajeWhatsApp(pedido, numero, { completo = true } = {}) {
   l.push(en.tipo === "recogida" ? `Recogida en tienda: ${etiquetaDia(en.dia)}, ${en.franja}` : `Reparto a domicilio: ${etiquetaDia(en.dia)}, ${en.franja}`);
   if (en.tipo === "reparto") l.push(`Dirección: ${en.direccion}${en.cp ? ` (${en.cp})` : ""}`);
   l.push(`Pago: ${NOMBRE_PAGO[pedido.pago]}`);
+  if (pedido.ahorroCent > 0) l.push(`Ahorro por ofertas: ${formatoEuro(pedido.ahorroCent / 100)}`);
+  for (const r of pedido.regalos ?? []) l.push(`Regalo por tu compra: ${r.cantidad > 1 ? `${r.cantidad} × ` : ""}${r.texto}`);
   if (pedido.subtotalCent > 0 || pedido.consultar === 0) {
     const total = formatoEuro(pedido.totalCent / 100);
     l.push(`Total estimado: ${total}${pedido.envioCent ? ` (incluye ${formatoEuro(pedido.envioCent / 100)} de envío)` : ""}${pedido.consultar ? ` + ${pedido.consultar} producto${pedido.consultar === 1 ? "" : "s"} por consultar` : ""}`);

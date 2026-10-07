@@ -83,12 +83,14 @@ function tarjeta(p) {
   });
 
   const lineas = p.lineas.map((l) => h("li", {},
-    h("span", {}, h("strong", { texto: l.nombre }), ` · ${cantidad(l.cantidad, l.unidad)}`, l.opcion ? ` · ${l.opcion}` : "", l.nota ? h("em", { texto: ` — «${l.nota}»` }) : null),
+    h("span", {}, h("strong", { texto: l.nombre }), ` · ${cantidad(l.cantidad, l.unidad)}`, l.opcion ? ` · ${l.opcion}` : "", l.nota ? h("em", { texto: ` — «${l.nota}»` }) : null,
+      l.oferta ? h("span", { class: "etiqueta-oferta", texto: ` · ${l.oferta}${l.gratis ? `: ${cantidad(l.gratis, l.unidad)} gratis` : l.precioHabitual != null ? `: ${euros(Math.round(l.precio * 100))} en vez de ${euros(Math.round(l.precioHabitual * 100))}` : ""}` }) : null),
     h("span", { class: "importe", texto: l.subtotalCent == null ? "Consultar" : euros(l.subtotalCent) })));
 
   const totales = [`Productos ${euros(p.subtotalCent)}`];
   if (p.envioCent) totales.push(`Envío ${euros(p.envioCent)}`);
   totales.push(`Total ${euros(p.totalCent)}`);
+  if (p.ahorroCent > 0) totales.push(`Ahorro por ofertas ${euros(p.ahorroCent)}`);
 
   return h("article", { class: `pedido estado-${p.estado}`, "aria-labelledby": `t-${p.numero}` },
     h("header", { class: "pedido-cab" },
@@ -104,6 +106,7 @@ function tarjeta(p) {
       en.tipo === "reparto" && en.zonaVerificada === false ? h("span", { class: "pendiente", texto: " · ⚠ Dirección por verificar: no se pudo comprobar si está dentro de tu radio de reparto" }) : null),
     h("ul", { class: "pedido-lineas" }, lineas),
     h("p", { class: "pedido-total" }, totales.join(" · "), p.consultar ? h("span", { class: "pendiente", texto: ` · ${p.consultar} producto${p.consultar === 1 ? "" : "s"} por consultar` }) : null),
+    (p.regalos ?? []).length ? h("p", { class: "pedido-regalo" }, h("strong", { texto: "Regalo por la compra: " }), p.regalos.map((r) => `${r.cantidad > 1 ? `${r.cantidad} × ` : ""}${r.texto}`).join(" · ")) : null,
     h("p", { class: "pedido-pago", texto: `Pago: ${NOMBRE_PAGO[p.pago] ?? p.pago}${p.mayorEdad ? " · Mayor de 18 confirmado" : ""}` }),
     p.comentarios ? h("p", { class: "pedido-comentarios" }, h("strong", { texto: "Comentarios del cliente: " }), p.comentarios) : null,
     h("div", { class: "pedido-acciones" },
