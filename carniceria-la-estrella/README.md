@@ -111,6 +111,14 @@ Lo que cambió al comprobarlo:
 - Venta de vino por internet. La casilla de mayor de 18 años y la comprobación en la entrega están. La prohibición de vender alcohol a menores es de la ley andaluza de drogas (Ley 4/1997, con la reforma de la Ley 12/2003), pero no he podido leer su texto vigente en el BOJA. Comprueba también los requisitos de la licencia.
 - Datos personales de los pedidos. Constan la base legal (art. 6.1.b del RGPD), los derechos y la AEPD. No lo he auditado a fondo: el plazo de conservación es «mientras sean necesarios», los pedidos no se borran solos (se pueden borrar en el panel y exportar en CSV) y quedan por mirar las transferencias fuera de la UE (Netlify, WhatsApp/Meta, Google) y los contratos con esos encargados.
 
+## Pendientes de la revisión legal
+
+Decididos el 7 de octubre de 2026: se dejan para más adelante, sin tocar la web.
+
+1. RGPD en detalle: transferencias de datos fuera de la UE (Netlify, WhatsApp/Meta, Google) y contratos con esos encargados. El texto de privacidad actual cubre la base legal, los derechos y la AEPD, pero no se ha auditado.
+2. Periodo transitorio del precio por unidad de medida (RD 3423/2000, disposición transitoria única): comprobar si Andalucía lo fijó para el pequeño comercio. Mientras tanto, la web enseña el precio por kilo o litro de lo envasado.
+3. Etiquetado de origen de la carne, registro sanitario y licencia de venta de alcohol: no leídos y fuera de lo que muestra la web.
+
 ## Guía rápida del panel
 
 Ver `GUIA-CARNICERO.md` (explicada sin términos técnicos).
