@@ -281,3 +281,25 @@ test("pie con la fecha y la versión de la web, y nota de precios con su fecha d
   assert.match(nota, /^Precios actualizados por última vez el 5 de octubre de 2026\. /, "el entorno de pruebas fija el reloj el 5/10/2026 y ya se han puesto precios");
   await page.context().close();
 });
+
+test("móvil: el buscador y las categorías se ven en la primera pantalla; los pasos solo en pantallas grandes", async () => {
+  const movil = await abrir({ ancho: 390, alto: 844 });
+  assert.equal(await movil.locator(".shop-intro .pasos").isVisible(), false, "los pasos se esconden en móvil");
+  const buscador = await movil.locator("#buscar").boundingBox();
+  const chips = await movil.locator("#chips .chip").first().boundingBox();
+  assert.ok(buscador.y + buscador.height < 844 - 64, `el buscador debe verse sin bajar (y=${buscador.y})`);
+  assert.ok(chips.y < 844 - 64, `las categorías deben verse sin bajar (y=${chips.y})`);
+  await movil.context().close();
+  const grande = await abrir({ ancho: 1280, alto: 800, tactil: false });
+  assert.equal(await grande.locator(".shop-intro .pasos").isVisible(), true);
+  await grande.context().close();
+});
+
+test("móvil: el botón «volver arriba» no tapa el formulario del pedido", async () => {
+  const page = await abrir({ ancho: 390, alto: 844 });
+  await page.locator(".btn-anadir").first().click();
+  await page.locator("#nombre").scrollIntoViewIfNeeded();
+  await page.waitForFunction(() => document.body.classList.contains("sobre-pedido"));
+  assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector(".back-to-top")).display), "none");
+  await page.context().close();
+});

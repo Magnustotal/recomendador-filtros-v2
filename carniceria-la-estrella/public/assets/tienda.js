@@ -627,4 +627,7 @@ async function iniciar() {
   if (location.hash.startsWith("#cat-")) irASeccion($(location.hash.slice(1)));
 }
 
+// En móvil el botón «volver arriba» tapaba el formulario del pedido: se oculta mientras ese panel está a la vista (solo CSS en pantallas pequeñas).
+if ("IntersectionObserver" in window) new IntersectionObserver(([e]) => document.body.classList.toggle("sobre-pedido", e.isIntersecting), { threshold: 0.1 }).observe(el.pedido);
+
 iniciar();

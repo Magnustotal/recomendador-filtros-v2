@@ -114,6 +114,15 @@ button:disabled { opacity: 0.5; cursor: default; }
 .interruptor { display: flex; align-items: center; gap: 0.6rem; min-height: 48px; font-weight: 600; cursor: pointer; }
 .interruptor input { width: 1.4rem; height: 1.4rem; accent-color: var(--maroon); }
 .fila-estado { min-height: 1.2em; font-size: 0.9rem; font-weight: 700; color: var(--green); }
+/* Móvil: nombre y precio a todo el ancho; «Agotado» y «Editar» comparten fila (la lista es larga: cada fila, lo más baja posible) */
+@media (max-width: 799px) {
+  .prod-fila { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .prod-fila .prod-nombre, .prod-fila .precio-sem, .prod-fila .fila-estado { grid-column: 1 / -1; }
+  .prod-fila .fila-estado:empty { min-height: 0; margin-top: -0.5rem; }
+  .prod-fila > .btn-sec { width: 100%; }
+  #prod-expandir, #prod-contraer { flex: 1 1 calc(50% - 0.4rem); }
+  #prod-nuevo { flex: 1 1 100%; }
+}
 @media (min-width: 800px) {
   .prod-fila { grid-template-columns: minmax(0, 1fr) 11rem 8rem auto 10rem; }
   .fila-estado { text-align: left; }
@@ -216,5 +225,5 @@ label.btn-sec { cursor: pointer; }
 .merc-fuente { display: flex; flex-wrap: wrap; gap: 0.5rem 0.9rem; align-items: center; padding: 0.7rem 0.9rem; background: var(--cream-bright); border: 1px solid var(--line); border-radius: var(--radius); }
 .merc-fuente .nombre { flex: 1 1 12rem; font-weight: 700; }
 .merc-fuente select { min-height: 48px; }
-.merc-aviso { margin: 0 0 0.8rem; padding: 0.7rem 0.9rem; border-left: 4px solid var(--warn); background: #fff4e0; border-radius: 6px; }
+.merc-aviso { margin: 0 0 0.8rem; padding: 0.7rem 0.9rem; border: 1px solid var(--warn); background: #fff4e0; border-radius: var(--radius); }
 .merc-lista { max-height: 28rem; overflow: auto; margin: 0.6rem 0; padding-right: 0.3rem; }

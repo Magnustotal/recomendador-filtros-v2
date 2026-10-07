@@ -750,3 +750,22 @@ test("mercado: si otro dispositivo ha cambiado los datos, el panel avisa, recarg
   assert.equal((await e.api.llamar("/datos")).datos.mercado.precios["pollo-alitas-de-pollo"].mercadona.precio, 4.2);
   await page.context().close();
 });
+
+test("productos en móvil: «Agotado» y «Editar» comparten fila y los botones de la lista caben en dos filas", async () => {
+  const page = await entrar({ ancho: 390, alto: 844 });
+  await page.click("#tab-productos");
+  await page.locator(".prod-cat summary").first().click();
+  const fila = page.locator(".prod-fila").first();
+  await fila.waitFor();
+  const agotado = await fila.locator(".interruptor").boundingBox();
+  const editar = await fila.getByRole("button", { name: /Editar/ }).boundingBox();
+  assert.ok(Math.abs(agotado.y - editar.y) < 40, "misma fila");
+  assert.ok(editar.height >= 44, "objetivo táctil suficiente");
+  assert.ok((await fila.boundingBox()).height < 225, `fila compacta (${(await fila.boundingBox()).height}px)`);
+  const nuevo = await page.locator("#prod-nuevo").boundingBox();
+  const abrirTodas = await page.locator("#prod-expandir").boundingBox();
+  const cerrarTodas = await page.locator("#prod-contraer").boundingBox();
+  assert.ok(Math.abs(abrirTodas.y - cerrarTodas.y) < 5, "«Abrir» y «Cerrar todas» juntas");
+  assert.ok(nuevo.y > abrirTodas.y, "«Añadir producto» debajo, a todo el ancho");
+  await page.context().close();
+});

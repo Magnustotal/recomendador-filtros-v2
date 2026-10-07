@@ -10,6 +10,14 @@
 
 /* ---------- Introducción ---------- */
 .shop-intro { padding: 2.5rem 0 2rem; }
+/* Móvil: lo primero que se ve ha de ser el producto, no tres pantallas de explicación. Los pasos ya los resume el texto de arriba. */
+@media (max-width: 640px) {
+  .shop-intro { padding: 1.4rem 0 1.1rem; }
+  body .shop-intro h1 { font-size: 1.9rem; }
+  body .shop-lede { margin: 0.7rem 0 0.9rem; font-size: 1rem; }
+  body .shop-intro .pasos { display: none; }
+  .sobre-pedido .back-to-top { display: none; } /* no tapa el formulario (el botón «Mi pedido» de la barra ya lleva ahí) */
+}
 .shop-intro h1 { font-size: clamp(2rem, 1.5rem + 2.4vw, 3.2rem); margin-top: 0.25em; }
 .shop-lede { max-width: 62ch; font-size: 1.08rem; color: var(--ink-soft); margin: 1rem 0 1.4rem; }
 .pasos { display: grid; gap: 0.7rem; grid-template-columns: 1fr; margin: 0 0 1.2rem; counter-reset: paso; max-width: 62rem; }
