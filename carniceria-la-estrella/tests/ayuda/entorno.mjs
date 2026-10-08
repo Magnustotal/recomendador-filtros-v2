@@ -19,8 +19,8 @@ export async function arrancarEntorno({ activarTienda = true, modificar = null, 
   const navegador = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined, args: ["--no-sandbox"] });
   return {
     url: srv.url, api, navegador,
-    async nuevaPagina({ ancho = 390, alto = 800, tactil = true, reloj = true } = {}) {
-      const ctx = await navegador.newContext({ viewport: { width: ancho, height: alto }, hasTouch: tactil, serviceWorkers: "block", locale: "es-ES", timezoneId: "Europe/Madrid" });
+    async nuevaPagina({ ancho = 390, alto = 800, tactil = true, reloj = true, reducido = false } = {}) {
+      const ctx = await navegador.newContext({ viewport: { width: ancho, height: alto }, hasTouch: tactil, serviceWorkers: "block", locale: "es-ES", timezoneId: "Europe/Madrid", reducedMotion: reducido ? "reduce" : "no-preference" });
       const page = await ctx.newPage();
       if (reloj) await page.clock.setFixedTime(new Date(AHORA));
       const consola = [];

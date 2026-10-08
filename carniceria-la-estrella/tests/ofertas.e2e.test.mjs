@@ -32,12 +32,12 @@ test("ofertas: se crean eligiendo el producto en la lista, con errores explicado
   await page.click("#tab-ofertas");
   assert.match(await page.locator("#of-lista").innerText(), /Todavía no hay ofertas/);
   const dlg = page.locator("#dlg-oferta");
-  const crear = async ({ buscar, id }) => { await page.click("#of-nueva"); await dlg.locator("#f-of-buscar").fill(buscar); await dlg.locator("#f-of-producto").selectOption(id); };
+  const crear = async ({ buscar, id }) => { await page.click("#of-nueva"); await dlg.locator("#f-of-buscar").fill(buscar); await dlg.locator(`input[name="of-producto"][value="${id}"]`).check(); };
   const guardar = (nombre) => dlg.getByRole("button", { name: nombre, exact: true }).click();
 
   // 3x2 para las albóndigas, con las fechas de una semana ya puestas
   await crear({ buscar: "Albóndigas", id: ALB });
-  assert.match(await dlg.locator("#f-of-producto").locator("option:checked").innerText(), /Albóndigas · 9,90\s€\/kg/);
+  assert.match(await dlg.locator('input[name="of-producto"]:checked').locator("xpath=..").innerText(), /Albóndigas[\s\S]*9,90\s€\/kg/);
   assert.match(await dlg.innerText(), /Precio habitual: 9,90\s€\/kg/);
   assert.equal(await dlg.locator("#f-of-desde").inputValue(), "2026-10-05");
   assert.equal(await dlg.locator("#f-of-hasta").inputValue(), "2026-10-11");
@@ -81,7 +81,7 @@ test("ofertas: se crean eligiendo el producto en la lista, con errores explicado
 
   // cambiar la rebaja del secreto
   await page.getByRole("button", { name: "Cambiar la oferta de Secreto ibérico" }).click();
-  assert.equal(await dlg.locator("#f-of-producto").count(), 0, "al cambiar, el producto no se elige otra vez");
+  assert.equal(await dlg.locator('input[name="of-producto"]').count(), 0, "al cambiar, el producto no se elige otra vez");
   await dlg.locator("#f-of-precio").fill("21,95");
   await guardar("Guardar cambios");
   await page.locator("#aviso", { hasText: "Oferta cambiada" }).waitFor();
@@ -117,7 +117,7 @@ test("ofertas: se crean eligiendo el producto en la lista, con errores explicado
   await page.fill("#of-buscar", "");
   await page.click("#of-nueva");
   await dlg.locator("#f-of-buscar").fill("Secreto");
-  await dlg.locator("#f-of-producto").selectOption(SEC);
+  await dlg.locator(`input[name="of-producto"][value="${SEC}"]`).check();
   await dlg.locator("#f-of-precio").fill("23,95");
   await dlg.locator("#f-of-desde").fill("2026-10-26");
   await dlg.locator("#f-of-hasta").fill("2026-11-01");
@@ -318,7 +318,7 @@ test("venta con pérdida: al crear una oferta por debajo del coste (con IVA) el 
   const dlg = page.locator("#dlg-oferta");
   await page.click("#of-nueva");
   await dlg.locator("#f-of-buscar").fill("Solomillo de ternera");
-  await dlg.locator("#f-of-producto").selectOption(SOL);
+  await dlg.locator(`input[name="of-producto"][value="${SOL}"]`).check();
   await dlg.locator("#f-of-precio").fill("24,95");
   const texto = await dlg.innerText();
   assert.match(texto, /vendes por debajo de lo que te cuesta \(27,50\s€ con IVA/);
@@ -337,5 +337,55 @@ test("tienda: el botón del pedido dice «con obligación de pago» y se avisa d
   assert.match(intro, /precios son finales, con el IVA incluido/);
   assert.match(intro, /reparto a domicilio solo llega a la zona/i);
   assert.match(intro, /pago se hace al recoger o al recibir/);
+  await page.context().close();
+});
+
+test("crear oferta: al buscar salen todos los productos que coinciden, los activos de un color y los ocultos de otro, y la oferta activa al oculto y lo vuelve a ocultar al terminar", async () => {
+  const PRESA = "cerdo-iberico-presa-iberica";
+  const PLUMA = "cerdo-iberico-pluma-iberica";
+  await enFecha("2026-08-01", async () => {
+    assert.equal((await e.api.llamar("/producto", { metodo: "PUT", cuerpo: { ...(await producto(PRESA)), precio: 24, oculto: true } })).estado, 200);
+    assert.equal((await e.api.llamar("/producto", { metodo: "PUT", cuerpo: { ...(await producto(PLUMA)), precio: 26, oculto: false } })).estado, 200);
+  });
+  const page = await entrar();
+  await page.click("#tab-ofertas");
+  await page.click("#of-nueva");
+  const dlg = page.locator("#dlg-oferta");
+  await dlg.locator("#f-of-buscar").fill("ibérica");
+  const activa = dlg.locator(`.of-op.es-activo:has(input[value="${PLUMA}"])`);
+  const oculta = dlg.locator(`.of-op.es-oculto:has(input[value="${PRESA}"])`);
+  assert.equal(await activa.count(), 1, "el activo sale en su color");
+  assert.equal(await oculta.count(), 1, "el oculto sale en el otro");
+  assert.match(await activa.innerText(), /Activo/);
+  assert.match(await oculta.innerText(), /Oculto: se activará con la oferta/, "y con la etiqueta escrita, no solo con el color");
+  assert.match(await dlg.locator("[role=status]").first().innerText(), /\d+ productos: \d+ activos y \d+ ocultos?\./);
+  const colores = await Promise.all([activa, oculta].map((l) => l.evaluate((n) => getComputedStyle(n).backgroundColor)));
+  assert.notEqual(colores[0], colores[1], "los dos colores son distintos");
+  // Los activos van antes que los ocultos
+  const orden = await dlg.locator(".of-op").evaluateAll((ns) => ns.map((n) => n.classList.contains("es-oculto")));
+  assert.deepEqual(orden, [...orden].sort((a, b) => Number(a) - Number(b)));
+
+  await dlg.locator(`input[name="of-producto"][value="${PRESA}"]`).check();
+  await dlg.locator("#f-of-precio").fill("19,90");
+  assert.match(await dlg.innerText(), /Está oculto en la tienda: con esta oferta se mostrará del 5 de octubre al 11 de octubre y volverá a ocultarse solo cuando termine/);
+  await dlg.getByRole("button", { name: "Crear oferta", exact: true }).click();
+  await page.locator("#aviso", { hasText: "Oferta creada" }).waitFor();
+  await dlg.waitFor({ state: "hidden" });
+
+  // Durante la oferta (reloj fijo: 5 de octubre) la tienda lo enseña y se puede pedir; la ficha sigue oculta
+  const publico = await (await fetch(e.url + "/api/catalogo")).json();
+  assert.ok(publico.productos.some((p) => p.id === PRESA), "el oculto sale durante la oferta");
+  assert.equal((await producto(PRESA)).oculto, true, "pero sigue marcado como oculto en la ficha");
+  const tienda = await e.nuevaPagina();
+  await tienda.goto(e.url + "/tienda", { waitUntil: "networkidle" });
+  await tienda.locator("#app").waitFor();
+  assert.equal(await tienda.locator(".prod", { has: tienda.getByRole("heading", { name: "Presa ibérica", exact: true }) }).count(), 1);
+  await tienda.context().close();
+  // Cuando la oferta termina (se simula caducándola), vuelve a ocultarse sin tocar nada
+  await enFecha("2026-10-20", async () => {
+    const despues = await (await fetch(e.url + "/api/catalogo")).json();
+    assert.equal(despues.hoy, "2026-10-20");
+    assert.equal(despues.productos.some((p) => p.id === PRESA), false, "terminada la oferta, el producto vuelve a estar oculto");
+  });
   await page.context().close();
 });

@@ -141,9 +141,11 @@ function pintarFila(p) {
       anadir(p, selector ? selector.value : "", cantidad);
       // Confirmación visible (además del aviso para lectores de pantalla)
       boton.textContent = "✓ Añadido";
+      boton.classList.add("es-hecho");
+      fila.classList.remove("recien-anadido"); void fila.offsetWidth; fila.classList.add("recien-anadido"); // reinicia el destello si se pulsa otra vez
       boton.setAttribute("aria-label", `Añadido ${p.nombre} al pedido`); // el nombre accesible contiene el texto visible
       clearTimeout(temporizador);
-      temporizador = setTimeout(() => { boton.textContent = "Añadir"; boton.setAttribute("aria-label", `Añadir ${p.nombre} al pedido`); }, 1600);
+      temporizador = setTimeout(() => { boton.textContent = "Añadir"; boton.classList.remove("es-hecho"); fila.classList.remove("recien-anadido"); boton.setAttribute("aria-label", `Añadir ${p.nombre} al pedido`); }, 1600);
     });
     acciones = crear("div", { class: "prod-acciones" }, selector, crear("div", { class: "cantidad", role: "group", "aria-label": `Cantidad de ${p.nombre}` }, menos, salida, mas), boton);
   }
@@ -282,15 +284,21 @@ function totales() {
   return { subtotal, consultar, ahorro, regalos, envio, gratis, total: subtotal + envio };
 }
 
+let lineasPintadas = null; // claves de las líneas ya dibujadas: la primera pintura (carrito recuperado) no se anima, las nuevas sí
+const claveLinea = (l) => `${l.id}|${l.opcion}`;
+
 function pintarCarrito() {
   const hay = carrito.length > 0;
   el.vacio.hidden = hay;
   el.form.hidden = !hay;
   actualizarBarra();
-  if (!hay) { el.lineas.replaceChildren(); el.totales.replaceChildren(); return; }
+  if (!hay) { el.lineas.replaceChildren(); el.totales.replaceChildren(); lineasPintadas = new Set(); totalAnterior = null; return; }
 
   recalcular();
-  el.lineas.replaceChildren(...carrito.map((l, i) => pintarLinea(l, i)));
+  const nodos = carrito.map((l, i) => pintarLinea(l, i));
+  if (lineasPintadas) carrito.forEach((l, i) => { if (!lineasPintadas.has(claveLinea(l))) nodos[i].classList.add("nueva"); });
+  lineasPintadas = new Set(carrito.map(claveLinea));
+  el.lineas.replaceChildren(...nodos);
   pintarTotales();
   el.campoEdad.hidden = !carrito.some((l) => porId.get(l.id).alcohol);
   if (el.campoEdad.hidden) el.edad.checked = false;
@@ -341,6 +349,8 @@ function pintarLinea(l, i) {
   );
 }
 
+let totalAnterior = null;
+
 function pintarTotales() {
   const t = cat.ajustes.tienda;
   const x = totales();
@@ -361,12 +371,22 @@ function pintarTotales() {
   }
   filas.push(crear("p", { class: "nota", texto: "Importe orientativo: el peso y el importe finales se confirman al prepararlo." }));
   el.totales.replaceChildren(...filas);
+  // El total late un momento cuando cambia (no al recuperar el carrito ni al repintar con el mismo importe)
+  if (totalAnterior !== null && totalAnterior !== x.total) el.totales.querySelector(".total")?.classList.add("cambio");
+  totalAnterior = x.total;
 }
+
+let ultimoN = null;
 
 function actualizarBarra() {
   const enlace = document.querySelector(".mobile-action-bar a:last-child");
   if (!enlace) return;
   const n = carrito.length;
+  if (ultimoN !== null && n !== ultimoN) {
+    enlace.classList.remove("pulso"); void enlace.offsetWidth; enlace.classList.add("pulso");
+    enlace.addEventListener("animationend", () => enlace.classList.remove("pulso"), { once: true });
+  }
+  ultimoN = n;
   const texto = n ? `Mi pedido (${n})` : "Mi pedido";
   for (const nodo of [...enlace.childNodes]) if (nodo.nodeType === 3 && nodo.textContent.trim()) nodo.textContent = `\n    ${texto}\n  `;
 }

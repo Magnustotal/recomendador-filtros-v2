@@ -8,12 +8,18 @@ import { catalogo, foto, crearPedido } from "../lib/api-publica.mjs";
 import { pagina } from "../lib/api-pagina.mjs";
 import { ahoraEnMadrid } from "../lib/horario.mjs";
 import { jpegCon, pngCon, webpLossy } from "./ayuda/imagenes.mjs";
+import { readFileSync } from "node:fs";
 
 const ORIGEN = "https://tienda.test";
 const ENV = { ADMIN_PASSWORD: "clave-de-prueba-larga", SESSION_SECRET: "s".repeat(48) };
 let blobs, almacen, reloj = Date.parse("2026-10-05T07:00:00Z"); // lunes 09:00 en Madrid
 const purgas = [];
-const deps = () => ({ almacen, env: ENV, ahora: () => reloj, ip: "1.2.3.4", ajustesPorDefecto, purgar: async (t) => { purgas.push(...t); } });
+// Las pruebas no salen nunca a internet: las descargas de precios de la UE leen las copias de tests/fixtures/mercado-ue
+let traerUE = async (url) => {
+  const e = /\/api\/([A-Za-z]+)\/prices/.exec(url)?.[1];
+  return { ok: true, status: 200, text: async () => readFileSync(new URL(`./fixtures/mercado-ue/${e}.json`, import.meta.url), "utf8") };
+};
+const deps = () => ({ almacen, env: ENV, ahora: () => reloj, ip: "1.2.3.4", ajustesPorDefecto, purgar: async (t) => { purgas.push(...t); }, traer: (...a) => traerUE(...a) });
 
 before(async () => { blobs = await arrancarBlobs(); almacen = crearAlmacen(); });
 after(async () => { await blobs.parar(); });
@@ -33,7 +39,7 @@ async function entrar() {
 }
 
 test("sin sesión, todo el panel responde 401 (salvo el acceso)", async () => {
-  for (const [ruta, metodo] of [["/datos", "GET"], ["/yo", "GET"], ["/pedidos", "GET"], ["/ajustes", "PUT"], ["/producto", "PUT"], ["/foto", "POST"], ["/mercado", "PUT"], ["/diagnostico", "GET"], ["/pedidos.csv", "GET"]]) {
+  for (const [ruta, metodo] of [["/datos", "GET"], ["/yo", "GET"], ["/pedidos", "GET"], ["/ajustes", "PUT"], ["/producto", "PUT"], ["/foto", "POST"], ["/mercado", "PUT"], ["/mercado/actualizar", "POST"], ["/diagnostico", "GET"], ["/pedidos.csv", "GET"]]) {
     const r = await adm(ruta, { metodo, cuerpo: metodo === "GET" ? undefined : {} });
     assert.equal(r.status, 401, `${metodo} ${ruta}`);
   }
@@ -529,3 +535,49 @@ test("historial de precios: cada cambio de precio se anota (ficha, redondeo y or
   assert.ok(panel.productos.find((x) => x.id === base.id).historial.length >= 2);
   await adm(`/producto?id=${(await almacen.leerProductos()).find((x) => x.nombre === "Producto de historial").id}`, { metodo: "DELETE", cookie });
 });
+
+test("mercado automático: sin datos se descargan con el botón (o solos al abrir el panel), no se repite la descarga y un fallo da un error claro", async () => {
+  cookie = await entrar();
+  const antes = await (await adm("/datos", { cookie })).json();
+  assert.equal(antes.mercadoAuto.series.length, 0);
+  assert.equal(antes.mercadoAuto.desactualizado, true);
+
+  const original = traerUE;
+  traerUE = async () => ({ ok: false, status: 503, text: async () => "" });
+  const fallo = await adm("/mercado/actualizar", { metodo: "POST", cuerpo: {}, cookie });
+  assert.equal(fallo.status, 502);
+  assert.match((await fallo.json()).errores?.[0]?.mensaje ?? JSON.stringify(await fallo.clone().json().catch(() => "")), /No se pudieron descargar los precios de la UE/);
+  traerUE = original;
+
+  let peticiones = 0;
+  traerUE = async (u, o) => { peticiones++; return original(u, o); };
+  const r = await adm("/mercado/actualizar", { metodo: "POST", cuerpo: {}, cookie });
+  assert.equal(r.status, 200);
+  const j = await r.json();
+  assert.equal(peticiones, 4);
+  assert.equal(j.mercadoAuto.series.length, 6);
+  assert.ok(j.mercadoAuto.productosCubiertos >= 71, "los 71 del catálogo inicial, más los que se hayan creado en otras pruebas");
+  assert.equal(j.mercadoAuto.desactualizado, false);
+  assert.match(j.mercadoAuto.fuente.nombre, /Comisión Europea/);
+
+  const otra = await adm("/mercado/actualizar", { metodo: "POST", cuerpo: {}, cookie });
+  assert.equal(otra.status, 200);
+  assert.equal(peticiones, 4, "una segunda pulsación enseguida no vuelve a llamar a la UE");
+
+  const datos = await (await adm("/datos", { cookie })).json();
+  assert.equal(datos.mercadoAuto.series.length, 6);
+  assert.ok(datos.mercadoAuto.actualizado);
+  assert.equal(JSON.stringify(datos.mercadoAuto).includes("Bearer"), false);
+
+  // Lo público no sabe nada de esto
+  const publico = await (await catalogo(deps())).text();
+  assert.ok(!/ZR3|Young cattle|agrifood|mercadoAuto/.test(publico));
+  traerUE = original;
+
+  reloj += 4 * 86_400_000; // pasan 4 días: el panel lo ve viejo y se refrescaría solo
+  cookie = await entrar(); // la sesión de antes ha caducado
+  const viejo = await (await adm("/datos", { cookie })).json();
+  assert.equal(viejo.mercadoAuto.desactualizado, true);
+  reloj -= 4 * 86_400_000;
+});
+

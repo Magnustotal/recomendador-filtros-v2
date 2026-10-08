@@ -207,3 +207,25 @@ test("el pedido de reparto guarda CP y el mensaje de WhatsApp lo incluye", () =>
   assert.equal(r.valor.entrega.cp, "41008");
   assert.match(mensajeWhatsApp(r.valor, "LE-2610-0001"), /Dirección: Calle Gálena 2, 2º B \(41008\)/);
 });
+
+test("un producto oculto se puede pedir solo mientras tenga una oferta vigente (se activa con la oferta y se oculta al terminar)", () => {
+  const oculto = clone(productos);
+  const sol = oculto.find((x) => x.id === "vacuno-solomillo-de-ternera");
+  sol.oculto = true;
+  const mas2 = (f) => new Date(Date.parse(`${f}T00:00:00Z`) + 2 * 86_400_000).toISOString().slice(0, 10);
+  const v = (hoy, lista = oculto) => { const e = pedidoOk(); e.entrega.dia = mas2(hoy); return validarPedido(e, { productos: lista, ajustes, ahora: { ...AHORA, fecha: hoy, dia: new Date(`${hoy}T12:00:00Z`).getUTCDay() } }); };
+  assert.equal(v("2026-10-05").ok, false, "sin oferta, un producto oculto no se puede pedir");
+  sol.ofertas = [{ tipo: "precio", desde: "2026-10-05", hasta: "2026-10-11", precio: 19.9 }];
+  const durante = v("2026-10-07");
+  assert.equal(durante.ok, true, JSON.stringify(durante.errores));
+  assert.equal(durante.valor.lineas[0].precio, 19.9, "y se cobra al precio de la oferta");
+  assert.equal(v("2026-10-11").ok, true, "el último día cuenta");
+  const despues = v("2026-10-12");
+  assert.equal(despues.ok, false, "al terminar la oferta vuelve a estar oculto");
+  assert.match(despues.errores[0].mensaje, /no disponible/i);
+  sol.ofertas = [{ tipo: "precio", desde: "2026-10-12", hasta: "2026-10-18", precio: 19.9 }];
+  assert.equal(v("2026-10-07").ok, false, "una oferta programada para más adelante todavía no lo activa");
+  sol.ofertas = [{ tipo: "precio", desde: "2026-10-05", hasta: "2026-10-11", precio: 19.9 }];
+  sol.agotado = true;
+  assert.equal(v("2026-10-07").ok, false, "agotado sigue sin poder pedirse aunque haya oferta");
+});

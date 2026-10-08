@@ -1,166 +1,96 @@
-// Pestaña "Mercado": fuentes de precios de otras tiendas y los precios que el carnicero anota de cada una.
-// Todo es de uso interno; sirve para el semáforo de Productos (mediana de las fuentes recientes).
+// Pestaña "Mercado": precios semanales de la carne que la web descarga sola de la Comisión Europea (cada día, o con el botón).
+// No se anota nada a mano. Son precios mayoristas, útiles para ver hacia dónde se mueve el mercado (ver lib/mercado-auto.mjs).
 import { api, textoErrores } from "./api.js";
-import { h, $, importeEs, aviso, sinAcentos } from "./util.js";
-import { TIPOS_FUENTE, FRECUENCIAS, VIGENCIA_DIAS, referenciaMercado, fuentesAtrasadas } from "/assets/compartido/mercado.js";
+import { h, $, aviso } from "./util.js";
 
-let mercado = { fuentes: [], precios: {}, anclas: [] };
-let productos = [];
-let hoy = new Date().toISOString().slice(0, 10);
+let resumen = null;
 let contexto = { alCambiar() {} };
-let fuenteElegida = "";
-let todos = false;
-let borrador = new Map(); // id de producto -> texto escrito (sin guardar)
+let ocupado = false;
 
-export function iniciarMercado(ctx) { contexto = ctx; }
-export function cargarMercado({ mercado: m, productos: lista, hoy: h0 }) {
-  if (m) mercado = structuredClone(m);
-  if (lista) productos = lista;
-  if (h0) hoy = h0;
-  if (!mercado.fuentes.some((f) => f.id === fuenteElegida)) fuenteElegida = mercado.fuentes[0]?.id ?? "";
-  pintar(); // lo escrito y sin guardar (borrador) se conserva aunque se recarguen los datos
-}
-export function resumenMercado() {
-  const conPrecios = Object.values(mercado.precios ?? {}).some((p) => Object.keys(p).length > 0);
-  return { conPrecios, atrasadas: conPrecios ? fuentesAtrasadas(mercado, hoy) : [] };
+const NUM = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const PCT = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1, signDisplay: "exceptZero" });
+const fecha = (iso) => new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`));
+const fechaLarga = (iso) => new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`));
+const horaMadrid = (iso) => new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Madrid" }).format(new Date(iso));
+
+export function iniciarMercado(ctx) {
+  contexto = ctx;
+  $("merc-actualizar").addEventListener("click", () => actualizar(true));
 }
 
-const slug = (s) => sinAcentos(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30);
-const num = (t) => { const n = Number(String(t).trim().replace(",", ".")); return String(t).trim() === "" || !Number.isFinite(n) ? null : n; };
-const eur = (n) => `${Number(n).toFixed(2).replace(".", ",")} €`;
-
-async function guardar(nuevo, mensaje) {
-  const r = await api("/mercado", { metodo: "PUT", cuerpo: { version: mercado.version ?? 0, fuentes: nuevo.fuentes, precios: nuevo.precios } });
-  if (!r.ok) { aviso(textoErrores(r.errores), { error: true }); if (r.estado === 409) contexto.recargar?.(); return false; }
-  mercado = structuredClone(r.datos.mercado);
-  borrador = new Map();
-  if (mensaje) aviso(mensaje);
-  contexto.alCambiar(mercado);
+export function cargarMercado({ mercadoAuto }) {
+  resumen = mercadoAuto ?? null;
   pintar();
-  return true;
+  // Sin datos o con datos viejos, se descargan solos: nadie tiene que acordarse
+  if (resumen?.desactualizado && !ocupado) actualizar(false);
+}
+
+// Para la lista de comprobación de la pestaña Estado
+export function resumenMercado() { return resumen; }
+
+async function actualizar(manual) {
+  if (ocupado) return;
+  ocupado = true;
+  const boton = $("merc-actualizar");
+  boton.disabled = true;
+  $("merc-estado").textContent = "Descargando los precios de la UE…";
+  const r = await api("/mercado/actualizar", { metodo: "POST", cuerpo: {} });
+  ocupado = false;
+  boton.disabled = false;
+  if (r.ok) {
+    resumen = r.datos.mercadoAuto;
+    contexto.alCambiar(resumen);
+    if (manual) aviso("Precios de la UE al día.");
+  } else if (manual || !resumen?.series?.length) {
+    aviso(textoErrores(r.errores) || "No se han podido descargar los precios de la UE.", { error: true });
+  }
+  pintar();
+}
+
+// Línea de puntos con la evolución de las últimas semanas (el texto la describe, el dibujo es un añadido)
+function grafico(s) {
+  const v = s.grafico;
+  if (!v || v.length < 2) return null;
+  const min = Math.min(...v), max = Math.max(...v), W = 120, H = 32, margen = 2;
+  const puntos = v.map((y, i) => `${(margen + (i * (W - 2 * margen)) / (v.length - 1)).toFixed(1)},${(max === min ? H / 2 : H - margen - ((y - min) / (max - min)) * (H - 2 * margen)).toFixed(1)}`).join(" ");
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("width", W); svg.setAttribute("height", H); svg.setAttribute("class", "merc-grafico"); svg.setAttribute("aria-hidden", "true"); svg.setAttribute("focusable", "false");
+  const linea = document.createElementNS(NS, "polyline");
+  linea.setAttribute("points", puntos); linea.setAttribute("fill", "none"); linea.setAttribute("stroke", "currentColor"); linea.setAttribute("stroke-width", "2"); linea.setAttribute("stroke-linejoin", "round"); linea.setAttribute("stroke-linecap", "round");
+  svg.append(linea);
+  return svg;
+}
+
+const cambio = (etiqueta, pct) => (pct == null ? null : h("li", { class: `merc-cambio ${pct > 0 ? "sube" : pct < 0 ? "baja" : ""}` },
+  h("span", { class: "merc-etq", texto: etiqueta }), h("strong", { texto: `${pct > 0 ? "▲" : pct < 0 ? "▼" : "="} ${PCT.format(pct)} %` })));
+
+function tarjeta(s) {
+  const kilo = s.ultima.precio / 100;
+  return h("li", { class: "merc-serie" },
+    h("div", { class: "merc-cab" },
+      h("div", {}, h("h3", { texto: s.nombre }), h("p", { class: "ayuda", texto: s.detalle })),
+      h("div", { class: "merc-precio" }, h("strong", { texto: `${NUM.format(kilo)} €/kg` }), h("span", { class: "ayuda", texto: `${NUM.format(s.ultima.precio)} €/100 kg · semana del ${fecha(s.ultima.ini)} al ${fecha(s.ultima.fin)}` })),
+      grafico(s)),
+    h("ul", { class: "merc-cambios", "aria-label": `Cómo ha cambiado ${s.nombre}` },
+      cambio("Semana anterior", s.vsSemanaAnterior), cambio("Hace 4 semanas", s.vsCuatroSemanas), cambio("Hace un año", s.vsUnAnio),
+      s.vsTusPrecios ? cambio(`Desde tus últimos precios (${fecha(s.vsTusPrecios.desde)})`, s.vsTusPrecios.pct) : null),
+    h("p", { class: "ayuda", texto: s.productos ? `Sirve de termómetro para ${s.productos} producto${s.productos === 1 ? "" : "s"} tuyo${s.productos === 1 ? "" : "s"}.` : "Ningún producto tuyo se apoya en esta serie." }));
 }
 
 function pintar() {
-  pintarAvisos();
-  pintarAnotar();
-  pintarFuentes();
-  pintarNueva();
-}
-
-function pintarAvisos() {
-  const { conPrecios, atrasadas } = resumenMercado();
-  const nodos = [];
-  if (!conPrecios) nodos.push(h("p", { class: "merc-aviso", texto: "Todavía no hay precios anotados. Mientras tanto, el semáforo usa mi estimación propia (sin fuentes). Elige una tienda abajo y anota lo que ves." }));
-  for (const f of atrasadas) nodos.push(h("p", { class: "merc-aviso", texto: f.dias == null ? `${f.nombre}: todavía no has anotado ningún precio.` : `${f.nombre}: llevas ${f.dias} días sin anotar precios.` }));
-  $("merc-avisos").replaceChildren(...nodos);
-}
-
-function pintarAnotar() {
-  const caja = $("merc-anotar");
-  if (!mercado.fuentes.length) { caja.replaceChildren(h("p", { class: "ayuda", texto: "Añade primero una fuente (abajo)." })); return; }
-  const selFuente = h("select", { id: "merc-fuente" }, mercado.fuentes.map((f) => h("option", { value: f.id, texto: f.nombre, selected: f.id === fuenteElegida })));
-  const fecha = h("input", { id: "merc-fecha", type: "date", value: hoy, max: hoy });
-  const verTodos = h("input", { id: "merc-todos", type: "checkbox", checked: todos });
-  const lista = h("div", { class: "merc-lista", id: "merc-lista" });
-  const estado = h("p", { class: "ayuda", role: "status", id: "merc-estado" });
-  const ids = todos ? productos.filter((p) => p.unidad === "kg" && !p.oculto).map((p) => p.id) : mercado.anclas.filter((id) => productos.some((p) => p.id === id));
-  const filas = ids.map((id) => ({ p: productos.find((x) => x.id === id), id })).filter((x) => x.p);
-  const actual = () => mercado.fuentes.find((f) => f.id === fuenteElegida);
-
-  const pintarLista = () => {
-    lista.replaceChildren(...filas.map(({ p, id }) => {
-      const guardadoF = mercado.precios[id]?.[fuenteElegida];
-      const ref = referenciaMercado(mercado.precios[id], mercado.fuentes, hoy);
-      const entrada = h("input", { type: "text", inputmode: "decimal", autocomplete: "off", id: `merc-p-${id}`, "aria-label": `Precio de ${p.nombre} en ${actual()?.nombre ?? ""}, euros por kilo`, placeholder: guardadoF ? importeEs(guardadoF.precio) : "—", value: borrador.get(id) ?? "" });
-      entrada.addEventListener("input", () => borrador.set(id, entrada.value));
-      return h("div", { class: "merc-fila" },
-        h("label", { class: "nombre", for: entrada.id, texto: p.nombre }), entrada,
-        h("p", { class: "ref", texto: [
-          guardadoF ? `Anotado: ${eur(guardadoF.precio)} (${guardadoF.fecha})` : "Sin anotar en esta tienda",
-          ref?.n ? `Mediana: ${eur(ref.mediana)} con ${ref.n} fuente${ref.n === 1 ? "" : "s"}${ref.descartadas ? ` (${ref.descartadas} caducada${ref.descartadas === 1 ? "" : "s"})` : ""}` : "Sin referencia vigente",
-        ].join(" · ") }));
-    }));
-  };
-  selFuente.addEventListener("change", () => { fuenteElegida = selFuente.value; borrador = new Map(); pintarLista(); });
-  verTodos.addEventListener("change", () => { todos = verTodos.checked; pintarAnotar(); });
-
-  const guardarBtn = h("button", { type: "button", class: "btn-prim", id: "merc-guardar", texto: "Guardar precios" });
-  guardarBtn.addEventListener("click", async () => {
-    const nuevo = structuredClone(mercado);
-    let cambios = 0;
-    for (const [id, texto] of borrador) {
-      if (texto.trim() === "") continue; // vacío = no tocar
-      const n = num(texto);
-      if (n == null || n <= 0) { estado.textContent = `«${texto}» no es un precio válido (${productos.find((p) => p.id === id)?.nombre}).`; return; }
-      (nuevo.precios[id] ??= {})[fuenteElegida] = { precio: n, fecha: fecha.value || hoy };
-      cambios++;
-    }
-    if (!cambios) { estado.textContent = "No has escrito ningún precio nuevo."; return; }
-    if (await guardar(nuevo, `Guardados ${cambios} precios de ${actual()?.nombre}.`)) $("merc-estado").textContent = `Guardados ${cambios} precios.`;
-  });
-  const quitarBtn = h("button", { type: "button", class: "btn-sec", id: "merc-quitar", texto: "Quitar todos los precios de esta tienda" });
-  quitarBtn.addEventListener("click", async () => {
-    if (!confirm(`¿Quitar todos los precios anotados de ${actual()?.nombre}?`)) return;
-    const nuevo = structuredClone(mercado);
-    for (const id of Object.keys(nuevo.precios)) { delete nuevo.precios[id][fuenteElegida]; if (!Object.keys(nuevo.precios[id]).length) delete nuevo.precios[id]; }
-    await guardar(nuevo, "Precios quitados.");
-  });
-
-  caja.replaceChildren(
-    h("h3", { texto: "Anotar precios" }),
-    h("p", { class: "ayuda", texto: `Elige la tienda, mira su precio por kilo en su web o en el lineal y escríbelo. Lo que dejes en blanco no se toca. Dejan de contar a los ${VIGENCIA_DIAS.semanal} días (o ${VIGENCIA_DIAS.diaria} si la fuente es diaria).` }),
-    h("div", { class: "barra" },
-      h("div", { class: "campo" }, h("label", { for: "merc-fuente", texto: "Tienda" }), selFuente),
-      h("div", { class: "campo" }, h("label", { for: "merc-fecha", texto: "Fecha del precio" }), fecha)),
-    h("label", { class: "check" }, verTodos, " Mostrar todos los productos al peso (no solo los de referencia)"),
-    lista, estado, h("div", { class: "acciones" }, guardarBtn, quitarBtn));
-  pintarLista();
-}
-
-function pintarFuentes() {
-  $("merc-fuentes").replaceChildren(...mercado.fuentes.map((f) => {
-    const frecuencia = h("select", { "aria-label": `Frecuencia de ${f.nombre}` }, Object.entries(FRECUENCIAS).map(([k, v]) => h("option", { value: k, texto: v, selected: k === f.frecuencia })));
-    frecuencia.addEventListener("change", async () => {
-      const nuevo = structuredClone(mercado);
-      nuevo.fuentes.find((x) => x.id === f.id).frecuencia = frecuencia.value;
-      await guardar(nuevo, `${f.nombre}: frecuencia ${FRECUENCIAS[frecuencia.value].toLowerCase()}.`);
-    });
-    const n = Object.values(mercado.precios).filter((p) => p[f.id]).length;
-    const quitar = h("button", { type: "button", class: "btn-sec", texto: "Quitar", "aria-label": `Quitar la fuente ${f.nombre}` });
-    quitar.addEventListener("click", async () => {
-      if (!confirm(`¿Quitar la fuente ${f.nombre} y sus ${n} precios anotados?`)) return;
-      const nuevo = structuredClone(mercado);
-      nuevo.fuentes = nuevo.fuentes.filter((x) => x.id !== f.id);
-      for (const id of Object.keys(nuevo.precios)) { delete nuevo.precios[id][f.id]; if (!Object.keys(nuevo.precios[id]).length) delete nuevo.precios[id]; }
-      await guardar(nuevo, `Fuente ${f.nombre} quitada.`);
-    });
-    return h("div", { class: "merc-fuente" },
-      h("span", { class: "nombre", texto: f.nombre }),
-      h("span", { class: "ayuda", texto: `${TIPOS_FUENTE[f.tipo]} · ${n} precio${n === 1 ? "" : "s"}` }),
-      f.url ? h("a", { href: f.url, target: "_blank", rel: "noopener noreferrer", texto: "Abrir web" }) : null,
-      frecuencia, quitar);
-  }));
-}
-
-function pintarNueva() {
-  const nombre = h("input", { id: "merc-n-nombre", type: "text", maxlength: "60", autocomplete: "off" });
-  const tipo = h("select", { id: "merc-n-tipo" }, Object.entries(TIPOS_FUENTE).map(([k, v]) => h("option", { value: k, texto: v, selected: k === "carniceria_online" })));
-  const frec = h("select", { id: "merc-n-frec" }, Object.entries(FRECUENCIAS).map(([k, v]) => h("option", { value: k, texto: v, selected: k === "semanal" })));
-  const url = h("input", { id: "merc-n-url", type: "url", maxlength: "200", placeholder: "https://…", autocomplete: "off" });
-  const campo = (id, texto, el) => h("div", { class: "campo" }, h("label", { for: id, texto }), el);
-  const boton = h("button", { type: "submit", class: "btn-sec", texto: "Añadir fuente" });
-  $("merc-nueva").onsubmit = async (ev) => {
-    ev.preventDefault();
-    const base = slug(nombre.value);
-    if (!base) { aviso("Escribe el nombre de la tienda.", { error: true }); nombre.focus(); return; }
-    let id = base, i = 2;
-    while (mercado.fuentes.some((f) => f.id === id)) id = `${base.slice(0, 27)}-${i++}`;
-    const nuevo = structuredClone(mercado);
-    nuevo.fuentes.push({ id, nombre: nombre.value.trim(), tipo: tipo.value, frecuencia: frec.value, url: url.value.trim(), nota: "" });
-    if (await guardar(nuevo, `Fuente ${nombre.value.trim()} añadida.`)) { fuenteElegida = id; pintar(); }
-  };
-  $("merc-nueva").replaceChildren(
-    h("h3", { texto: "Añadir una fuente" }),
-    h("p", { class: "ayuda", texto: "Por ejemplo una carnicería online o la tienda de un mayorista. Comprueba antes sus condiciones de uso: aquí solo anotas a mano lo que ves publicado." }),
-    campo("merc-n-nombre", "Nombre", nombre), campo("merc-n-tipo", "Tipo", tipo), campo("merc-n-frec", "Cada cuánto la repasas", frec), campo("merc-n-url", "Dirección web (opcional)", url), boton);
+  const estado = $("merc-estado"), avisos = $("merc-avisos"), lista = $("merc-series"), pie = $("merc-pie");
+  if (!resumen || !resumen.series.length) {
+    estado.textContent = ocupado ? "Descargando los precios de la UE…" : "Todavía no hay datos: se descargan solos en unos segundos. Si no aparecen, pulsa «Actualizar ahora».";
+    avisos.replaceChildren(); lista.replaceChildren(); pie.replaceChildren();
+    return;
+  }
+  estado.textContent = `Última semana publicada: del ${fecha(resumen.series[0].ultima.ini)} al ${fechaLarga(resumen.ultimaSemana)}. Descargado el ${horaMadrid(resumen.actualizado)}.${resumen.errores.length ? ` Algunas series no se pudieron leer (${resumen.errores.length}); se conservan los datos anteriores.` : ""}`;
+  avisos.replaceChildren(...resumen.avisos.map((a) => h("p", { class: "merc-aviso" },
+    h("strong", { texto: `${a.nombre}: ${a.pct > 0 ? "ha subido" : "ha bajado"} un ${PCT.format(Math.abs(a.pct)).replace("+", "")} % ` }),
+    `desde el ${fecha(a.desde)}, cuando confirmaste tus precios. Afecta a ${a.productos} producto${a.productos === 1 ? "" : "s"}: conviene repasar su precio en la pestaña Productos.`)));
+  lista.replaceChildren(...resumen.series.map(tarjeta));
+  pie.replaceChildren(
+    h("p", { class: "ayuda", texto: `Cubre ${resumen.productosCubiertos} de tus ${resumen.productosTotales} productos (ternera, cerdo, pollo y cordero). Para ibérico, conejo, caza, pavo, embutidos y elaborados la UE no publica precios, así que no hay termómetro.` }),
+    h("p", { class: "ayuda" }, "Fuente: ", h("a", { href: resumen.fuente.url, target: "_blank", rel: "noopener", texto: resumen.fuente.nombre }), "."));
 }

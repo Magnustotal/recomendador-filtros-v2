@@ -1,7 +1,7 @@
 import { texto, numeroOpcional, entero, booleano, listaTextos, recoger, ErrorValidacion } from "./validar.mjs";
 import { redondear } from "./dinero.mjs";
 import { MEDIDAS } from "./contenido.mjs";
-import { estaVigente, fechaReal, hayRangosSolapados, precioAnterior, MAX_OFERTAS_POR_PRODUCTO } from "./ofertas.mjs";
+import { estaVigente, activoHoy, fechaReal, hayRangosSolapados, precioAnterior, MAX_OFERTAS_POR_PRODUCTO } from "./ofertas.mjs";
 
 const euros = (n) => `${n.toFixed(2).replace(".", ",")} €`;
 
@@ -93,11 +93,11 @@ export function validarProducto(entrada, { categorias, redondeo = null }) {
   });
 }
 
-// Lo que ve el público: sin productos ocultos y sin campos internos.
+// Lo que ve el público: sin productos ocultos (salvo mientras tengan una oferta vigente) y sin campos internos.
 // Solo se enseña la oferta que está activa hoy (las programadas para más adelante no se adelantan al público).
 export function catalogoPublico(productos, hoy) {
   return productos
-    .filter((p) => !p.oculto)
+    .filter((p) => activoHoy(p, hoy))
     .sort((a, b) => a.orden - b.orden)
     // el coste, el margen y el historial de precios son datos del negocio, no del cliente. De cada rebaja activa se calcula aquí el precio
     // anterior de los 30 días (el que se enseña tachado), porque el navegador no tiene el historial.

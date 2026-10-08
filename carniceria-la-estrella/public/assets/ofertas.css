@@ -34,3 +34,18 @@
 /* Tienda: el escaparate va dentro de la lista, con aire arriba y abajo */
 .ofertas-tienda { padding: 0 0 1rem; }
 .prod.resaltado { outline: 3px solid var(--maroon); outline-offset: 2px; }
+
+/* ---------- Movimiento ---------- */
+.of-card { animation: of-entra var(--dur-3) var(--ease) backwards; }
+.of-card:nth-child(2) { animation-delay: 60ms; }
+.of-card:nth-child(3) { animation-delay: 120ms; }
+.of-card:nth-child(4) { animation-delay: 180ms; }
+.of-card:nth-child(n + 5) { animation-delay: 240ms; }
+@keyframes of-entra { from { opacity: 0; translate: 0 12px; } to { opacity: 1; translate: 0 0; } }
+@media (hover: hover) {
+  .of-card { transition: transform var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease); }
+  .of-card:hover { transform: translateY(-3px); box-shadow: 0 16px 28px -16px rgba(42, 29, 23, 0.4); }
+  .of-foto img { transition: transform 0.4s var(--ease); }
+  .of-card:hover .of-foto img { transform: scale(1.05); }
+}
+

@@ -290,7 +290,7 @@ test("escaparate: título en singular con una sola cosa y en plural con varias",
   assert.equal(tituloDestacadas(7), "Ofertas de la semana");
 });
 
-test("escaparate: solo lo activo hoy, con precio, sin ocultar ni agotar; por orden de fin y los regalos al final", () => {
+test("escaparate: solo lo activo hoy, con precio y sin agotar (un oculto con oferta vigente cuenta como activo); por orden de fin y los regalos al final", () => {
   const hoy = "2026-10-07";
   const productos = [
     pd("a", "Zanahorias de cerdo", [precio("2026-10-05", "2026-10-11", 7)]),
@@ -305,9 +305,10 @@ test("escaparate: solo lo activo hoy, con precio, sin ocultar ni agotar; por ord
     pd("j", "Rebaja que ya no lo es", [precio("2026-10-05", "2026-10-11", 12)]),
   ];
   const r = destacadas(productos, [regalo(), regalo({ regalo: "pasado", hasta: "2026-10-06" })], hoy);
-  assert.deepEqual(r.map((t) => (t.clase === "producto" ? t.p.nombre : `regalo: ${t.regalo.regalo}`)), ["Albóndigas", "Zanahorias de cerdo", "regalo: 250 g de chorizo"]);
-  assert.equal(r[1].precio, 7);
-  assert.equal(r[1].habitual, 10);
+  assert.deepEqual(r.map((t) => (t.clase === "producto" ? t.p.nombre : `regalo: ${t.regalo.regalo}`)), ["Albóndigas", "Oculta", "Zanahorias de cerdo", "regalo: 250 g de chorizo"]);
+  assert.equal(r[2].precio, 7);
+  assert.equal(r[2].habitual, 10);
+  assert.equal(destacadas([pd("o", "Oculta sin oferta hoy", [precio("2026-10-10", "2026-10-15", 7)], { oculto: true })], [], hoy).length, 0, "oculto y con la oferta programada: no sale");
   assert.equal(r[0].habitual, null, "el 3x2 no tacha nada");
   assert.equal(r[0].hasta, "2026-10-09");
   assert.deepEqual(destacadas([], [], hoy), []);
@@ -409,3 +410,22 @@ test("catálogo público: trae el precio anterior ya calculado y no filtra el hi
 });
 
 function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+test("activoHoy: un producto oculto cuenta como activo solo mientras tiene una oferta vigente", async () => {
+  const { activoHoy, destacadas } = await import("../lib/ofertas.mjs");
+  const { catalogoPublico } = await import("../lib/productos.mjs");
+  const base = { id: "x", nombre: "Secreto", categoria: "cerdo-iberico", unidad: "kg", precio: 20, orden: 1, historial: [{ desde: "2000-01-01", precio: 20 }] };
+  const of = (desde, hasta) => [{ tipo: "precio", desde, hasta, precio: 15 }];
+  assert.equal(activoHoy({ ...base }, "2026-10-05"), true, "visible de siempre");
+  assert.equal(activoHoy({ ...base, oculto: true }, "2026-10-05"), false);
+  assert.equal(activoHoy({ ...base, oculto: true, ofertas: of("2026-10-05", "2026-10-11") }, "2026-10-05"), true, "primer día");
+  assert.equal(activoHoy({ ...base, oculto: true, ofertas: of("2026-10-05", "2026-10-11") }, "2026-10-11"), true, "último día");
+  assert.equal(activoHoy({ ...base, oculto: true, ofertas: of("2026-10-05", "2026-10-11") }, "2026-10-12"), false, "al terminar vuelve a ocultarse");
+  assert.equal(activoHoy({ ...base, oculto: true, ofertas: of("2026-10-12", "2026-10-18") }, "2026-10-05"), false, "programada: aún no");
+  const ocultoConOferta = { ...base, oculto: true, ofertas: of("2026-10-05", "2026-10-11") };
+  assert.equal(catalogoPublico([ocultoConOferta], "2026-10-07").length, 1);
+  assert.equal(catalogoPublico([ocultoConOferta], "2026-10-12").length, 0);
+  assert.equal("oculto" in catalogoPublico([ocultoConOferta], "2026-10-07")[0], false, "el público no ve la marca interna");
+  const publico = catalogoPublico([ocultoConOferta], "2026-10-07");
+  assert.equal(destacadas(publico, [], "2026-10-07").filter((t) => t.clase === "producto").length, 1, "y sale en el escaparate");
+});

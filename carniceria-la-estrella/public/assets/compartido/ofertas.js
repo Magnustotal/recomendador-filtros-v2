@@ -22,6 +22,12 @@ export function ofertaVigente(ofertas, hoy) {
   return (ofertas ?? []).find((o) => o.desde && o.hasta && estaVigente(o, hoy)) ?? null;
 }
 
+// ¿Se ve (y se puede pedir) hoy en la tienda? Un producto oculto sale mientras tenga una oferta vigente: se activa con la oferta
+// y vuelve a ocultarse solo cuando termina, sin que nadie tenga que acordarse.
+export function activoHoy(p, hoy) {
+  return !p.oculto || ofertaVigente(p.ofertas, hoy) != null;
+}
+
 // «3x2», o «Oferta» para una rebaja de precio.
 export const nombreOferta = (o) => (o.tipo === "cantidad" ? `${o.lleva}x${o.paga}` : "Oferta");
 
@@ -178,7 +184,7 @@ export const tituloDestacadas = (n) => (n === 1 ? "Oferta de la semana" : "Ofert
 export function destacadas(productos, regalos, hoy) {
   const tarjetas = [];
   for (const p of productos ?? []) {
-    if (p.oculto || p.agotado) continue;
+    if (!activoHoy(p, hoy) || p.agotado) continue;
     const e = precioEfectivo(p, hoy);
     if (!e.oferta) continue;
     tarjetas.push({ clase: "producto", p, oferta: e.oferta, precio: e.precio, habitual: e.habitual, hasta: e.oferta.hasta });

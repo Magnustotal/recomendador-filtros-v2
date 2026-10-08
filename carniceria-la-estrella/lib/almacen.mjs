@@ -60,6 +60,10 @@ export function crearAlmacen(abrir = (nombre) => getStore({ name: nombre, consis
     // Con control de ediciones simultáneas (ETag), igual que los productos. `version` sube con cada cambio.
     actualizarMercado(transformar) { return actualizarJson(config(), "mercado", { version: 0, fuentes: mercadoPorDefecto.fuentes, precios: {} }, transformar); },
 
+    // Precios semanales de la carne que publica la UE (descarga automática; ver lib/mercado-auto.mjs): { actualizado, series, errores }.
+    async leerMercadoAuto() { return (await config().get("mercado-auto", { type: "json" })) ?? null; },
+    async guardarMercadoAuto(valor) { await config().setJSON("mercado-auto", valor); },
+
     async leerProductos() { return (await config().get("productos", { type: "json" })) ?? structuredClone(productosPorDefecto); },
     actualizarProductos(transformar) { return actualizarJson(config(), "productos", productosPorDefecto, transformar); },
 

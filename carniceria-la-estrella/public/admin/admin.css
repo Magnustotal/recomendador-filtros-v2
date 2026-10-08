@@ -5,6 +5,7 @@
 :root {
   --cream: #f5ead3; --cream-bright: #fdf8ec; --ink: #2a1d17; --ink-soft: #4a3a30; --maroon: #7a1f2a; --maroon-deep: #5c1620;
   --green: #1f4d3a; --line: #d9c9a8; --warn: #8a4b00; --danger: #a3262f; --radius: 12px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1); --dur-1: 0.12s; --dur-2: 0.22s; --dur-3: 0.36s;
   --font-display: "Playfair Display", Georgia, serif;
   --font-body: "Karla", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -133,6 +134,7 @@ button:disabled { opacity: 0.5; cursor: default; }
 /* ---------- diálogo de producto ---------- */
 dialog { width: min(100% - 1.5rem, 40rem); max-height: calc(100dvh - 1.5rem); padding: 1.3rem; background: var(--cream-bright); color: var(--ink); border: 2px solid var(--ink); border-radius: var(--radius); }
 dialog::backdrop { background: rgba(42, 29, 23, 0.6); }
+
 dialog h2 { margin-top: 0; }
 .fila-dos { display: grid; gap: 0 1rem; } .fila-tres { display: grid; gap: 0 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media (min-width: 560px) { .fila-dos { grid-template-columns: 1fr 1fr; } }
@@ -218,17 +220,6 @@ label.btn-sec { cursor: pointer; }
 
 /* ---- Mercado ---- */
 .tarjeta.ancha { width: 100%; max-width: 60rem; margin: 0 0 1.2rem; }
-.merc-fila { display: grid; grid-template-columns: minmax(0, 1fr) 7.5rem; gap: 0.4rem 0.8rem; align-items: center; padding: 0.45rem 0; border-top: 1px solid var(--line); }
-.merc-fila:first-child { border-top: 0; }
-.merc-fila .nombre { font-weight: 600; }
-.merc-fila .ref { grid-column: 1 / -1; margin: 0; font-size: 0.85rem; color: var(--ink-soft); }
-.merc-fila input { min-height: 48px; text-align: right; }
-.merc-fuentes { display: grid; gap: 0.6rem; margin: 0 0 1.2rem; }
-.merc-fuente { display: flex; flex-wrap: wrap; gap: 0.5rem 0.9rem; align-items: center; padding: 0.7rem 0.9rem; background: var(--cream-bright); border: 1px solid var(--line); border-radius: var(--radius); }
-.merc-fuente .nombre { flex: 1 1 12rem; font-weight: 700; }
-.merc-fuente select { min-height: 48px; }
-.merc-aviso { margin: 0 0 0.8rem; padding: 0.7rem 0.9rem; border: 1px solid var(--warn); background: #fff4e0; border-radius: var(--radius); }
-.merc-lista { max-height: 28rem; overflow: auto; margin: 0.6rem 0; padding-right: 0.3rem; }
 
 /* ---------- ofertas temporales (ficha del producto) ---------- */
 .ofertas-lista { display: grid; gap: 0.8rem; margin: 0.6rem 0; }
@@ -259,3 +250,57 @@ label.btn-sec { cursor: pointer; }
 .ofertas-resumen { margin: 0.3rem 0 0.6rem; padding-left: 1.2rem; }
 #dlg-oferta select, #dlg-oferta input[type="search"] { width: 100%; }
 .oferta-aviso { margin: 0.4rem 0; padding: 0.5rem 0.7rem; font-weight: 700; color: var(--warn); background: #fff4e0; border: 1px solid var(--warn); border-radius: var(--radius); }
+
+/* ---------- Movimiento ----------
+   Diálogos que entran y salen, pestañas que aparecen, botones que responden al pulsar. Solo opacity, translate y color. */
+@media (prefers-reduced-motion: no-preference) {
+  dialog {
+    opacity: 0; translate: 0 14px;
+    transition: opacity var(--dur-2) var(--ease), translate var(--dur-2) var(--ease), overlay var(--dur-2) allow-discrete, display var(--dur-2) allow-discrete;
+  }
+  dialog[open] { opacity: 1; translate: 0 0; }
+  @starting-style { dialog[open] { opacity: 0; translate: 0 14px; } }
+  dialog::backdrop { background-color: rgba(42, 29, 23, 0); transition: background-color var(--dur-2) var(--ease), overlay var(--dur-2) allow-discrete, display var(--dur-2) allow-discrete; }
+  dialog[open]::backdrop { background-color: rgba(42, 29, 23, 0.6); }
+  @starting-style { dialog[open]::backdrop { background-color: rgba(42, 29, 23, 0); } }
+  [role="tabpanel"]:not([hidden]) { animation: panel-entra var(--dur-3) var(--ease); }
+}
+@keyframes panel-entra { from { opacity: 0; translate: 0 6px; } to { opacity: 1; translate: 0 0; } }
+.btn-prim, .btn-sec, .btn-peligro, button.chip, .dia { transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease); }
+.btn-prim:active, .btn-sec:active, .btn-peligro:active, button.chip:active, .dia:active { transform: scale(0.97); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+}
+
+/* ---------- Ofertas: lista de productos que coinciden (activos y ocultos, cada uno con su color y su etiqueta) ---------- */
+.of-resultados { max-height: 16rem; overflow-y: auto; margin: 0 0 0.6rem; border: 2px solid var(--line); border-radius: 10px; background: var(--cream-bright); }
+.of-op { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.8rem; min-height: 48px; padding: 0.45rem 0.8rem; cursor: pointer; border-bottom: 1px solid var(--line); }
+.of-op:last-child { border-bottom: 0; }
+.of-op.es-activo { background: #e6f0e8; }
+.of-op.es-oculto { background: #f7ead0; }
+.of-op:has(input:checked) { outline: 3px solid var(--maroon); outline-offset: -3px; }
+.of-op input { accent-color: var(--maroon); width: 1.2rem; height: 1.2rem; flex-shrink: 0; }
+.of-op-texto { display: grid; flex: 1 1 12rem; min-width: 0; }
+.of-op-nombre { font-weight: 700; }
+.of-op-meta { font-size: 0.86rem; color: var(--ink-soft); }
+.of-pastilla { display: inline-block; padding: 0.1em 0.6em; border-radius: 999px; font-size: 0.8rem; font-weight: 700; color: #fff; }
+.of-pastilla.es-activo { background: var(--green); }
+.of-pastilla.es-oculto { background: var(--warn); }
+.of-pastilla.es-agotado { background: var(--ink-soft); }
+
+/* ---------- Mercado de la carne (descarga automática) ---------- */
+.merc-aviso { margin: 0 0 0.8rem; padding: 0.7rem 0.9rem; border: 2px solid var(--warn); background: #fff4e0; border-radius: 10px; }
+.merc-series { display: grid; gap: 0.9rem; margin: 1rem 0; padding: 0; list-style: none; }
+.merc-serie { padding: 1rem 1.1rem; background: var(--cream-bright); border: 1px solid var(--line); border-radius: var(--radius); }
+.merc-serie h3 { margin: 0 0 0.2rem; font-size: 1.1rem; }
+.merc-cab { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: center; justify-content: space-between; }
+.merc-cab > div:first-child { flex: 1 1 14rem; min-width: 0; }
+.merc-precio { display: grid; text-align: right; }
+.merc-precio strong { font-size: 1.35rem; color: var(--maroon-deep); }
+.merc-grafico { color: var(--maroon); flex: 0 0 auto; }
+.merc-cambios { display: flex; flex-wrap: wrap; gap: 0.4rem 0.6rem; margin: 0.7rem 0 0.4rem; padding: 0; list-style: none; }
+.merc-cambio { display: inline-flex; gap: 0.5rem; align-items: baseline; padding: 0.25rem 0.7rem; border: 1px solid var(--line); border-radius: 999px; background: var(--cream); font-size: 0.9rem; }
+.merc-cambio.sube strong { color: var(--danger); }
+.merc-cambio.baja strong { color: var(--green); }
+.merc-etq { color: var(--ink-soft); }
+

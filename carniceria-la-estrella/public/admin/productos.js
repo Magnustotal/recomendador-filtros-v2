@@ -312,7 +312,7 @@ function abrirEditor(original) {
   };
   const chk = (id, etiqueta, marcado) => h("label", { class: "check", for: id }, h("input", { id, type: "checkbox", checked: marcado }), h("span", { texto: etiqueta }));
   const cAgotado = chk("f-agotado", "Agotado (se ve pero no se puede pedir)", p.agotado);
-  const cOculto = chk("f-oculto", "Oculto (no aparece en la tienda)", p.oculto);
+  const cOculto = chk("f-oculto", "Oculto (no aparece en la tienda, salvo mientras tenga una oferta)", p.oculto);
   const cAlcohol = chk("f-alcohol", "Bebida alcohólica (pide confirmar que es mayor de 18)", p.alcohol);
 
   const ayudaUnidad = h("p", { class: "ayuda", id: "ayuda-unidad" });

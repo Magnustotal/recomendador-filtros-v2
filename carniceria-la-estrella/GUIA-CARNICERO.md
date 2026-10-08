@@ -33,13 +33,13 @@ En el móvil funciona igual que en el ordenador. Arriba tienes siete pestañas.
 
 ## Mercado
 
-Sirve para que el semáforo de los precios se apoye en lo que cuestan **otras tiendas**, no solo en mi estimación. Solo lo ves tú; el cliente no ve nada de esto.
+Aquí no hay que anotar nada. La web descarga sola, cada día, los precios semanales de la carne en España que publica la Unión Europea (ternera, cerdo, pollo y cordero) y te los enseña con su evolución. Solo lo ves tú.
 
-- **Anotar precios:** elige la tienda (Mercadona, Lidl, Aldi…), mira el precio por kilo en su web o en el lineal y escríbelo en cada producto; pulsa **Guardar precios**. Lo que dejes en blanco no se toca. La **fecha** del precio es hoy salvo que la cambies. Con una vez por semana basta.
-- Se muestran **30 productos de referencia** (pollo, cerdo, ternera, cordero, picada…). Marca «Mostrar todos los productos al peso» si quieres anotar más.
-- **Cómo se usa:** el semáforo coge la **mediana** de las tiendas con precio reciente (hasta 45 días) y te dice cuántas son y de cuándo es la más antigua. Si no hay ninguna reciente, vuelve a la estimación propia.
-- **Fuentes:** puedes cambiar cada cuánto repasas cada tienda, quitarla o **añadir otra** (una carnicería online, un mayorista…). Antes de usar la web de otra empresa, mira sus condiciones: aquí solo anotas a mano lo que ves publicado.
-- El panel te avisa (y la pestaña **Estado**) si una tienda semanal lleva más de 7 días sin anotarse.
+- **Qué son:** precios **mayoristas** (de canal o de pieza, por 100 kg), no lo que cobra una carnicería ni un supermercado por cada corte. Sirven de termómetro: si la ternera en canal sube un 6 %, tus precios de ternera se van a quedar cortos.
+- **Qué ves:** para cada tipo de carne, el precio de la última semana publicada y cuánto ha cambiado frente a la semana anterior, hace 4 semanas, hace un año y **desde la última vez que confirmaste tus precios**.
+- **Avisos:** si desde que confirmaste tus precios el mercado se ha movido un 5 % o más en algo que vendes, sale un aviso en esta pestaña y en **Estado**, con cuántos productos afecta.
+- **Qué no cubre:** ibérico, conejo, caza, pavo, embutidos ni elaborados (la UE no publica precios de eso). Lo que sí cubre son unos 70 de tus productos.
+- **Botón «Actualizar ahora»:** normalmente no hace falta. La UE publica una vez por semana, con unos días de retraso.
 
 ## Ofertas
 
@@ -49,6 +49,7 @@ Aquí programas lo que quieras anunciar. Se activa y se desactiva **solo** en la
 - **Reglas:** solo una oferta a la vez en cada producto (si dos coinciden en fechas, te avisa); la rebaja necesita que el producto tenga su precio normal y que la oferta sea más barata; el 3x2 también necesita precio. Puedes dejar ofertas **programadas** para más adelante: no se ven hasta su día.
 - **La lista:** *Activas hoy*, *Programadas* y *Terminadas* (plegadas, con un botón para borrarlas). Con *Cambiar* modificas una oferta y con *Quitar* la borras.
 - **Lo que no sale en el bloque:** un producto agotado o sin precio.
+- **Productos ocultos:** al buscar el producto salen todos los que coinciden: los **activos** (verde) y los **ocultos** (ámbar, con la etiqueta escrita). Si eliges uno oculto, **se muestra en la tienda mientras dure la oferta y se vuelve a ocultar solo cuando termina**; no tienes que acordarte. Un producto agotado sigue agotado aunque tenga oferta.
 - **El precio tachado lo calcula la web, no tú.** La ley (Ley 7/1996, art. 20) obliga a enseñar el **precio anterior**, que es **el más bajo que hayas aplicado a ese producto en los 30 días anteriores al inicio de la rebaja**. La web guarda el historial de tus precios y ofertas y tacha ese precio, que puede ser distinto de tu precio de ahora (por ejemplo, si lo subiste hace poco). Si una oferta no cuenta como rebaja (porque en esos 30 días ya vendiste más barato, o es la primera vez que pones precio al producto), al crearla te sale un aviso ⚠ y, en la tienda, se cobra lo que programaste pero **sin tachar nada ni llamarla oferta**. Por eso, **dos rebajas seguidas del mismo producto** tienen que dejar 30 días entre una y otra para que la segunda vuelva a tachar el precio de siempre. El historial empieza con esta versión. La ley exceptúa los descuentos que hagas solo para no tirar género próximo a caducar, pero la web no distingue: los cuenta como cualquier otro precio (así el tachado nunca queda más alto de lo debido). **Si pones una oferta por debajo de lo que te cuesta el producto, el panel te avisa**: vender con pérdida puede ser desleal en algunos casos. Conviene que tu gestoría confirme todo esto.
 - **Regalo por compra**, más abajo en la misma pestaña: por ejemplo, «por cada 30 € de compra, 250 g de chorizo de regalo». Pulsa *Añadir un regalo*, escribe qué regalas y a partir de cuántos euros, y si quieres las fechas, y **guarda con *Guardar regalos***. «Se repite» regala uno más por cada 30 € (60 € = 2 regalos); si lo desmarcas, es uno solo. Cuenta lo que se paga por los productos (ya con las ofertas, sin el envío). El cliente lo ve en el bloque de ofertas, en su carrito («te faltan X € para tu regalo»), en el mensaje de WhatsApp, y a ti te sale en el pedido. El regalo es solo un texto: tú lo preparas.
 

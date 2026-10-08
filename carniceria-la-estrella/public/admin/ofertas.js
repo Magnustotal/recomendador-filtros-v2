@@ -149,23 +149,30 @@ function abrirDialogo(edicion = null) {
   const campo = (idc, etiqueta, control, ayuda) => h("div", { class: "campo" }, h("label", { for: idc, texto: etiqueta }), control, ayuda ? h("p", { class: "ayuda", texto: ayuda }) : null);
   const errores = h("div", { class: "errores", role: "alert", tabindex: "-1", hidden: true });
 
-  // Producto: buscador + lista por categorías (225 productos no caben en una lista a pelo)
+  // Producto: se escribe para buscar y salen TODOS los que coinciden, los activos de un color y los ocultos de otro
+  // (el color nunca va solo: cada fila lleva su etiqueta escrita)
+  let elegido = edicion?.p.id ?? "";
   const buscar = h("input", { id: id("buscar"), type: "search", autocomplete: "off", placeholder: "Escribe para encontrar el producto" });
-  const selProd = h("select", { id: id("producto"), size: "1" });
+  const resultados = h("div", { class: "of-resultados", role: "radiogroup", "aria-label": "Productos que coinciden" });
+  const resumen = h("p", { class: "ayuda", role: "status" });
   const infoProd = h("p", { class: "ayuda", role: "status" });
-  const pintarProductos = (conservar) => {
+  const pintarProductos = () => {
     const q = sinAcentos(buscar.value.trim());
-    const grupos = [];
-    for (const c of categorias) {
-      const ops = productos.filter((p) => p.categoria === c.id && !p.oculto && (!q || sinAcentos(`${p.nombre} ${c.nombre}`).includes(q)))
-        .map((p) => h("option", { value: p.id, texto: `${p.nombre} · ${p.precio != null ? `${eurosTxt(p.precio)}/${unidadDe(p)}` : "sin precio"}`, selected: p.id === conservar }));
-      if (ops.length) grupos.push(h("optgroup", { label: c.nombre }, ops));
-    }
-    selProd.replaceChildren(...(grupos.length ? [h("option", { value: "", texto: "Elige un producto…" }), ...grupos] : [h("option", { value: "", texto: "Ningún producto coincide" })]));
-    if (conservar) selProd.value = conservar;
+    const coinciden = productos
+      .filter((p) => !q || sinAcentos(`${p.nombre} ${nombreCat(p.categoria)}`).includes(q))
+      .sort((a, b) => (Number(!!a.oculto) - Number(!!b.oculto)) || a.nombre.localeCompare(b.nombre, "es"));
+    const ocultos = coinciden.filter((p) => p.oculto).length;
+    resultados.replaceChildren(...(coinciden.length ? coinciden.map((p) => h("label", { class: `of-op ${p.oculto ? "es-oculto" : "es-activo"}` },
+      h("input", { type: "radio", name: "of-producto", value: p.id, checked: p.id === elegido }),
+      h("span", { class: "of-op-texto" },
+        h("span", { class: "of-op-nombre", texto: p.nombre }),
+        h("span", { class: "of-op-meta", texto: `${nombreCat(p.categoria)} · ${p.precio != null ? `${eurosTxt(p.precio)}/${unidadDe(p)}` : "sin precio"}` })),
+      h("span", { class: `of-pastilla ${p.oculto ? "es-oculto" : "es-activo"}`, texto: p.oculto ? "Oculto: se activará con la oferta" : "Activo" }),
+      p.agotado ? h("span", { class: "of-pastilla es-agotado", texto: "Agotado" }) : null)) : [h("p", { class: "ayuda", texto: "Ningún producto coincide." })]));
+    resumen.textContent = coinciden.length ? `${coinciden.length} producto${coinciden.length === 1 ? "" : "s"}: ${coinciden.length - ocultos} activo${coinciden.length - ocultos === 1 ? "" : "s"} y ${ocultos} oculto${ocultos === 1 ? "" : "s"}.` : "";
     mostrarProducto();
   };
-  const producto = () => productos.find((p) => p.id === selProd.value) ?? null;
+  const producto = () => productos.find((p) => p.id === elegido) ?? null;
 
   const tipoPrecio = h("input", { type: "radio", name: "tipo-oferta", value: "precio", checked: !edicion || edicion.o.tipo === "precio" });
   const tipoCantidad = h("input", { type: "radio", name: "tipo-oferta", value: "cantidad", checked: edicion?.o.tipo === "cantidad" });
@@ -186,7 +193,9 @@ function abrirDialogo(edicion = null) {
   const num = (el) => { const t = el.value.trim().replace(",", "."); const n = Number(t); return t === "" || !Number.isFinite(n) ? null : n; };
   function mostrarProducto() {
     const p = producto();
-    infoProd.textContent = p ? (p.precio != null ? `Precio habitual: ${eurosTxt(p.precio)}/${unidadDe(p)}.` : "Este producto todavía no tiene precio: solo se puede hacer un 3x2 (para rebajar, pon antes su precio en la pestaña Productos).") : "";
+    const precioTxt = p ? (p.precio != null ? `Precio habitual: ${eurosTxt(p.precio)}/${unidadDe(p)}.` : "Este producto todavía no tiene precio: solo se puede hacer un 3x2 (para rebajar, pon antes su precio en la pestaña Productos).") : "";
+    const ocultoTxt = p?.oculto ? ` Está oculto en la tienda: con esta oferta se mostrará${desde.value && hasta.value ? ` del ${fechaCorta(desde.value)} al ${fechaCorta(hasta.value)}` : " mientras dure"} y volverá a ocultarse solo cuando termine.` : "";
+    infoProd.textContent = precioTxt + ocultoTxt;
     refrescar();
   }
   function refrescar() {
@@ -206,17 +215,21 @@ function abrirDialogo(edicion = null) {
       : "Se paga menos de lo que se lleva (por ejemplo, lleva 3 y paga 2).";
   }
   for (const el of [tipoPrecio, tipoCantidad, precio, lleva, paga, desde, hasta]) el.addEventListener("input", refrescar);
-  buscar.addEventListener("input", () => pintarProductos(selProd.value));
-  selProd.addEventListener("change", mostrarProducto);
-  pintarProductos(edicion?.p.id);
-  if (edicion) { selProd.disabled = true; buscar.disabled = true; }
+  for (const el of [desde, hasta]) el.addEventListener("input", mostrarProducto);
+  buscar.addEventListener("input", pintarProductos);
+  resultados.addEventListener("change", (ev) => { if (ev.target.name === "of-producto") { elegido = ev.target.value; mostrarProducto(); } });
+  pintarProductos();
+  if (edicion) buscar.disabled = true;
 
   const guardarBtn = h("button", { type: "submit", class: "btn-prim", texto: esNueva ? "Crear oferta" : "Guardar cambios" });
   const cancelar = h("button", { type: "button", class: "btn-sec", texto: "Cancelar", onclick: () => dlg.close() });
   const formulario = h("form", { novalidate: true, "aria-labelledby": "dlg-of-titulo" },
     h("h2", { id: "dlg-of-titulo", texto: esNueva ? "Crear oferta" : `Cambiar la oferta de ${edicion.p.nombre}` }),
     errores,
-    ...(edicion ? [h("p", { class: "ayuda", texto: `${edicion.p.nombre} · ${nombreCat(edicion.p.categoria)}` })] : [campo(id("buscar"), "Producto", buscar), campo(id("producto"), "Elige el producto", selProd), infoProd]),
+    ...(edicion ? [h("p", { class: "ayuda", texto: `${edicion.p.nombre} · ${nombreCat(edicion.p.categoria)}` }), infoProd] : [
+      campo(id("buscar"), "Producto", buscar),
+      h("p", { class: "ayuda" }, h("span", { class: "of-pastilla es-activo", texto: "Activo" }), " se ve ahora en la tienda. ", h("span", { class: "of-pastilla es-oculto", texto: "Oculto" }), " no se ve: con la oferta se mostrará y, cuando termine, volverá a ocultarse solo."),
+      resumen, resultados, infoProd]),
     h("fieldset", { class: "campo-grupo" }, h("legend", { texto: "Qué oferta" }), tipos, panelPrecio, panelCantidad),
     h("div", { class: "fila-dos" }, campo(id("desde"), "Desde (incluido)", desde), campo(id("hasta"), "Hasta (incluido)", hasta)),
     h("p", { class: "ayuda", texto: "Se activa y se desactiva sola en esas fechas. Con una rebaja, la tienda tacha el precio anterior, que según la Ley 7/1996 (art. 20) es el más bajo que hayas aplicado a ese producto en los 30 días previos al inicio: la web lo calcula con el historial de tus precios y ofertas. Conviene que tu gestoría lo confirme." }),

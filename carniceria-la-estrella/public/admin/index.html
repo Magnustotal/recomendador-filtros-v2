@@ -130,13 +130,15 @@
 
     <!-- Mercado -->
     <section id="panel-mercado" role="tabpanel" aria-labelledby="tab-mercado" hidden>
-      <h2>Precios de otras tiendas</h2>
-      <p class="ayuda">Anota aquí lo que cuestan en otros sitios los productos de referencia. El semáforo de Productos usa la <strong>mediana</strong> de lo anotado (sin contar lo que tenga demasiados días). Solo lo ves tú: el cliente no ve nada de esto. La web <strong>no lee ningún precio sola</strong>: lo apuntas tú, una vez a la semana basta.</p>
-      <div id="merc-avisos" role="status"></div>
-      <div id="merc-anotar" class="tarjeta ancha"></div>
-      <h3>Fuentes</h3>
-      <div id="merc-fuentes" class="merc-fuentes"></div>
-      <form id="merc-nueva" class="tarjeta ancha" novalidate></form>
+      <h2>Mercado de la carne</h2>
+      <p class="ayuda">Aquí no se anota nada: la web descarga sola, cada día, los precios semanales de la carne en España que publica la Unión Europea. Son <strong>precios mayoristas</strong> (de canal o de pieza, por 100 kg), no lo que cobra una carnicería ni un supermercado por cada corte. Sirven para ver si el mercado sube o baja y avisarte cuando tus precios se queden atrás. Solo lo ves tú.</p>
+      <div class="barra">
+        <p id="merc-estado" class="ayuda" role="status"></p>
+        <button type="button" id="merc-actualizar" class="btn-sec">Actualizar ahora</button>
+      </div>
+      <div id="merc-avisos"></div>
+      <ul id="merc-series" class="merc-series"></ul>
+      <div id="merc-pie"></div>
     </section>
 
     <section id="panel-tienda" role="tabpanel" aria-labelledby="tab-tienda" hidden>

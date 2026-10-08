@@ -10,6 +10,7 @@ import { validarProducto, aplicarRedondeoATodos } from "./productos.mjs";
 import { categorias, preciosOrientativos, mercadoPorDefecto } from "./datos.generado.mjs";
 import { redondear } from "./dinero.mjs";
 import { validarMercado } from "./mercado.mjs";
+import { resumenPanel, refrescarMercadoAuto } from "./mercado-auto.mjs";
 import { historialActualizado } from "./ofertas.mjs";
 import { ahoraEnMadrid } from "./horario.mjs";
 import { randomUUID } from "node:crypto";
@@ -45,7 +46,18 @@ export async function manejarAdmin(req, deps) {
       const [ajustes, productos] = await Promise.all([deps.almacen.leerAjustes(), deps.almacen.leerProductos()]);
       const meta = await deps.almacen.leerMeta().catch(() => ({}));
       const mercado = { ...(await deps.almacen.leerMercado().catch(() => ({ version: 0, fuentes: mercadoPorDefecto.fuentes, precios: {} }))), anclas: mercadoPorDefecto.anclas };
-      return json(200, { ok: true, ajustes, productos, categorias, orientativos: preciosOrientativos, meta, mercado, hoy: ahoraEnMadrid(new Date(deps.ahora())).fecha });
+      const hoy = ahoraEnMadrid(new Date(deps.ahora())).fecha;
+      const datosAuto = await deps.almacen.leerMercadoAuto().catch(() => null);
+      const mercadoAuto = resumenPanel(datosAuto, productos, { desde: meta.precios ? meta.precios.slice(0, 10) : null, hoy });
+      return json(200, { ok: true, ajustes, productos, categorias, orientativos: preciosOrientativos, meta, mercado, mercadoAuto, hoy });
+    }
+
+    // Precios de la carne que publica la UE: se descargan solos cada día; esto los trae al momento (el panel lo hace él solo si faltan o están viejos).
+    if (ruta === "/mercado/actualizar" && metodo === "POST") {
+      try { await refrescarMercadoAuto(deps, { forzar: true }); } catch (e) { return error(502, String(e?.message ?? "No se pudieron descargar los precios.")); }
+      const [productos, meta, datosAuto] = await Promise.all([deps.almacen.leerProductos(), deps.almacen.leerMeta().catch(() => ({})), deps.almacen.leerMercadoAuto().catch(() => null)]);
+      const hoy = ahoraEnMadrid(new Date(deps.ahora())).fecha;
+      return json(200, { ok: true, mercadoAuto: resumenPanel(datosAuto, productos, { desde: meta.precios ? meta.precios.slice(0, 10) : null, hoy }) });
     }
 
     if (ruta === "/ajustes" && metodo === "PUT") {

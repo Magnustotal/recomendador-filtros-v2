@@ -3,7 +3,7 @@
 // el navegador del cliente solo envía lo que quiere, nunca lo que cuesta.
 import { texto, telefonoEspana, fechaISO, recoger, ErrorValidacion } from "./validar.mjs";
 import { cantidadValida, aCentimos, formatoCantidad, formatoEuro } from "./dinero.mjs";
-import { calcularLineas, regalosDelPedido, nombreOferta } from "./ofertas.mjs";
+import { calcularLineas, regalosDelPedido, nombreOferta, activoHoy } from "./ofertas.mjs";
 import { diaSemanaDeFecha, sumarDias, aMinutos, franjaDentroDeHorario } from "./horario.mjs";
 
 const MAX_LINEAS = 60;
@@ -40,7 +40,7 @@ export function validarPedido(entrada, { productos, ajustes, ahora, geo = null }
       const fusion = new Map();
       for (const [i, l] of e.lineas.entries()) {
         const p = typeof l?.id === "string" ? porId.get(l.id) : undefined;
-        if (!p || p.oculto) { ctx.error(`lineas[${i}]`, "Producto no disponible."); continue; }
+        if (!p || !activoHoy(p, ahora.fecha)) { ctx.error(`lineas[${i}]`, "Producto no disponible."); continue; }
         if (p.agotado) { ctx.error(`lineas[${i}]`, `${p.nombre} está agotado.`); continue; }
         const opcion = ctx.intento(() => texto(l.opcion, { max: 40, campo: `lineas[${i}].opcion` })) ?? "";
         if (opcion && !p.opciones.includes(opcion)) { ctx.error(`lineas[${i}].opcion`, `Opción no válida para ${p.nombre}.`); continue; }
