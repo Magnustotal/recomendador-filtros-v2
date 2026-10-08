@@ -212,16 +212,62 @@ function chip(id, texto, iconoId) {
   return b;
 }
 
-// Las categorías lejanas no se pintan hasta acercarse (content-visibility), así que su altura real solo se
-// conoce al llegar: se salta, se deja que se pinte y se corrige la posición.
-function irASeccion(destino, intentos = 8) {
+// Lleva la pantalla a `destino` y lo mantiene en su sitio mientras la página se acomoda. En el móvil, lo que mueve el destino después del
+// salto es: las categorías de más arriba que se pintan por primera vez (content-visibility calcula su altura al verlas), las imágenes que
+// cargan, el ajuste de posición automático del navegador y la barra de direcciones de Chrome que se esconde. Por eso:
+//  1. se pintan antes las categorías de arriba, con su altura real (luego vuelven a su modo, recordando la altura);
+//  2. se apaga el ajuste automático mientras dura;
+//  3. se corrige la posición hasta que lleve un rato quieta (máximo ~1,5 s), y se deja en cuanto la persona toca la pantalla o mueve la rueda.
+const QUIETO_MS = 350, MAXIMO_MS = 1500;
+let corrigiendo = null; // cancelar el anterior si se pulsa otro botón
+
+function fijarEnPantalla(destino, { antes = [], posicion = "inicio" } = {}) {
+  corrigiendo?.();
+  const raiz = document.documentElement;
+  for (const s of antes) s.style.contentVisibility = "visible";
+  raiz.style.overflowAnchor = "none";
+  const tolerancia = posicion === "centro" ? 24 : 2;
+  const desvio = () => {
+    const r = destino.getBoundingClientRect();
+    return posicion === "centro" ? r.top + r.height / 2 - innerHeight / 2 : r.top - (parseFloat(getComputedStyle(destino).scrollMarginTop) || 0);
+  };
+  const inicio = performance.now();
+  let quietoDesde = inicio, fin = false;
+  const cancelar = () => {
+    if (fin) return;
+    fin = true;
+    for (const s of antes) s.style.contentVisibility = "";
+    raiz.style.overflowAnchor = "";
+    for (const ev of ["wheel", "touchstart", "keydown", "pointerdown"]) removeEventListener(ev, cancelar, true);
+    visualViewport?.removeEventListener("resize", mover);
+    if (corrigiendo === cancelar) corrigiendo = null;
+  };
+  const mover = () => { quietoDesde = performance.now(); };
+  const vuelta = () => {
+    if (fin) return;
+    const d = desvio();
+    if (Math.abs(d) > tolerancia && destino.getBoundingClientRect().height > 0) { scrollBy({ top: d, behavior: "instant" }); quietoDesde = performance.now(); }
+    const ahora = performance.now();
+    if (ahora - quietoDesde >= QUIETO_MS || ahora - inicio >= MAXIMO_MS) return cancelar();
+    requestAnimationFrame(vuelta);
+  };
+  corrigiendo = cancelar;
+  for (const ev of ["wheel", "touchstart", "keydown", "pointerdown"]) addEventListener(ev, cancelar, { capture: true, passive: true });
+  visualViewport?.addEventListener("resize", mover);
+  vuelta();
+}
+
+// Las categorías anteriores a una dada (las que, al pintarse, pueden mover el destino)
+const categoriasAntesDe = (seccion) => {
+  const lista = [];
+  for (const b of bloques) { if (b.seccion === seccion) break; lista.push(b.seccion); }
+  return lista;
+};
+
+function irASeccion(destino) {
   destino = destino?.closest(".cat-bloque"); // se salta a la cabecera con su foto, no solo al título
   if (!destino) return;
-  destino.scrollIntoView({ block: "start", behavior: "instant" });
-  if (intentos > 0) requestAnimationFrame(() => {
-    const arriba = destino.getBoundingClientRect().top;
-    if (Math.abs(arriba - parseFloat(getComputedStyle(destino).scrollMarginTop)) > 2) irASeccion(destino, intentos - 1);
-  });
+  fijarEnPantalla(destino, { antes: categoriasAntesDe(destino), posicion: "inicio" });
 }
 
 // Con buscador activo se ve todo lo que coincide; con una categoría elegida y sin búsqueda
@@ -249,15 +295,11 @@ function pintarOfertas() {
 
 // Salto a un producto concreto (desde el escaparate o desde la portada: /tienda#p-<id>).
 // Las categorías lejanas no se pintan hasta acercarse (content-visibility), así que se corrige la posición.
-function irAProducto(id, intentos = 8) {
+function irAProducto(id) {
   const nodo = el.productos.querySelector(`.prod[data-id="${CSS.escape(id)}"]`);
   if (!nodo) return;
   if (el.buscar.value) { el.buscar.value = ""; filtrar(); }
-  nodo.scrollIntoView({ block: "center", behavior: "instant" });
-  if (intentos > 0) requestAnimationFrame(() => {
-    const r = nodo.getBoundingClientRect();
-    if (Math.abs(r.top + r.height / 2 - innerHeight / 2) > 40 && r.height > 0) irAProducto(id, intentos - 1);
-  });
+  fijarEnPantalla(nodo, { antes: categoriasAntesDe(nodo.closest(".cat-bloque")), posicion: "centro" });
   nodo.classList.add("resaltado");
   setTimeout(() => nodo.classList.remove("resaltado"), 2500);
   nodo.querySelector(".btn-anadir")?.focus({ preventScroll: true });

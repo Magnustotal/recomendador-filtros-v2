@@ -56,6 +56,41 @@
     });
   }
 
+  // --- Saltos a una sección de la misma página ---
+  // En el móvil el desplazamiento suave puede acabar un poco antes del comienzo de la sección (imágenes que cargan, la barra del navegador
+  // que se esconde...). Cuando termina, si no ha llegado, se ajusta; se vuelve a comprobar un instante después. Si la persona toca la
+  // pantalla o mueve la rueda, no se hace nada.
+  document.addEventListener("click", function (ev) {
+    if (ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+    var a = ev.target.closest && ev.target.closest("a[href]");
+    if (!a || (a.target && a.target !== "_self")) return;
+    var url;
+    try { url = new URL(a.href, location.href); } catch (e) { return; }
+    if (url.origin !== location.origin || url.pathname !== location.pathname || !url.hash || url.hash === "#") return;
+    var destino = document.getElementById(decodeURIComponent(url.hash.slice(1)));
+    if (!destino || destino.id === "top") return;
+    var cancelado = false;
+    function parar() { cancelado = true; }
+    ["wheel", "touchstart", "keydown"].forEach(function (nombre) { addEventListener(nombre, parar, { once: true, passive: true }); });
+    function ajustar() {
+      if (cancelado) return;
+      var margen = parseFloat(getComputedStyle(destino).scrollMarginTop) || 0;
+      var d = destino.getBoundingClientRect().top - margen;
+      var alFinal = Math.ceil(scrollY + innerHeight) >= document.documentElement.scrollHeight - 1;
+      if (Math.abs(d) > 2 && !(alFinal && d > 0)) scrollBy({ top: d, behavior: "instant" });
+    }
+    var hecho = false;
+    function alTerminar() {
+      if (hecho) return;
+      hecho = true;
+      ajustar();
+      setTimeout(ajustar, 300);
+      setTimeout(ajustar, 900);
+    }
+    if ("onscrollend" in window) addEventListener("scrollend", alTerminar, { once: true });
+    setTimeout(alTerminar, 1600); // por si el navegador no avisa del final o ya estaba en su sitio
+  });
+
   // --- Revelado al hacer scroll ---
   var reveals = document.querySelectorAll(".reveal");
   if ("IntersectionObserver" in window && reveals.length) {

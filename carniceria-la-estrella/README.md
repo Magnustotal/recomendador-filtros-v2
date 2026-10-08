@@ -1,4 +1,4 @@
-# Carnicería La Estrella — web y tienda online (v5.12.0)
+# Carnicería La Estrella — web y tienda online (v5.12.1)
 
 Web del negocio (portada, aviso legal, privacidad) **más una tienda online con panel de administración**:
 el cliente elige productos (casi todo al peso, de 250 en 250 g), indica si recoge o quiere reparto, día y franja,
@@ -224,6 +224,7 @@ Reglas: el cliente siempre escribe su código postal al pedir reparto. Si solo h
 
 ## Historial
 
+- **v5.12.1** — Los botones de sección (categorías de la tienda y menú de la portada) llegan al comienzo a la primera en el móvil: la posición se corrige hasta que se asienta (ver «Saltos a una sección»).
 - **v5.12.0** — Productos «por encargo» (se pueden pedir sin stock, con el precio orientativo confirmado antes de encargar) y mensaje de WhatsApp preformateado con emojis y cabecera «PEDIDO WEB».
 - **v5.11.0** — Movimiento (animaciones y transiciones en la tienda, la portada y el panel, con «reducir movimiento» respetado y sin saltos de diseño), buscador de ofertas con los productos activos y ocultos en dos colores (y la oferta activa un producto oculto mientras dura), y Mercado automático: precios de la carne que se descargan solos de la UE en lugar de anotarse a mano.
 - **v5.10.0** — Lo que quedaba por resolver de la revisión legal: precio por kilo o litro de lo envasado (campo «Contenido» en la ficha, visible en la tienda y en el escaparate de ofertas), lectura en el BOE de la accesibilidad (Ley 11/2023) y del arbitraje de consumo (Ley 7/2017), y los textos de cara al público reescritos con un tono más natural.
@@ -337,4 +338,12 @@ Todo es CSS y un poco de JavaScript propio: sin librerías. Solo se animan `tran
 - **Mensaje de WhatsApp** (`mensajeWhatsApp` en `lib/pedido.mjs`). Saludo, cabecera `🛒 *PEDIDO WEB · número*`, una línea con icono por dato, productos en lista con su importe (`▪️ 500 g · *Solomillo* (opción) · 12,45 €`), ofertas (`🏷️`), por encargo (`📦`), ahorro (`💰`), regalo (`🎁`), total (`🧾`), mayoría de edad (`🔞`), comentarios (`📝`) y un pie `✅ Enviado desde la web de <negocio>`; usa el formato de WhatsApp (`*negrita*`). Un pedido escrito a mano no tiene la cabecera «PEDIDO WEB», así que se distingue buscando esas palabras.
 - **Largo del enlace.** Los emojis ocupan unos 12 caracteres al codificarse, y un pedido de cuatro o cinco productos ya pasaba del límite de 1800 que había. Lo he subido a 2400 y, si no cabe, primero se resume la lista (6 productos, notas y comentarios acortados) y, como último recurso, se deja solo la cabecera y los totales. **El 2400 es un límite prudente que me he puesto yo: no he podido comprobar cuánto admite `wa.me` de verdad.** Antes de depender de ello conviene probar en un móvil con un pedido de diez productos.
 - **Pruebas.** `tests/encargo.test.mjs`, `tests/encargo.e2e.test.mjs` y las de `tests/pedido.test.mjs` (formato, límite en el peor caso: 60 líneas con notas largas, comentarios de 500 y dirección de 200).
+
+## Saltos a una sección (v5.12.1)
+
+Un usuario de Chrome en el móvil contó que había que pulsar dos veces el botón de una sección para llegar a su comienzo: la primera dejaba la pantalla cerca. **No he conseguido reproducirlo**: en Chromium emulado (Pixel 7, con la CPU 4 y 6 veces más lenta y toques reales) las 18 categorías de la tienda y los 7 enlaces del menú de la portada llegaban a 0 px del comienzo. Así que el arreglo se basa en las causas que sí pueden mover una página después de un salto, y se ha probado con esas causas simuladas, no en un móvil real. **Pendiente de confirmar en el móvil del usuario.**
+
+- **Tienda** (`fijarEnPantalla` en `public/assets/tienda.js`, usado por los botones de categoría y por los enlaces `/tienda#cat-…` y `#p-…`): antes de saltar se pintan las categorías de más arriba con su altura real (con `content-visibility: auto` el navegador solo la calcula al verlas; luego vuelven a su modo y recuerdan esa altura), se apaga el ajuste automático de posición del navegador (`overflow-anchor`) mientras dura, y se corrige la posición hasta que lleva 350 ms quieta (máximo 1,5 s), también cuando cambia el área visible (la barra de direcciones de Chrome que se esconde). Si la persona toca la pantalla, mueve la rueda o pulsa una tecla, se deja de corregir.
+- **Portada** (`public/assets/app.js`, enlaces a una sección de la misma página): el desplazamiento suave sigue igual; cuando termina (`scrollend`, o a los 1,6 s si el navegador no avisa) y si no ha llegado al comienzo, se ajusta, y se comprueba otra vez a los 300 y a los 900 ms. Esto está pensado para el caso en que Chrome del móvil corta el desplazamiento suave antes de tiempo o el contenido cambia mientras dura; con el código anterior, una prueba que mueve 300 px el contenido durante el desplazamiento acababa a 300 px del comienzo.
+- **Pruebas** (`tests/saltos.e2e.test.mjs`): categoría lejana con un salto de diseño a los 150 ms, las 18 categorías ida y vuelta, no pelear con la persona que sigue desplazándose, y el menú de la portada con 300 px de contenido que aparecen durante el desplazamiento. La de la portada falla con el código anterior; las de la tienda no distinguen entre el código anterior y el nuevo (el navegador compensaba ese salto concreto por su cuenta), así que valen como red de seguridad y no como prueba de la causa.
 
