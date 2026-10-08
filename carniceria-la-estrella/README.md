@@ -1,4 +1,4 @@
-# Carnicería La Estrella — web y tienda online (v5.12.2)
+# Carnicería La Estrella — web y tienda online (v5.12.3)
 
 Web del negocio (portada, aviso legal, privacidad) **más una tienda online con panel de administración**:
 el cliente elige productos (casi todo al peso, de 250 en 250 g), indica si recoge o quiere reparto, día y franja,
@@ -224,6 +224,7 @@ Reglas: el cliente siempre escribe su código postal al pedir reparto. Si solo h
 
 ## Historial
 
+- **v5.12.3** — Validador HTML del W3C (Nu): arreglados los 3 errores reales de la tienda (`autocomplete="street-address"` pasa a `address-line1`; los desplegables «Día» y «Franja» llevan una opción inicial en el HTML, que el script sustituye igual que antes). Los errores de CSS que sigue marcando (`@view-transition`, `view-transition-name`, `animation-timeline`, `animation-duration: auto`, `interpolate-size`, `transition-behavior`) son propiedades modernas válidas que el analizador de CSS del validador aún no conoce; se dejan porque son mejoras progresivas que los navegadores sin soporte ignoran.
 - **v5.12.2** — Rendimiento según PageSpeed Insights: el botón «Volver arriba» anima solo la opacidad (antes usaba una animación de scroll que no va en la GPU), las fotos pasan a WebP (≈45 % menos peso; la portada con versión de 480 px), los estilos del escaparate de ofertas van dentro de la página (ya no bloquean el primer pintado), se precargan los módulos del escaparate y la foto de portada ya no espera al revelado por scroll para pintarse (retrasaba el LCP). Medido en local con Lighthouse móvil: 83-87 → 89-93 puntos y LCP 3,8 → 3,1-3,6 s (cifras de mi equipo, no de PageSpeed).
 - **v5.12.1** — Los botones de sección (categorías de la tienda y menú de la portada) llegan al comienzo a la primera en el móvil: la posición se corrige hasta que se asienta (ver «Saltos a una sección»).
 - **v5.12.0** — Productos «por encargo» (se pueden pedir sin stock, con el precio orientativo confirmado antes de encargar) y mensaje de WhatsApp preformateado con emojis y cabecera «PEDIDO WEB».

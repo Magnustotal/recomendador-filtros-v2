@@ -136,7 +136,7 @@
               <div class="opciones" id="opciones-entrega"></div>
               <div class="campo" id="campo-direccion" hidden>
                 <label for="direccion">Calle, número y piso</label>
-                <input id="direccion" name="direccion" type="text" autocomplete="street-address" maxlength="200">
+                <input id="direccion" name="direccion" type="text" autocomplete="address-line1" maxlength="200">
                 <p class="campo-error" id="error-direccion" hidden></p>
                 <label for="cp" class="etiqueta-cp">Código postal</label>
                 <input id="cp" name="cp" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="5" class="entrada-cp">
@@ -145,12 +145,12 @@
               </div>
               <div class="campo">
                 <label for="dia">Día</label>
-                <select id="dia" name="dia" required></select>
+                <select id="dia" name="dia" required><option value="">Primero elige recogida o reparto</option></select>
                 <p class="campo-error" id="error-dia" hidden></p>
               </div>
               <div class="campo">
                 <label for="franja">Franja horaria</label>
-                <select id="franja" name="franja" required></select>
+                <select id="franja" name="franja" required><option value="">Primero elige el día</option></select>
                 <p class="campo-error" id="error-franja" hidden></p>
               </div>
             </fieldset>
