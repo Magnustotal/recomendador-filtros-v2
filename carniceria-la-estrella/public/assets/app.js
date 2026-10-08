@@ -91,6 +91,27 @@
     setTimeout(alTerminar, 1600); // por si el navegador no avisa del final o ya estaba en su sitio
   });
 
+  // --- Botón «Volver arriba» ---
+  // Aparece al pasar de 0,8 alturas de pantalla. Solo se anima la opacidad (en CSS); aquí se decide la clase, el foco y la accesibilidad.
+  var subir = document.querySelector(".back-to-top");
+  if (subir) {
+    var subirVisible = null;
+    var subirPendiente = false;
+    var actualizarSubir = function () {
+      subirPendiente = false;
+      var ver = scrollY > innerHeight * 0.8;
+      if (ver === subirVisible) return;
+      subirVisible = ver;
+      subir.classList.toggle("visible", ver);
+      if (ver) { subir.removeAttribute("tabindex"); subir.removeAttribute("aria-hidden"); }
+      else { subir.setAttribute("tabindex", "-1"); subir.setAttribute("aria-hidden", "true"); }
+    };
+    addEventListener("scroll", function () {
+      if (!subirPendiente) { subirPendiente = true; requestAnimationFrame(actualizarSubir); }
+    }, { passive: true });
+    actualizarSubir();
+  }
+
   // --- Revelado al hacer scroll ---
   var reveals = document.querySelectorAll(".reveal");
   if ("IntersectionObserver" in window && reveals.length) {

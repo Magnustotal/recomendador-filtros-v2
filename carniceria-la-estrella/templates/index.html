@@ -65,7 +65,7 @@
         se ha actualizado para no mencionar ya ni el formulario ni a
         Netlify como encargado del tratamiento de esos datos.
 
-     La foto de la fachada (assets/photos/fachada.jpg) es real, recortada
+     La foto de la fachada (assets/photos/fachada.webp) es real, recortada
      de esa misma foto de Google Maps. corte-parrilla-4x3.jpg (portada) y las
      13 fotos del catálogo (Pexels y Pixabay) son banco de imágenes, no
      producto real.
@@ -225,6 +225,12 @@
 
 <link rel="preload" href="assets/fonts/playfair.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/karla.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="modulepreload" href="/assets/destacadas.js">
+<link rel="modulepreload" href="/assets/compartido/ofertas.js">
+<link rel="modulepreload" href="/assets/compartido/dinero.js">
+<link rel="modulepreload" href="/assets/compartido/contenido.js">
+<link rel="modulepreload" href="/assets/compartido/encargo.js">
+<link rel="modulepreload" href="/assets/compartido/horario.js">
 
 <!-- Datos estructurados: solo hechos verificables. No se incluye
      aggregateRating/review aunque la valoración real se muestre más abajo
@@ -499,7 +505,9 @@
   .maps-link { display: inline-flex; align-items: center; gap: 0.5em; margin-top: 0.8rem; min-height: 48px; color: var(--maroon); font-weight: 700; text-decoration: underline; }
 
 </style>
-<link rel="stylesheet" href="assets/ofertas.css">
+<style>
+{{{css.ofertas}}}
+</style>
 </head>
 <body>
 
@@ -539,9 +547,9 @@
         </a>
       </div>
 
-      <div class="hero-art reveal" aria-hidden="true">
+      <div class="hero-art" aria-hidden="true">
         <div class="hero-photo">
-          <img src="assets/photos/corte-parrilla-4x3.jpg" alt="" width="800" height="600" fetchpriority="high">
+          <img src="assets/photos/corte-parrilla-4x3.webp" srcset="assets/photos/corte-parrilla-4x3-480.webp 480w, assets/photos/corte-parrilla-4x3.webp 800w" sizes="(max-width: 900px) 100vw, 520px" alt="" width="800" height="600" fetchpriority="high">
         </div>
         <svg class="hero-badge-float" viewBox="0 0 200 200">
           <circle cx="100" cy="100" r="96" fill="#7a1f2a"/>
@@ -591,7 +599,7 @@
 
         <article class="cat-card reveal">
           <div class="cat-photo">
-            <img src="assets/photos/vacuno.jpg" srcset="assets/photos/vacuno-400.jpg 400w, assets/photos/vacuno.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Corte de carne de vacuno sazonado" width="800" height="800" loading="lazy">
+            <img src="assets/photos/vacuno.webp" srcset="assets/photos/vacuno-400.webp 400w, assets/photos/vacuno.webp 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Corte de carne de vacuno sazonado" width="800" height="800" loading="lazy">
             <span class="photo-badge">Foto ilustrativa</span>
           </div>
           <div class="cat-body">
@@ -603,7 +611,7 @@
 
         <article class="cat-card reveal">
           <div class="cat-photo">
-            <img src="assets/photos/cerdo.jpg" srcset="assets/photos/cerdo-400.jpg 400w, assets/photos/cerdo.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Chuletas de cerdo sazonadas sobre tabla" width="800" height="800" loading="lazy">
+            <img src="assets/photos/cerdo.webp" srcset="assets/photos/cerdo-400.webp 400w, assets/photos/cerdo.webp 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Chuletas de cerdo sazonadas sobre tabla" width="800" height="800" loading="lazy">
             <span class="photo-badge">Foto ilustrativa</span>
           </div>
           <div class="cat-body">
@@ -615,7 +623,7 @@
 
         <article class="cat-card reveal">
           <div class="cat-photo">
-            <img src="assets/photos/cerdo-iberico.jpg" srcset="assets/photos/cerdo-iberico-400.jpg 400w, assets/photos/cerdo-iberico.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Corte de carne de cerdo ibérico" width="800" height="800" loading="lazy">
+            <img src="assets/photos/cerdo-iberico.webp" srcset="assets/photos/cerdo-iberico-400.webp 400w, assets/photos/cerdo-iberico.webp 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Corte de carne de cerdo ibérico" width="800" height="800" loading="lazy">
             <span class="photo-badge">Foto ilustrativa</span>
           </div>
           <div class="cat-body">
@@ -627,7 +635,7 @@
 
         <article class="cat-card reveal">
           <div class="cat-photo">
-            <img src="assets/photos/cordero.jpg" srcset="assets/photos/cordero-400.jpg 400w, assets/photos/cordero.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Chuletillas de cordero lechal con guarnición" width="800" height="800" loading="lazy">
+            <img src="assets/photos/cordero.webp" srcset="assets/photos/cordero-400.webp 400w, assets/photos/cordero.webp 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Chuletillas de cordero lechal con guarnición" width="800" height="800" loading="lazy">
             <span class="photo-badge">Foto ilustrativa</span>
           </div>
           <div class="cat-body">
@@ -639,7 +647,7 @@
 
         <article class="cat-card reveal">
           <div class="cat-photo">
-            <img src="assets/photos/pollo.jpg" srcset="assets/photos/pollo-400.jpg 400w, assets/photos/pollo.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Pechuga de pollo cruda con romero" width="800" height="800" loading="lazy">
+            <img src="assets/photos/pollo.webp" srcset="assets/photos/pollo-400.webp 400w, assets/photos/pollo.webp 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Pechuga de pollo cruda con romero" width="800" height="800" loading="lazy">
             <span class="photo-badge">Foto ilustrativa</span>
           </div>
           <div class="cat-body">
@@ -651,7 +659,7 @@
 
         <article class="cat-card reveal">
           <div class="cat-photo">
-            <img src="assets/photos/pavo.jpg" srcset="assets/photos/pavo-400.jpg 400w, assets/photos/pavo.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Filete de pavo crudo" width="800" height="800" loading="lazy">
+            <img src="assets/photos/pavo.webp" srcset="assets/photos/pavo-400.webp 400w, assets/photos/pavo.webp 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Filete de pavo crudo" width="800" height="800" loading="lazy">
             <span class="photo-badge">Foto ilustrativa</span>
           </div>
           <div class="cat-body">
@@ -663,7 +671,7 @@
 
         <article class="cat-card reveal">
           <div class="cat-photo">
-            <img src="assets/photos/conejo.jpg" srcset="assets/photos/conejo-400.jpg 400w, assets/photos/conejo.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Guiso de conejo en cazuela de barro" width="800" height="800" loading="lazy">
+            <img src="assets/photos/conejo.webp" srcset="assets/photos/conejo-400.webp 400w, assets/photos/conejo.webp 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Guiso de conejo en cazuela de barro" width="800" height="800" loading="lazy">
             <span class="photo-badge">Foto ilustrativa</span>
           </div>
           <div class="cat-body">
@@ -675,7 +683,7 @@
 
         <article class="cat-card reveal">
           <div class="cat-photo">
-            <img src="assets/photos/caza.jpg" srcset="assets/photos/caza-400.jpg 400w, assets/photos/caza.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Corte de carne de caza sobre tabla" width="800" height="800" loading="lazy">
+            <img src="assets/photos/caza.webp" srcset="assets/photos/caza-400.webp 400w, assets/photos/caza.webp 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Corte de carne de caza sobre tabla" width="800" height="800" loading="lazy">
             <span class="photo-badge">Foto ilustrativa</span>
           </div>
           <div class="cat-body">
@@ -689,7 +697,7 @@
 
         <article class="cat-card reveal">
           <div class="cat-photo">
-            <img src="assets/photos/casqueria.jpg" srcset="assets/photos/casqueria-400.jpg 400w, assets/photos/casqueria.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Hígado fresco de ternera" width="800" height="800" loading="lazy">
+            <img src="assets/photos/casqueria.webp" srcset="assets/photos/casqueria-400.webp 400w, assets/photos/casqueria.webp 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Hígado fresco de ternera" width="800" height="800" loading="lazy">
             <span class="photo-badge">Foto ilustrativa</span>
           </div>
           <div class="cat-body">
@@ -703,7 +711,7 @@
 
         <article class="cat-card reveal">
           <div class="cat-photo">
-            <img src="assets/photos/jamones.jpg" srcset="assets/photos/jamones-400.jpg 400w, assets/photos/jamones.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Jamones ibéricos curados colgados" width="800" height="800" loading="lazy">
+            <img src="assets/photos/jamones.webp" srcset="assets/photos/jamones-400.webp 400w, assets/photos/jamones.webp 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Jamones ibéricos curados colgados" width="800" height="800" loading="lazy">
             <span class="photo-badge">Foto ilustrativa</span>
           </div>
           <div class="cat-body">
@@ -715,7 +723,7 @@
 
         <article class="cat-card reveal">
           <div class="cat-photo">
-            <img src="assets/photos/embutidos.jpg" srcset="assets/photos/embutidos-400.jpg 400w, assets/photos/embutidos.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Embutidos cortados finos sobre tabla de madera" width="800" height="800" loading="lazy">
+            <img src="assets/photos/embutidos.webp" srcset="assets/photos/embutidos-400.webp 400w, assets/photos/embutidos.webp 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Embutidos cortados finos sobre tabla de madera" width="800" height="800" loading="lazy">
             <span class="photo-badge">Foto ilustrativa</span>
           </div>
           <div class="cat-body">
@@ -727,7 +735,7 @@
 
         <article class="cat-card reveal">
           <div class="cat-photo">
-            <img src="assets/photos/quesos.jpg" srcset="assets/photos/quesos-400.jpg 400w, assets/photos/quesos.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Queso curado entero y en cuñas" width="800" height="800" loading="lazy">
+            <img src="assets/photos/quesos.webp" srcset="assets/photos/quesos-400.webp 400w, assets/photos/quesos.webp 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Queso curado entero y en cuñas" width="800" height="800" loading="lazy">
             <span class="photo-badge">Foto ilustrativa</span>
           </div>
           <div class="cat-body">
@@ -741,7 +749,7 @@
 
         <article class="cat-card reveal">
           <div class="cat-photo">
-            <img src="assets/photos/elaborados.jpg" srcset="assets/photos/elaborados-400.jpg 400w, assets/photos/elaborados.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Hamburguesas de carne crudas apiladas" width="800" height="800" loading="lazy">
+            <img src="assets/photos/elaborados.webp" srcset="assets/photos/elaborados-400.webp 400w, assets/photos/elaborados.webp 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Hamburguesas de carne crudas apiladas" width="800" height="800" loading="lazy">
             <span class="photo-badge">Foto ilustrativa</span>
           </div>
           <div class="cat-body">
@@ -753,7 +761,7 @@
 
         <article class="cat-card reveal">
           <div class="cat-photo">
-            <img src="assets/photos/huevos.jpg" srcset="assets/photos/huevos-400.jpg 400w, assets/photos/huevos.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Cesta de huevos frescos" width="800" height="800" loading="lazy">
+            <img src="assets/photos/huevos.webp" srcset="assets/photos/huevos-400.webp 400w, assets/photos/huevos.webp 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Cesta de huevos frescos" width="800" height="800" loading="lazy">
             <span class="photo-badge">Foto ilustrativa</span>
           </div>
           <div class="cat-body">
@@ -765,7 +773,7 @@
 
         <article class="cat-card reveal">
           <div class="cat-photo">
-            <img src="assets/photos/especias.jpg" srcset="assets/photos/especias-400.jpg 400w, assets/photos/especias.jpg 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Puesto de especias en polvo de varios colores" width="800" height="800" loading="lazy">
+            <img src="assets/photos/especias.webp" srcset="assets/photos/especias-400.webp 400w, assets/photos/especias.webp 800w" sizes="(max-width: 640px) calc(100vw - 2.5rem), 300px" alt="Puesto de especias en polvo de varios colores" width="800" height="800" loading="lazy">
             <span class="photo-badge">Foto ilustrativa</span>
           </div>
           <div class="cat-body">
@@ -795,7 +803,7 @@
 
       <div class="gallery-grid reveal">
         <figure class="real-photo">
-          <img src="assets/photos/fachada.jpg" alt="Fachada de Carnicería La Estrella, con el cartel original en la Av. de la Barzola" width="900" height="675" loading="lazy">
+          <img src="assets/photos/fachada.webp" alt="Fachada de Carnicería La Estrella, con el cartel original en la Av. de la Barzola" width="900" height="675" loading="lazy">
           <figcaption>La fachada real, en la Av. de la Barzola</figcaption>
         </figure>
         <!-- sustituir por foto real cedida por el negocio -->

@@ -181,7 +181,7 @@ function pintarCatalogo() {
       return { p, nodo, texto: sinAcentos(`${p.nombre} ${p.descripcion ?? ""} ${p.opciones.join(" ")} ${c.nombre}`) };
     });
     const foto = crear("div", { class: "cat-foto" },
-      crear("img", { src: `/assets/photos/${c.id}-400.jpg`, srcset: `/assets/photos/${c.id}-400.jpg 400w, /assets/photos/${c.id}.jpg 800w`, sizes: "(max-width: 720px) 100vw, 240px", alt: "", loading: "lazy", decoding: "async", width: "400", height: "400" }),
+      crear("img", { src: `/assets/photos/${c.id}-400.webp`, srcset: `/assets/photos/${c.id}-400.webp 400w, /assets/photos/${c.id}.webp 800w`, sizes: "(max-width: 720px) 100vw, 240px", alt: "", loading: "lazy", decoding: "async", width: "400", height: "400" }),
       crear("span", { class: "etiqueta-foto", texto: "Foto ilustrativa" }));
     // Si la foto de la categoría no cargase, la cabecera se queda sin ella y el resto se mantiene
     foto.querySelector("img").addEventListener("error", () => foto.remove());

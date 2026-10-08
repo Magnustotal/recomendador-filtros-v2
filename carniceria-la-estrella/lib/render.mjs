@@ -137,7 +137,7 @@ export function contexto(ajustes, { origen = "", ahora = new Date(), meta = null
     horario: { filasHtml: tablaHorario(ajustes.horario) },
     faq: { html: faqHtml(preguntas) },
     jsonld: { negocio: jsonParaScript(jsonLdNegocio(ajustes, dominio)), faq: jsonParaScript(jsonLdFaq(preguntas)) },
-    css: { base: plantillas["base.css"] },
+    css: { base: plantillas["base.css"], ofertas: plantillas["ofertas.css"] },
     legal: textosLegales(ajustes, escapar),
     categorias: { json: jsonParaScript(categorias) },
   };

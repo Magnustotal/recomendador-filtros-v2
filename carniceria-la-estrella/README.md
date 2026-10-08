@@ -1,4 +1,4 @@
-# Carnicería La Estrella — web y tienda online (v5.12.1)
+# Carnicería La Estrella — web y tienda online (v5.12.2)
 
 Web del negocio (portada, aviso legal, privacidad) **más una tienda online con panel de administración**:
 el cliente elige productos (casi todo al peso, de 250 en 250 g), indica si recoge o quiere reparto, día y franja,
@@ -224,6 +224,7 @@ Reglas: el cliente siempre escribe su código postal al pedir reparto. Si solo h
 
 ## Historial
 
+- **v5.12.2** — Rendimiento según PageSpeed Insights: el botón «Volver arriba» anima solo la opacidad (antes usaba una animación de scroll que no va en la GPU), las fotos pasan a WebP (≈45 % menos peso; la portada con versión de 480 px), los estilos del escaparate de ofertas van dentro de la página (ya no bloquean el primer pintado), se precargan los módulos del escaparate y la foto de portada ya no espera al revelado por scroll para pintarse (retrasaba el LCP). Medido en local con Lighthouse móvil: 83-87 → 89-93 puntos y LCP 3,8 → 3,1-3,6 s (cifras de mi equipo, no de PageSpeed).
 - **v5.12.1** — Los botones de sección (categorías de la tienda y menú de la portada) llegan al comienzo a la primera en el móvil: la posición se corrige hasta que se asienta (ver «Saltos a una sección»).
 - **v5.12.0** — Productos «por encargo» (se pueden pedir sin stock, con el precio orientativo confirmado antes de encargar) y mensaje de WhatsApp preformateado con emojis y cabecera «PEDIDO WEB».
 - **v5.11.0** — Movimiento (animaciones y transiciones en la tienda, la portada y el panel, con «reducir movimiento» respetado y sin saltos de diseño), buscador de ofertas con los productos activos y ocultos en dos colores (y la oferta activa un producto oculto mientras dura), y Mercado automático: precios de la carne que se descargan solos de la UE en lugar de anotarse a mano.

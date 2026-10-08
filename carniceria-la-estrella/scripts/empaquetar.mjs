@@ -18,6 +18,8 @@ const datos = {
 const [versionWeb, fechaWeb] = leer("public/VERSION").trim().split(/\r?\n/);
 const plantillas = {};
 for (const f of readdirSync(new URL("templates/", raiz)).sort()) plantillas[f] = leer(`templates/${f}`);
+// CSS del escaparate de ofertas: va dentro de las páginas (en vez de un archivo aparte que bloquea el primer pintado)
+plantillas["ofertas.css"] = leer("public/assets/ofertas.css");
 
 const cabecera = "// ARCHIVO GENERADO por scripts/empaquetar.mjs. No editar a mano.\n";
 const salidas = {

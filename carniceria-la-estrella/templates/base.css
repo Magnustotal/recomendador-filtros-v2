@@ -302,14 +302,11 @@
   .back-to-top:hover, .back-to-top:focus-visible { background: var(--maroon-deep); transform: scale(1.06); }
   .back-to-top svg { width: 20px; height: 20px; }
   @media (max-width: 640px) { .back-to-top { bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 1.1rem); } }
-  @supports (animation-timeline: scroll()) {
-    .back-to-top {
-      opacity: 0; pointer-events: none; animation-name: back-to-top-appear; animation-timing-function: linear;
-      animation-duration: auto; animation-fill-mode: both; animation-timeline: scroll(root block); animation-range: 80vh 140vh;
-    }
-    @media (prefers-reduced-motion: reduce) { .back-to-top { animation-duration: auto !important; } }
-  }
-  @keyframes back-to-top-appear { from { opacity: 0; pointer-events: none; } to { opacity: 1; pointer-events: auto; } }
+  /* Con JavaScript, el botón aparece al bajar (lo decide app.js con la clase .visible). Solo se anima la opacidad, que va en la GPU;
+     «pointer-events» y el foco no se animan: cambian de golpe con la clase. Sin JavaScript queda siempre visible. */
+  .js .back-to-top { opacity: 0; pointer-events: none; transition: opacity var(--dur-2, 0.25s) var(--ease), transform 0.18s var(--ease), background-color 0.18s var(--ease); }
+  .js .back-to-top.visible { opacity: 1; pointer-events: auto; }
+  @media (prefers-reduced-motion: reduce) { .js .back-to-top { transition: none; } }
   @media (max-width: 640px) { body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); } }
 
   /* ---------- Revelado al hacer scroll ---------- */
