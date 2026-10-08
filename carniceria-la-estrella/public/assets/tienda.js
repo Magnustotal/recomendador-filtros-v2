@@ -4,6 +4,7 @@
 import { importeLinea, aCentimos, formatoEuro, formatoCantidad, cantidadValida } from "/assets/compartido/dinero.js";
 import { infoAlergenos } from "/assets/compartido/alergenos.js";
 import { lineaContenido } from "/assets/compartido/contenido.js";
+import { esPorEncargo, sePuedePedir, TEXTO_ENCARGO, TEXTO_ENCARGO_CORTO } from "/assets/compartido/encargo.js";
 import { calcularLineas, precioEfectivo, nombreOferta, regalosDelPedido, fechaCorta } from "/assets/compartido/ofertas.js";
 import { pintarDestacadas } from "/assets/destacadas.js";
 import { ahoraEnMadrid, diaSemanaDeFecha, sumarDias, aMinutos, franjaDentroDeHorario } from "/assets/compartido/horario.js";
@@ -72,7 +73,7 @@ function cargarCarrito() {
     if (!Array.isArray(bruto)) return [];
     return bruto.filter((l) => {
       const p = porId.get(l?.id);
-      return p && !p.agotado && typeof l.cantidad === "number" && cantidadValida(p, l.cantidad)
+      return p && sePuedePedir(p) && typeof l.cantidad === "number" && cantidadValida(p, l.cantidad)
         && (!l.opcion || p.opciones.includes(l.opcion));
     }).map((l) => ({ id: l.id, opcion: l.opcion || "", nota: typeof l.nota === "string" ? l.nota.slice(0, 140) : "", cantidad: l.cantidad }));
   } catch { return []; }
@@ -124,18 +125,21 @@ function pintarFila(p) {
     contenidoLinea(p, ef.precio),
     alergenosLinea(p),
     textoOferta ? crear("p", { class: "prod-oferta", texto: `${textoOferta} · hasta el ${fechaCorta(ef.oferta.hasta)}` }) : null,
-    p.agotado ? crear("p", { class: "prod-agotado", texto: "Agotado por ahora" }) : null,
+    p.agotado && !esPorEncargo(p) ? crear("p", { class: "prod-agotado", texto: "Agotado por ahora" }) : null,
+    esPorEncargo(p) ? crear("p", { class: "prod-encargo" }, crear("strong", { texto: "Por encargo" }), ` ${TEXTO_ENCARGO_CORTO}`) : null,
   );
 
   let acciones = null;
-  if (!p.agotado) {
+  const encargo = esPorEncargo(p);
+  const verbo = encargo ? "Encargar" : "Añadir";
+  if (sePuedePedir(p)) {
     let selector = null;
     if (p.opciones.length) {
       selector = crear("select", { "aria-label": `Cómo quieres ${p.nombre}` });
       for (const o of p.opciones) selector.append(crear("option", { value: o, texto: o }));
     }
-    const boton = crear("button", { type: "button", class: "btn btn-solid btn-anadir", texto: "Añadir" });
-    boton.setAttribute("aria-label", `Añadir ${p.nombre} al pedido`);
+    const boton = crear("button", { type: "button", class: "btn btn-solid btn-anadir", texto: verbo });
+    boton.setAttribute("aria-label", encargo ? `Encargar ${p.nombre}, por encargo` : `Añadir ${p.nombre} al pedido`);
     let temporizador;
     boton.addEventListener("click", () => {
       anadir(p, selector ? selector.value : "", cantidad);
@@ -143,15 +147,15 @@ function pintarFila(p) {
       boton.textContent = "✓ Añadido";
       boton.classList.add("es-hecho");
       fila.classList.remove("recien-anadido"); void fila.offsetWidth; fila.classList.add("recien-anadido"); // reinicia el destello si se pulsa otra vez
-      boton.setAttribute("aria-label", `Añadido ${p.nombre} al pedido`); // el nombre accesible contiene el texto visible
+      boton.setAttribute("aria-label", `Añadido ${p.nombre} al pedido${encargo ? ", por encargo" : ""}`); // el nombre accesible contiene el texto visible
       clearTimeout(temporizador);
-      temporizador = setTimeout(() => { boton.textContent = "Añadir"; boton.classList.remove("es-hecho"); fila.classList.remove("recien-anadido"); boton.setAttribute("aria-label", `Añadir ${p.nombre} al pedido`); }, 1600);
+      temporizador = setTimeout(() => { boton.textContent = verbo; boton.classList.remove("es-hecho"); fila.classList.remove("recien-anadido"); boton.setAttribute("aria-label", encargo ? `Encargar ${p.nombre}, por encargo` : `Añadir ${p.nombre} al pedido`); }, 1600);
     });
     acciones = crear("div", { class: "prod-acciones" }, selector, crear("div", { class: "cantidad", role: "group", "aria-label": `Cantidad de ${p.nombre}` }, menos, salida, mas), boton);
   }
 
   // Miniatura: la foto de la pieza si el carnicero la ha subido; si no, el icono de su categoría.
-  const fila = crear("article", { class: `prod con-foto${p.agotado ? " es-agotado" : ""}`, "data-id": p.id });
+  const fila = crear("article", { class: `prod con-foto${p.agotado && !encargo ? " es-agotado" : ""}${encargo ? " es-encargo" : ""}`, "data-id": p.id });
   fila.append(p.foto
     ? crear("div", { class: "prod-foto" }, crear("img", { src: `/api/foto/${p.foto}`, alt: "", loading: "lazy", decoding: "async", width: "88", height: "88" }))
     : crear("div", { class: "prod-foto es-icono" }, icono(p.categoria)));
@@ -343,6 +347,7 @@ function pintarLinea(l, i) {
       crear("div", {}, crear("p", { class: "linea-nombre", texto: p.nombre }), l.opcion ? crear("p", { class: "linea-opcion", texto: l.opcion }) : null),
       crear("span", { class: "linea-importe" }, imp == null ? crear("span", { class: "consultar", texto: "Consultar" }) : document.createTextNode(euros(imp))),
     ),
+    esPorEncargo(p) ? crear("p", { class: "linea-encargo", texto: TEXTO_ENCARGO }) : null,
     c.oferta ? crear("p", { class: "linea-oferta", texto: c.gratis ? `${nombreOferta(c.oferta)}: ${formatoCantidad(c.gratis, p.unidad)} gratis (ahorras ${euros(c.ahorroCent)})` : c.habitual != null ? `Oferta: ${formatoEuro(c.precio)}/${unidadPrecio(p)} en vez de ${formatoEuro(c.habitual)} (ahorras ${euros(c.ahorroCent)})` : `${nombreOferta(c.oferta)}: llévate ${formatoCantidad(c.oferta.lleva * (p.unidad === "kg" ? 1000 : 1), p.unidad)} y paga ${formatoCantidad(c.oferta.paga * (p.unidad === "kg" ? 1000 : 1), p.unidad)}` }) : null,
     crear("div", { class: "linea-ctrl" }, crear("div", { class: "cantidad", role: "group", "aria-label": `Cantidad de ${p.nombre}` }, menos, salida, mas), quitar),
     nota,
@@ -369,6 +374,8 @@ function pintarTotales() {
     if (r.cantidad > 0) filas.push(crear("p", { class: "regalo-linea", texto: `Regalo por tu compra: ${r.cantidad > 1 ? `${r.cantidad} × ` : ""}${r.texto}` }));
     if (r.faltaCent != null && x.consultar === 0) filas.push(crear("p", { class: "nota", texto: `Te faltan ${euros(r.faltaCent)} para ${r.cantidad > 0 ? "otro regalo igual" : `tu regalo: ${r.texto}`}.` }));
   }
+  const nEncargo = carrito.filter((l) => esPorEncargo(porId.get(l.id))).length;
+  if (nEncargo) filas.push(crear("p", { class: "nota", texto: `${nEncargo} producto${nEncargo === 1 ? "" : "s"} por encargo: su precio es orientativo y te lo confirmamos antes de hacer el encargo.` }));
   filas.push(crear("p", { class: "nota", texto: "Importe orientativo: el peso y el importe finales se confirman al prepararlo." }));
   el.totales.replaceChildren(...filas);
   // El total late un momento cuando cambia (no al recuperar el carrito ni al repintar con el mismo importe)

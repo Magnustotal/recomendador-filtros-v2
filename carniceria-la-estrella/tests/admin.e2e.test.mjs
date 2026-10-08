@@ -726,7 +726,7 @@ test("tienda: precio tachado y de oferta, 3x2 en el carrito, ahorro y regalo; el
   assert.equal(ok.resumen.ahorroCent, Math.round(precioAlb * 100) + (3090 - 1995) * 2);
   assert.deepEqual(ok.resumen.regalos, [{ texto: "250 g de chorizo", cantidad: Math.floor(ok.resumen.subtotalCent / 3000) }]);
   assert.match(decodeURIComponent(ok.whatsappUrl), /3x2: 1 kg gratis/);
-  assert.match(decodeURIComponent(ok.whatsappUrl), /Regalo por tu compra: .*250 g de chorizo/);
+  assert.match(decodeURIComponent(ok.whatsappUrl), /🎁 \*Regalo por compra:\* .*250 g de chorizo/);
   await tienda.context().close();
 
   // el panel lo muestra y el CSV lo recoge

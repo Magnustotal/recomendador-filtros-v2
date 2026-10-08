@@ -80,6 +80,9 @@
 .prod-contenido { margin: 0 0 0.3em; font-size: 0.85rem; color: var(--ink-soft); }
 .prod-alergenos { margin: 0 0 0.4em; font-size: 0.85rem; color: var(--ink-soft); }
 .prod-alergenos-contiene { font-weight: 700; color: var(--ink); }
+.prod-encargo { margin: 0.2rem 0 0.4rem; font-size: 0.88rem; color: var(--ink-soft); }
+.prod-encargo strong { display: inline-block; margin-right: 0.3em; padding: 0.1em 0.7em; border-radius: 999px; background: var(--green); color: var(--white); font-size: 0.82rem; }
+.linea-encargo { margin: 0.15rem 0 0; font-size: 0.86rem; color: var(--ink-soft); }
 .prod-desc { margin: 0 0 0.4em; font-size: 0.93rem; color: var(--ink-soft); }
 .prod-precio { margin: 0; font-weight: 800; color: var(--maroon-deep); }
 .prod-precio .consultar { font-weight: 700; color: var(--ink-soft); }

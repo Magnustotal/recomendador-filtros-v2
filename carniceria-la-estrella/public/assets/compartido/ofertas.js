@@ -5,6 +5,7 @@
 // No hay nada «programado»: cada oferta lleva su fecha de inicio y de fin (días completos, ambos incluidos, hora de
 // Madrid) y se comprueba contra el día de hoy cada vez que se calcula. Si hoy está dentro, se aplica; si no, no.
 // Todo el dinero va en céntimos enteros y las cantidades en gramos (kg) o unidades (ud), como en el resto de la web.
+import { sePuedePedir } from "./encargo.js";
 import { importeLinea, aCentimos, formatoEuro } from "./dinero.js";
 import { sumarDias } from "./horario.js";
 
@@ -184,7 +185,7 @@ export const tituloDestacadas = (n) => (n === 1 ? "Oferta de la semana" : "Ofert
 export function destacadas(productos, regalos, hoy) {
   const tarjetas = [];
   for (const p of productos ?? []) {
-    if (!activoHoy(p, hoy) || p.agotado) continue;
+    if (!activoHoy(p, hoy) || !sePuedePedir(p)) continue;
     const e = precioEfectivo(p, hoy);
     if (!e.oferta) continue;
     tarjetas.push({ clase: "producto", p, oferta: e.oferta, precio: e.precio, habitual: e.habitual, hasta: e.oferta.hasta });

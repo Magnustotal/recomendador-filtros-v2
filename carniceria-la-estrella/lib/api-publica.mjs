@@ -70,7 +70,7 @@ export async function crearPedido(req, deps) {
   const pedido = await deps.almacen.crearPedido(ahora.fecha, (numero) => ({
     numero, creado: new Date(deps.ahora()).toISOString(), estado: "nuevo", notaInterna: "", ...v.valor,
   }));
-  const enlace = enlaceWhatsApp(pedido, pedido.numero, ajustes.negocio.whatsapp);
+  const enlace = enlaceWhatsApp(pedido, pedido.numero, ajustes.negocio.whatsapp, 2400, ajustes.negocio.nombre);
   return json(201, {
     ok: true, numero: pedido.numero, whatsappUrl: enlace.url, resumido: enlace.resumido,
     resumen: { lineas: pedido.lineas.length, subtotalCent: pedido.subtotalCent, ahorroCent: pedido.ahorroCent, regalos: pedido.regalos, envioCent: pedido.envioCent, totalCent: pedido.totalCent, consultar: pedido.consultar },

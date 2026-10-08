@@ -125,7 +125,8 @@ test("pedido completo de recogida: se guarda con número y el botón abre WhatsA
   assert.match(href, /^https:\/\/wa\.me\/34601006290\?text=/);
   const texto = decodeURIComponent(href.split("?text=")[1]);
   assert.match(texto, /Lola Pérez/);
-  assert.match(texto, /Solomillo de ternera: 250 g/);
+  assert.match(texto, /250 g · \*Solomillo de ternera\*/);
+  assert.match(texto, /🛒 \*PEDIDO WEB · LE-2610-0001\*/);
   assert.match(texto, /LE-2610-0001/);
   assert.equal(await page.locator("#formulario").isVisible(), false);
   // el carrito se vacía tras confirmar
@@ -262,7 +263,7 @@ test("zona de reparto por códigos postales: se explica, se rechaza lo que queda
     await page.click("#enviar");
     await page.locator("#confirmacion").waitFor({ state: "visible" });
     const href = await page.locator("#confirmacion a.btn").getAttribute("href");
-    assert.match(decodeURIComponent(href), /Dirección: Calle Sol 4, 2º A \(41008\)/);
+    assert.match(decodeURIComponent(href), /📍 Calle Sol 4, 2º A \(41008\)/);
     await page.context().close();
   } finally {
     await e.api.llamar("/ajustes", { metodo: "PUT", cuerpo: original });

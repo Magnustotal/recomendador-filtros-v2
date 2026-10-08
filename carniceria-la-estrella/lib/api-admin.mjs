@@ -238,7 +238,7 @@ export function csvPedidos(pedidos) {
   const filas = pedidos.map((p) => [
     p.numero, p.creado, p.estado, p.cliente.nombre, p.cliente.telefono, p.entrega.tipo, p.entrega.dia, p.entrega.franja, p.entrega.direccion, p.entrega.cp ?? "", p.entrega.distanciaKm == null ? "" : String(p.entrega.distanciaKm).replace(".", ","), p.entrega.zonaVerificada === false ? "NO" : "sí", p.pago,
     euros(p.subtotalCent), euros(p.envioCent), euros(p.totalCent), p.consultar, euros(p.ahorroCent ?? 0), (p.regalos ?? []).map((r) => `${r.cantidad} × ${r.texto}`).join(" | "),
-    p.lineas.map((l) => `${l.nombre} ${l.cantidad}${l.unidad === "kg" ? " g" : " ud"}${l.opcion ? ` (${l.opcion})` : ""}${l.nota ? ` [${l.nota}]` : ""}${l.oferta ? ` {${l.oferta}${l.gratis ? `: ${l.gratis}${l.unidad === "kg" ? " g" : " ud"} gratis` : ""}}` : ""}`).join(" | "),
+    p.lineas.map((l) => `${l.nombre} ${l.cantidad}${l.unidad === "kg" ? " g" : " ud"}${l.opcion ? ` (${l.opcion})` : ""}${l.nota ? ` [${l.nota}]` : ""}${l.porEncargo ? " <POR ENCARGO>" : ""}${l.oferta ? ` {${l.oferta}${l.gratis ? `: ${l.gratis}${l.unidad === "kg" ? " g" : " ud"} gratis` : ""}}` : ""}`).join(" | "),
     p.comentarios, p.notaInterna,
   ]);
   return "﻿" + [cab, ...filas].map((f) => f.map(celdaCsv).join(";")).join("\r\n") + "\r\n";

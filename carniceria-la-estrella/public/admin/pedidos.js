@@ -84,6 +84,7 @@ function tarjeta(p) {
 
   const lineas = p.lineas.map((l) => h("li", {},
     h("span", {}, h("strong", { texto: l.nombre }), ` · ${cantidad(l.cantidad, l.unidad)}`, l.opcion ? ` · ${l.opcion}` : "", l.nota ? h("em", { texto: ` — «${l.nota}»` }) : null,
+      l.porEncargo ? h("span", { class: "etiqueta-oferta", texto: " · POR ENCARGO (confirmar precio)" }) : null,
       l.oferta ? h("span", { class: "etiqueta-oferta", texto: ` · ${l.oferta}${l.gratis ? `: ${cantidad(l.gratis, l.unidad)} gratis` : l.precioHabitual != null ? `: ${euros(Math.round(l.precio * 100))} en vez de ${euros(Math.round(l.precioHabitual * 100))}` : ""}` }) : null),
     h("span", { class: "importe", texto: l.subtotalCent == null ? "Consultar" : euros(l.subtotalCent) })));
 

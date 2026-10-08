@@ -140,18 +140,27 @@ test("mensaje de WhatsApp: legible, con número, y se acorta si es larguísimo",
   const n = numeroPedido("2026-10-05", 7);
   assert.equal(n, "LE-2610-0007");
   const msg = mensajeWhatsApp(r, n);
-  assert.match(msg, /Pedido LE-2610-0007/);
-  assert.match(msg, /Solomillo de ternera: 500 g \(En medallones\)/);
-  assert.match(msg, /Pollo entero: 2 ud/);
-  assert.match(msg, /Recogida en tienda: miércoles, 7 de octubre|Recogida en tienda: miércoles 7 de octubre/);
-  assert.match(msg, /Total estimado: 29,45/);
+  assert.match(msg, /🛒 \*PEDIDO WEB · LE-2610-0007\*/);
+  assert.match(msg, /👤 \*Cliente:\* Ana Pérez/);
+  assert.match(msg, /📞 \*Teléfono:\* 655 44 33 22/);
+  assert.match(msg, /🏪 \*Recogida en tienda\*/);
+  assert.match(msg, /📅 miércoles,? 7 de octubre/);
+  assert.match(msg, /🕐 11:00-13:00/);
+  assert.match(msg, /💳 \*Pago:\* Efectivo/);
+  assert.match(msg, /▪️ 500 g · \*Solomillo de ternera\* \(En medallones\) · 12,45\s€/);
+  assert.match(msg, /▪️ 2 ud · \*Pollo entero\* · 17,00\s€/);
+  assert.match(msg, /🧾 \*Total estimado: 29,45\s€\*/);
+  assert.match(msg, /✅ Enviado desde la web de Carnicería La Estrella/);
+  assert.match(mensajeWhatsApp(r, n, { negocio: "Otra Carnicería" }), /✅ Enviado desde la web de Otra Carnicería/);
+  assert.ok(msg.startsWith("👋 Hola, soy Ana Pérez."), "empieza saludando");
+  assert.ok(!/Dirección|📍/.test(msg), "una recogida no lleva dirección");
   const enlace = enlaceWhatsApp(r, n, "34601006290");
   assert.ok(enlace.url.startsWith("https://wa.me/34601006290?text="));
   assert.equal(enlace.resumido, false);
   const grande = clone(r); grande.lineas = Array.from({ length: 60 }, (_, i) => ({ ...grande.lineas[0], nombre: `Producto muy largo número ${i}`, nota: "nota bastante larga para ocupar espacio" }));
   const e2 = enlaceWhatsApp(grande, n, "34601006290");
   assert.equal(e2.resumido, true);
-  assert.ok(e2.url.length <= 1800);
+  assert.ok(e2.url.length <= 2400);
 });
 
 // ---------- zona de reparto ----------
@@ -205,7 +214,7 @@ test("consultaGeocodificacion: solo cuando hace falta localizar la dirección", 
 test("el pedido de reparto guarda CP y el mensaje de WhatsApp lo incluye", () => {
   const r = validar(pedidoReparto("41008"), reparto({}));
   assert.equal(r.valor.entrega.cp, "41008");
-  assert.match(mensajeWhatsApp(r.valor, "LE-2610-0001"), /Dirección: Calle Gálena 2, 2º B \(41008\)/);
+  assert.match(mensajeWhatsApp(r.valor, "LE-2610-0001"), /📍 Calle Gálena 2, 2º B \(41008\)/);
 });
 
 test("un producto oculto se puede pedir solo mientras tenga una oferta vigente (se activa con la oferta y se oculta al terminar)", () => {
@@ -228,4 +237,35 @@ test("un producto oculto se puede pedir solo mientras tenga una oferta vigente (
   sol.ofertas = [{ tipo: "precio", desde: "2026-10-05", hasta: "2026-10-11", precio: 19.9 }];
   sol.agotado = true;
   assert.equal(v("2026-10-07").ok, false, "agotado sigue sin poder pedirse aunque haya oferta");
+});
+
+test("mensaje de WhatsApp: producto por encargo marcado, y el enlace cabe aunque los datos sean larguísimos", () => {
+  const encargo = clone(productos);
+  encargo.find((x) => x.id === "pollo-pollo-entero").porEncargo = true;
+  encargo.find((x) => x.id === "pollo-pollo-entero").agotado = true; // agotado pero por encargo: se puede pedir
+  const r = validarPedido(pedidoOk(), { productos: encargo, ajustes, ahora: AHORA });
+  assert.equal(r.ok, true, JSON.stringify(r.errores));
+  assert.equal(r.valor.porEncargo, 1);
+  assert.equal(r.valor.lineas[1].porEncargo, true);
+  assert.equal(r.valor.lineas[0].porEncargo, false);
+  const msg = mensajeWhatsApp(r.valor, "LE-2610-0009");
+  assert.match(msg, /📦 \*POR ENCARGO\* · precio orientativo, a confirmar antes de encargarlo/);
+  assert.match(msg, /📦 El producto por encargo: me confirmáis el precio antes de hacer el encargo\./);
+  // sin la marca, agotado sigue sin poder pedirse
+  encargo.find((x) => x.id === "pollo-pollo-entero").porEncargo = false;
+  assert.equal(validarPedido(pedidoOk(), { productos: encargo, ajustes, ahora: AHORA }).ok, false);
+  // el nombre «(por encargo)» basta, sin tocar los productos ya guardados
+  encargo.find((x) => x.id === "pollo-pollo-entero").nombre = "Pollo entero (por encargo)";
+  assert.equal(validarPedido(pedidoOk(), { productos: encargo, ajustes, ahora: AHORA }).ok, true);
+  // el caso peor: 60 líneas con notas largas, comentarios y dirección de 200 caracteres
+  const v = r.valor;
+  const peor = clone(v);
+  peor.lineas = Array.from({ length: 60 }, (_, i) => ({ ...v.lineas[0], nombre: `Producto con nombre bastante largo número ${i}`, nota: "n".repeat(140), opcion: "o".repeat(40) }));
+  peor.comentarios = "c".repeat(500);
+  peor.entrega = { ...peor.entrega, tipo: "reparto", direccion: "d".repeat(200), cp: "41008" };
+  peor.cliente.nombre = "N".repeat(60);
+  const e = enlaceWhatsApp(peor, "LE-2610-0009", "34601006290");
+  assert.equal(e.resumido, true);
+  assert.ok(e.url.length <= 2400, `longitud ${e.url.length}`);
+  assert.match(decodeURIComponent(e.url), /PEDIDO WEB · LE-2610-0009/);
 });

@@ -271,12 +271,13 @@ test("mensaje de WhatsApp: cita la oferta, el ahorro y el regalo", () => {
   const a = clone(aj); a.tienda.regalos = [regalo()];
   const r = hacer([{ id: "elaborados-albondigas", cantidad: 3000 }, { id: "cerdo-iberico-secreto-iberico", cantidad: 1000 }], a);
   const m = mensajeWhatsApp({ ...r.valor }, "LE-2610-0001");
-  assert.match(m, /Albóndigas: 3 kg \[3x2: 1 kg gratis\]/i);
-  assert.match(m, /Secreto ibérico: 1 kg \[Oferta: 19,95\s€\/kg en vez de 29,95\s€\]/);
-  assert.match(m, /Ahorro por ofertas: 19,90\s€/);
-  assert.match(m, /Regalo por tu compra: 250 g de chorizo/);
+  assert.match(m, /3 kg · \*Albóndigas\*/);
+  assert.match(m, /🏷️ 3x2: 1 kg gratis/);
+  assert.match(m, /🏷️ Oferta: 19,95\s€\/kg en vez de 29,95\s€/);
+  assert.match(m, /💰 \*Ahorro por ofertas:\* 19,90\s€/);
+  assert.match(m, /🎁 \*Regalo por compra:\* 250 g de chorizo/);
   const dos = mensajeWhatsApp({ ...hacer([{ id: "pollo-pollo-entero", cantidad: 8 }], a).valor }, "LE-2610-0002");
-  assert.match(dos, /Regalo por tu compra: 2 × 250 g de chorizo/);
+  assert.match(dos, /🎁 \*Regalo por compra:\* 2 × 250 g de chorizo/);
   const sin = mensajeWhatsApp({ ...hacer([{ id: "pollo-pollo-entero", cantidad: 2 }], aj).valor }, "LE-2610-0003");
   assert.ok(!/Ahorro|Regalo/.test(sin));
 });

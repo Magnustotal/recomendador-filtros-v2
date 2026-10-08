@@ -3,6 +3,7 @@
 import { api, textoErrores } from "./api.js";
 import { h, $, importeEs, aviso, describirError, sinAcentos } from "./util.js";
 import { sumarDias } from "/assets/compartido/horario.js";
+import { esPorEncargo } from "/assets/compartido/encargo.js";
 import { fechaCorta, nombreOferta, rebajaValida, MAX_OFERTAS_POR_PRODUCTO, MAX_REGALOS } from "/assets/compartido/ofertas.js";
 
 let productos = [];
@@ -168,7 +169,7 @@ function abrirDialogo(edicion = null) {
         h("span", { class: "of-op-nombre", texto: p.nombre }),
         h("span", { class: "of-op-meta", texto: `${nombreCat(p.categoria)} · ${p.precio != null ? `${eurosTxt(p.precio)}/${unidadDe(p)}` : "sin precio"}` })),
       h("span", { class: `of-pastilla ${p.oculto ? "es-oculto" : "es-activo"}`, texto: p.oculto ? "Oculto: se activará con la oferta" : "Activo" }),
-      p.agotado ? h("span", { class: "of-pastilla es-agotado", texto: "Agotado" }) : null)) : [h("p", { class: "ayuda", texto: "Ningún producto coincide." })]));
+      p.agotado && !esPorEncargo(p) ? h("span", { class: "of-pastilla es-agotado", texto: "Agotado" }) : esPorEncargo(p) ? h("span", { class: "of-pastilla es-encargo", texto: "Por encargo" }) : null)) : [h("p", { class: "ayuda", texto: "Ningún producto coincide." })]));
     resumen.textContent = coinciden.length ? `${coinciden.length} producto${coinciden.length === 1 ? "" : "s"}: ${coinciden.length - ocultos} activo${coinciden.length - ocultos === 1 ? "" : "s"} y ${ocultos} oculto${ocultos === 1 ? "" : "s"}.` : "";
     mostrarProducto();
   };

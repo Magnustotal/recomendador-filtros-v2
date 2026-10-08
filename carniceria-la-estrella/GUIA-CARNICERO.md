@@ -11,6 +11,7 @@ En el móvil funciona igual que en el ordenador. Arriba tienes siete pestañas.
 - La **nota interna** es solo para ti; el cliente no la ve.
 - **Descargar Excel (CSV)** baja todos los pedidos para guardarlos o enviarlos a la gestoría.
 - Los pedidos **no se borran solos**. Si quieres quitar uno, pulsa *Eliminar pedido* (no se puede deshacer).
+- **El mensaje de WhatsApp** de un pedido hecho en la web llega ya preparado y se reconoce de un vistazo: empieza con «🛒 PEDIDO WEB · LE-…», cada dato lleva su icono (👤 cliente, 📞 teléfono, 🏪 recogida o 🚚 reparto, 📅 día, 🕐 franja, 📍 dirección, 💳 pago), los productos van en lista con su importe, y acaba con «✅ Enviado desde la web». Un pedido que alguien te escribe a mano no lleva nada de eso. Si es larguísimo, se resume (el pedido completo está en este panel).
 - Importante: el cliente envía el pedido por WhatsApp desde su móvil. Si no pulsa ese botón, el pedido queda guardado aquí igualmente, pero él no te habrá escrito; por eso conviene mirar esta pestaña de vez en cuando.
 
 ## Productos
@@ -24,6 +25,7 @@ En el móvil funciona igual que en el ordenador. Arriba tienes siete pestañas.
 - Escribe el **precio** directamente en la casilla de cada producto y sal de ella: se guarda en el momento (verás «✓ Guardado»). **Si el precio que escribes se aleja mucho del que tenía (menos de la mitad o más del doble) o del orientativo, te pregunta «¿Es correcto?»** para pillar erratas (un cero de más, una coma mal puesta): si dices que no, vuelve al de antes.
 - Si dejas el precio **vacío**, en la tienda se verá **«Consultar precio»** y el cliente podrá pedirlo igualmente.
 - Marca **Agotado** cuando no tengas algo: se sigue viendo, pero no se puede pedir. Al volver a tenerlo, desmárcalo.
+- Marca **Por encargo** (en la ficha del producto) cuando algo no lo tengas en la tienda pero puedas traerlo: se puede pedir aunque esté agotado, el botón dice «Encargar» y el cliente ve que **el precio es orientativo y se lo confirmas antes de hacer el encargo**. En el pedido que te llega y en el mensaje de WhatsApp sale marcado como POR ENCARGO. Si pones también Agotado, gana Por encargo (se sigue pudiendo pedir). Los productos que ya se llaman «(por encargo)» cuentan solos.
 - **Redondeo del precio por kilo:** si eliges «Terminar en ,90» (o ,95), cada precio por kilo que guardes se sube al siguiente que acabe así (14,31 → 14,90). No se aplica a lo que se vende por unidades. El botón *Aplicar ahora a todos* cambia todos los precios que ya hay.
 - **Editar** abre la ficha completa: nombre, categoría, descripción, si se vende al peso o por unidades, de cuánto en cuánto se puede pedir (250 g por defecto), opciones al pedir (por ejemplo «En filetes», «Picada»), foto, y si es **Oculto** (no aparece en la tienda) o bebida alcohólica (el cliente tendrá que confirmar que es mayor de 18).
 - **Fotos por defecto:** cada categoría ya trae su foto y cada pieza muestra el icono de su categoría hasta que subas la suya.

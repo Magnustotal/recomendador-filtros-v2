@@ -4,6 +4,7 @@
 import { texto, telefonoEspana, fechaISO, recoger, ErrorValidacion } from "./validar.mjs";
 import { cantidadValida, aCentimos, formatoCantidad, formatoEuro } from "./dinero.mjs";
 import { calcularLineas, regalosDelPedido, nombreOferta, activoHoy } from "./ofertas.mjs";
+import { esPorEncargo, sePuedePedir } from "./encargo.mjs";
 import { diaSemanaDeFecha, sumarDias, aMinutos, franjaDentroDeHorario } from "./horario.mjs";
 
 const MAX_LINEAS = 60;
@@ -41,7 +42,7 @@ export function validarPedido(entrada, { productos, ajustes, ahora, geo = null }
       for (const [i, l] of e.lineas.entries()) {
         const p = typeof l?.id === "string" ? porId.get(l.id) : undefined;
         if (!p || !activoHoy(p, ahora.fecha)) { ctx.error(`lineas[${i}]`, "Producto no disponible."); continue; }
-        if (p.agotado) { ctx.error(`lineas[${i}]`, `${p.nombre} está agotado.`); continue; }
+        if (!sePuedePedir(p)) { ctx.error(`lineas[${i}]`, `${p.nombre} está agotado.`); continue; }
         const opcion = ctx.intento(() => texto(l.opcion, { max: 40, campo: `lineas[${i}].opcion` })) ?? "";
         if (opcion && !p.opciones.includes(opcion)) { ctx.error(`lineas[${i}].opcion`, `Opción no válida para ${p.nombre}.`); continue; }
         const nota = ctx.intento(() => texto(l.nota, { max: 140, campo: `lineas[${i}].nota` })) ?? "";
@@ -62,7 +63,7 @@ export function validarPedido(entrada, { productos, ajustes, ahora, geo = null }
         lineas.push({
           id: p.id, nombre: p.nombre, unidad: p.unidad, cantidad, opcion, nota,
           precio: c.precio, precioHabitual: c.habitual, subtotalCent: c.subtotalCent, ahorroCent: c.ahorroCent,
-          oferta: c.oferta ? nombreOferta(c.oferta) : "", gratis: c.gratis, alcohol: p.alcohol,
+          oferta: c.oferta ? nombreOferta(c.oferta) : "", gratis: c.gratis, alcohol: p.alcohol, porEncargo: esPorEncargo(p),
         });
       });
     }
@@ -154,6 +155,7 @@ export function validarPedido(entrada, { productos, ajustes, ahora, geo = null }
       pago, comentarios, mayorEdad,
       lineas: lineas.map(({ alcohol, ...l }) => l),
       subtotalCent, ahorroCent, regalos, consultar, envioCent, totalCent: subtotalCent + envioCent,
+      porEncargo: lineas.filter((l) => l.porEncargo).length,
     };
   });
 }
@@ -167,38 +169,65 @@ function etiquetaDia(fechaISOstr) {
   return new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(fechaISOstr + "T12:00:00Z"));
 }
 
-const NOMBRE_PAGO = { efectivo: "efectivo", tarjeta: "tarjeta (al recoger)", bizum: "Bizum", transferencia: "transferencia" };
+const NOMBRE_PAGO = { efectivo: "Efectivo", tarjeta: "Tarjeta (al recoger)", bizum: "Bizum", transferencia: "Transferencia" };
+const telefonoBonito = (t) => (/^\d{9}$/.test(t) ? `${t.slice(0, 3)} ${t.slice(3, 5)} ${t.slice(5, 7)} ${t.slice(7)}` : t);
+const MAX_LINEAS_RESUMEN = 6;
+const corto = (t, n) => (t.length > n ? `${t.slice(0, n - 1)}…` : t);
 
-export function mensajeWhatsApp(pedido, numero, { completo = true } = {}) {
+/**
+ * Mensaje de WhatsApp del pedido hecho en la web. Va pensado para reconocerse de un vistazo entre los mensajes del día: cabecera «PEDIDO WEB»
+ * con el número, una línea por dato con su icono, los productos en lista y un pie que dice de dónde viene. Un pedido que alguien escribe a
+ * mano no tiene nada de esto. Usa el formato de WhatsApp (*negrita*).
+ */
+export function mensajeWhatsApp(pedido, numero, { completo = true, minimo = false, negocio = "Carnicería La Estrella" } = {}) {
   const l = [];
-  l.push(`Hola, soy ${pedido.cliente.nombre}. Pedido ${numero}:`, "");
-  const lineas = completo ? pedido.lineas : pedido.lineas.slice(0, 8);
-  for (const x of lineas) {
-    const extra = [x.opcion, x.nota].filter(Boolean).join("; ");
-    const oferta = x.oferta ? ` [${x.oferta}${x.gratis ? `: ${formatoCantidad(x.gratis, x.unidad)} gratis` : x.precioHabitual != null ? `: ${formatoEuro(x.precio)}/${x.unidad === "kg" ? "kg" : "ud"} en vez de ${formatoEuro(x.precioHabitual)}` : ""}]` : "";
-    l.push(`- ${x.nombre}: ${formatoCantidad(x.cantidad, x.unidad)}${extra ? ` (${extra})` : ""}${oferta}`);
-  }
-  if (!completo && pedido.lineas.length > 8) l.push(`- ...y ${pedido.lineas.length - 8} productos más (detalle completo con el número ${numero})`);
-  l.push("");
   const en = pedido.entrega;
-  l.push(en.tipo === "recogida" ? `Recogida en tienda: ${etiquetaDia(en.dia)}, ${en.franja}` : `Reparto a domicilio: ${etiquetaDia(en.dia)}, ${en.franja}`);
-  if (en.tipo === "reparto") l.push(`Dirección: ${en.direccion}${en.cp ? ` (${en.cp})` : ""}`);
-  l.push(`Pago: ${NOMBRE_PAGO[pedido.pago]}`);
-  if (pedido.ahorroCent > 0) l.push(`Ahorro por ofertas: ${formatoEuro(pedido.ahorroCent / 100)}`);
-  for (const r of pedido.regalos ?? []) l.push(`Regalo por tu compra: ${r.cantidad > 1 ? `${r.cantidad} × ` : ""}${r.texto}`);
+  l.push(`👋 Hola, soy ${pedido.cliente.nombre}. Este es mi pedido hecho desde la web:`, "");
+  l.push(`🛒 *PEDIDO WEB · ${numero}*`, "━━━━━━━━━━━━━━━━━━");
+  l.push(`👤 *Cliente:* ${pedido.cliente.nombre}`);
+  l.push(`📞 *Teléfono:* ${telefonoBonito(pedido.cliente.telefono)}`);
+  l.push(en.tipo === "recogida" ? "🏪 *Recogida en tienda*" : "🚚 *Reparto a domicilio*");
+  l.push(`📅 ${etiquetaDia(en.dia)}`, `🕐 ${en.franja}`);
+  if (en.tipo === "reparto") l.push(`📍 ${en.direccion}${en.cp ? ` (${en.cp})` : ""}`);
+  l.push(`💳 *Pago:* ${NOMBRE_PAGO[pedido.pago]}`, "");
+
+  l.push("🥩 *Productos*");
+  const lineas = minimo ? [] : completo ? pedido.lineas : pedido.lineas.slice(0, MAX_LINEAS_RESUMEN);
+  for (const x of lineas) {
+    const extra = completo ? [x.opcion, x.nota].filter(Boolean).join("; ") : corto([x.opcion, x.nota].filter(Boolean).join("; "), 30);
+    const importe = x.subtotalCent == null ? "precio por confirmar" : formatoEuro(x.subtotalCent / 100);
+    l.push(`▪️ ${formatoCantidad(x.cantidad, x.unidad)} · *${x.nombre}*${extra ? ` (${extra})` : ""} · ${importe}`);
+    if (x.oferta) l.push(`   🏷️ ${x.oferta}${x.gratis ? `: ${formatoCantidad(x.gratis, x.unidad)} gratis` : x.precioHabitual != null ? `: ${formatoEuro(x.precio)}/${x.unidad === "kg" ? "kg" : "ud"} en vez de ${formatoEuro(x.precioHabitual)}` : ""}`);
+    if (x.porEncargo) l.push("   📦 *POR ENCARGO* · precio orientativo, a confirmar antes de encargarlo");
+  }
+  if (!completo && pedido.lineas.length > lineas.length) l.push(`▪️ …${lineas.length ? "y " : ""}${pedido.lineas.length - lineas.length} producto${pedido.lineas.length - lineas.length === 1 ? "" : "s"}${lineas.length ? " más" : ""} (detalle completo con el número ${numero})`);
+  l.push("");
+
+  if (pedido.ahorroCent > 0) l.push(`💰 *Ahorro por ofertas:* ${formatoEuro(pedido.ahorroCent / 100)}`);
+  for (const r of pedido.regalos ?? []) l.push(`🎁 *Regalo por compra:* ${r.cantidad > 1 ? `${r.cantidad} × ` : ""}${r.texto}`);
   if (pedido.subtotalCent > 0 || pedido.consultar === 0) {
     const total = formatoEuro(pedido.totalCent / 100);
-    l.push(`Total estimado: ${total}${pedido.envioCent ? ` (incluye ${formatoEuro(pedido.envioCent / 100)} de envío)` : ""}${pedido.consultar ? ` + ${pedido.consultar} producto${pedido.consultar === 1 ? "" : "s"} por consultar` : ""}`);
-  } else l.push("Precios por confirmar.");
-  if (pedido.comentarios) l.push(`Comentarios: ${pedido.comentarios}`);
-  l.push("", "El peso y el precio definitivos se confirman al preparar el pedido.");
+    l.push(`🧾 *Total estimado: ${total}*${pedido.envioCent ? ` (incluye ${formatoEuro(pedido.envioCent / 100)} de envío)` : ""}${pedido.consultar ? ` + ${pedido.consultar} producto${pedido.consultar === 1 ? "" : "s"} por confirmar` : ""}`);
+  } else l.push("🧾 *Precios por confirmar*");
+  if (pedido.mayorEdad) l.push("🔞 Confirmo que soy mayor de 18 años");
+  if (pedido.comentarios) l.push(`📝 *Comentarios:* ${completo ? pedido.comentarios : corto(pedido.comentarios, 100)}`);
+  l.push("", "⚖️ El peso y el precio definitivos se confirman al preparar el pedido.");
+  if (pedido.porEncargo > 0) l.push(`📦 ${pedido.porEncargo === 1 ? "El producto por encargo" : "Los productos por encargo"}: me confirmáis el precio antes de hacer el encargo.`);
+  l.push("━━━━━━━━━━━━━━━━━━", `✅ Enviado desde la web de ${negocio}`);
   return l.join("\n");
 }
 
 // Enlace de WhatsApp. Si el texto codificado es muy largo se acorta (el pedido completo queda guardado con su número).
-export function enlaceWhatsApp(pedido, numero, whatsapp, maximo = 1800) {
+// 2400 caracteres es un límite prudente que me he puesto yo: no he podido comprobar cuánto admite wa.me de verdad. Los emojis ocupan
+// unos 12 caracteres cada uno al codificarse, por eso un pedido de cuatro o cinco productos ya pasa de 1800.
+export function enlaceWhatsApp(pedido, numero, whatsapp, maximo = 2400, negocio = undefined) {
   const url = (texto) => `https://wa.me/${whatsapp}?text=${encodeURIComponent(texto)}`;
-  const completo = url(mensajeWhatsApp(pedido, numero, { completo: true }));
+  const textoCompleto = mensajeWhatsApp(pedido, numero, { completo: true, negocio });
+  const completo = url(textoCompleto);
   if (completo.length <= maximo) return { url: completo, resumido: false };
-  return { url: url(mensajeWhatsApp(pedido, numero, { completo: false })), resumido: true };
+  // Primero se resume la lista y, si aun así no cabe, se deja solo la cabecera y los totales
+  const textoResumen = mensajeWhatsApp(pedido, numero, { completo: false, negocio });
+  const resumen = url(textoResumen);
+  if (resumen.length <= maximo) return { url: resumen, resumido: textoResumen !== textoCompleto };
+  return { url: url(mensajeWhatsApp(pedido, numero, { completo: false, minimo: true, negocio })), resumido: true };
 }

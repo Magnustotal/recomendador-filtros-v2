@@ -8,6 +8,7 @@ import { referenciaMercado, rangoDesdeMercado } from "/assets/compartido/mercado
 import { ofertaVigente, nombreOferta } from "/assets/compartido/ofertas.js";
 import { ALERGENOS_UE, alergenosPendientes } from "/assets/compartido/alergenos.js";
 import { MEDIDAS, contenidoPendiente, precioPorMedida } from "/assets/compartido/contenido.js";
+import { esPorEncargo } from "/assets/compartido/encargo.js";
 
 let productos = [];
 let categorias = [];
@@ -241,7 +242,7 @@ function fila(p) {
       });
       sugerido.replaceChildren(h("span", { texto: `Orientativo: ${eurosTxt(o.precio)}${p.unidad === "kg" ? "/kg" : "/ud"}` }), aceptar);
     } else sugerido.replaceChildren();
-    etiquetas.replaceChildren(...[p.oculto && "Oculto", p.agotado && "Agotado", p.foto && "Con foto", p.alcohol && "+18", textoOfertaFila(p)].filter(Boolean).map((t) => h("span", { class: "mini", texto: t })));
+    etiquetas.replaceChildren(...[p.oculto && "Oculto", p.agotado && !esPorEncargo(p) && "Agotado", esPorEncargo(p) && "Por encargo", p.foto && "Con foto", p.alcohol && "+18", textoOfertaFila(p)].filter(Boolean).map((t) => h("span", { class: "mini", texto: t })));
   };
 
   precio.addEventListener("change", async () => {
@@ -311,7 +312,8 @@ function abrirEditor(original) {
     ayudaContenido.textContent = pm ? `La tienda enseñará: ${importeEs(pm.precio)} €/${pm.por === "kg" ? "kilo" : "litro"} junto al precio.` : "Solo para lo que se vende por unidad y viene envasado: un bote de 250 g, una botella de 75 cl.";
   };
   const chk = (id, etiqueta, marcado) => h("label", { class: "check", for: id }, h("input", { id, type: "checkbox", checked: marcado }), h("span", { texto: etiqueta }));
-  const cAgotado = chk("f-agotado", "Agotado (se ve pero no se puede pedir)", p.agotado);
+  const cAgotado = chk("f-agotado", "Agotado (se ve pero no se puede pedir, salvo que sea por encargo)", p.agotado);
+  const cEncargo = chk("f-encargo", "Por encargo (se puede pedir aunque no haya stock: el precio es orientativo y se confirma antes de encargarlo)", esPorEncargo(p));
   const cOculto = chk("f-oculto", "Oculto (no aparece en la tienda, salvo mientras tenga una oferta)", p.oculto);
   const cAlcohol = chk("f-alcohol", "Bebida alcohólica (pide confirmar que es mayor de 18)", p.alcohol);
 
@@ -506,7 +508,7 @@ function abrirEditor(original) {
     h("fieldset", { class: "campo-grupo" }, h("legend", { texto: "Foto" }), vista,
       h("div", { class: "acciones" }, h("label", { class: "btn-sec", for: "f-foto", texto: p.foto ? "Cambiar foto" : "Subir foto" }), quitar), archivo,
       h("p", { class: "ayuda", id: "reglas-foto", texto: `Formatos JPG, PNG o WebP, de cualquier tamaño: se ajusta sola a entre ${LADO_MINIMO} y ${LADO_MAXIMO} px por el lado largo y se guarda como JPG ligero (sin ubicación ni datos ocultos).` }), estadoFoto),
-    h("div", { class: "checks" }, cAgotado, cOculto, cAlcohol),
+    h("div", { class: "checks" }, cEncargo, cAgotado, cOculto, cAlcohol),
     h("div", { class: "dlg-acciones" }, guardarBtn, cancelar, eliminar));
 
   formulario.addEventListener("submit", async (ev) => {
@@ -524,7 +526,7 @@ function abrirEditor(original) {
       opciones: opciones.value.split("\n").map((x) => x.trim()).filter(Boolean), alergenos: lista(alergenos.value), alergenosRevisados: cAlergenosRev.querySelector("input").checked,
       contenido: contenidoCant.value.trim() === "" ? null : { cantidad: contenidoCant.value, medida: contenidoMed.value }, precioUnidadExento: cExento.querySelector("input").checked,
       ofertas: p.ofertas ?? [], // se cambian en la pestaña «Ofertas»; aquí se conservan tal cual
-      agotado: cAgotado.querySelector("input").checked, oculto: cOculto.querySelector("input").checked, alcohol: cAlcohol.querySelector("input").checked, foto: p.foto,
+      agotado: cAgotado.querySelector("input").checked, porEncargo: cEncargo.querySelector("input").checked, oculto: cOculto.querySelector("input").checked, alcohol: cAlcohol.querySelector("input").checked, foto: p.foto,
     };
     const r = await api("/producto", { metodo: "PUT", cuerpo });
     guardarBtn.disabled = false;

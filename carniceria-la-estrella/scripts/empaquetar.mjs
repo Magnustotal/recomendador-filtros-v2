@@ -26,7 +26,7 @@ const salidas = {
 };
 
 // Módulos que usan a la vez el servidor y el navegador (una sola fuente de verdad, con pruebas).
-for (const nombre of ["dinero", "horario", "precios", "mercado", "ofertas", "alergenos", "contenido"]) {
+for (const nombre of ["dinero", "horario", "precios", "mercado", "ofertas", "alergenos", "contenido", "encargo"]) {
   // En el navegador los módulos se importan como .js, no .mjs
   salidas[`public/assets/compartido/${nombre}.js`] = `// COPIA de lib/${nombre}.mjs generada por scripts/empaquetar.mjs. No editar a mano.\n${leer(`lib/${nombre}.mjs`).replace(/from "\.\/(\w+)\.mjs"/g, 'from "./$1.js"')}`;
 }
